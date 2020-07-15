@@ -1,0 +1,4 @@
+github.com/helloeave/json v1.13.0 h1:gCsw/v7D6c+zMxfa1fAOJsc1nRcW8oBH9OzfkONQj6E=
+github.com/helloeave/json v1.13.0/go.mod h1:uTHhuUsgnrpm9cc7Gi3tfIUwgf1dq/7+uLfpUFLBFEQ=
+github.com/himidori/golang-vk-api v0.0.0-20200702133956-0d6cb9682ce6 h1:zXZt0TKPLsJr1cNEUTuzOgx0V+x99E0pLu4GvD0gAaE=
+github.com/himidori/golang-vk-api v0.0.0-20200702133956-0d6cb9682ce6/go.mod h1:Pr+ceG3dOm/e84EMeT9PBDjQ0keC9ZQP/wSrrZawMV0=
