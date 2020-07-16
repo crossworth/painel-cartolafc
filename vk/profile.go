@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	profileRegex = regexp.MustCompile(`(http(s?)://)?(m\.)?vk.com/([a-z0-9.]+)$`)
+	profileRegex = regexp.MustCompile(`(http(s?)://)?(m\.)?vk.com/([a-z0-9._]+)$`)
 )
 
 var (

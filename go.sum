@@ -1,4 +1,8 @@
+github.com/go-chi/chi v4.1.2+incompatible h1:fGFk2Gmi/YKXk0OmGfBh0WgmN3XB8lVnEyNz34tQRec=
+github.com/go-chi/chi v4.1.2+incompatible/go.mod h1:eB3wogJHnLi3x/kFX2A+IbTBlXxmMeXJVKy9tTv1XzQ=
 github.com/helloeave/json v1.13.0 h1:gCsw/v7D6c+zMxfa1fAOJsc1nRcW8oBH9OzfkONQj6E=
 github.com/helloeave/json v1.13.0/go.mod h1:uTHhuUsgnrpm9cc7Gi3tfIUwgf1dq/7+uLfpUFLBFEQ=
 github.com/himidori/golang-vk-api v0.0.0-20200702133956-0d6cb9682ce6 h1:zXZt0TKPLsJr1cNEUTuzOgx0V+x99E0pLu4GvD0gAaE=
 github.com/himidori/golang-vk-api v0.0.0-20200702133956-0d6cb9682ce6/go.mod h1:Pr+ceG3dOm/e84EMeT9PBDjQ0keC9ZQP/wSrrZawMV0=
+golang.org/x/sync v0.0.0-20200625203802-6e8e738ad208 h1:qwRHBd0NqMbJxfbotnDhm2ByMI1Shq4Y6oRJo21SGJA=
+golang.org/x/sync v0.0.0-20200625203802-6e8e738ad208/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
