@@ -1,17 +1,13 @@
 package model
 
-import (
-	"time"
-)
-
 type Topic struct {
-	ID        int
-	Title     string
-	IsClosed  bool
-	IsFixed   bool
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	CreatedBy int
-	UpdatedBy int
-	Deleted   bool
+	ID        int    `json:"id"`
+	Title     string `json:"title"`
+	IsClosed  bool   `json:"is_closed"`
+	IsFixed   bool   `json:"is_fixed"`
+	CreatedAt int64  `json:"created_at"`
+	UpdatedAt int64  `json:"updated_at"`
+	CreatedBy int    `json:"created_by"`
+	UpdatedBy int    `json:"updated_by"`
+	Deleted   bool   `json:"-"`
 }

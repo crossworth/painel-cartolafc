@@ -1,0 +1,60 @@
+package api
+
+import (
+	"compress/flate"
+	"net/http"
+
+	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/middleware"
+	"github.com/go-chi/cors"
+
+	"github.com/crossworth/cartola-web-admin/api/handle"
+	"github.com/crossworth/cartola-web-admin/database"
+	"github.com/crossworth/cartola-web-admin/vk"
+)
+
+var corsOpts = cors.Options{
+	AllowedOrigins:   []string{"*"},
+	AllowedMethods:   []string{"GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"},
+	AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+	ExposedHeaders:   []string{"Link"},
+	AllowCredentials: true,
+	MaxAge:           300,
+}
+
+type Server struct {
+	router chi.Router
+	vk     *vk.VKClient
+	db     *database.PostgreSQL
+}
+
+func NewServer(vk *vk.VKClient, db *database.PostgreSQL) *Server {
+	s := &Server{
+		router: chi.NewRouter(),
+		vk:     vk,
+		db:     db,
+	}
+
+	s.router.Use(middleware.Recoverer)
+	s.router.Use(middleware.NoCache)
+	s.router.Use(middleware.Compress(flate.DefaultCompression))
+	s.router.Use(cors.New(corsOpts).Handler)
+
+	s.router.NotFound(handle.NotFoundHandler)
+	s.router.MethodNotAllowed(handle.MethodNotAllowedHandler)
+
+	// public routes
+	s.router.Get("/resolve-profile", handle.ProfileLinkToID(s.vk))
+
+	// authenticated routes
+	s.router.Group(func(r chi.Router) {
+		r.Get("/user/{profile}", handle.ProfileByID(s.db))
+		r.Get("/topics/{profile}", handle.TopicsByID(s.db))
+	})
+
+	return s
+}
+
+func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	s.router.ServeHTTP(w, r)
+}

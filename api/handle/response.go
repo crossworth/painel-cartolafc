@@ -20,11 +20,32 @@ func errorCode(writer http.ResponseWriter, err error, status int) {
 }
 
 func databaseError(writer http.ResponseWriter, err error) {
-	status := 400
+	message := err.Error()
+	status := 500
 
 	if errors.Is(err, sql.ErrNoRows) {
+		message = "nenhum resultado encontrado"
 		status = 404
 	}
 
-	errorCode(writer, NewError(err.Error()), status)
+	errorCode(writer, NewError(message), status)
+}
+
+type PaginationMeta struct {
+	Current string `json:"current"`
+	Next    string `json:"next"`
+	Prev    string `json:"prev"`
+	Total   int64  `json:"total"`
+}
+
+type Pagination struct {
+	Data interface{}    `json:"data"`
+	Meta PaginationMeta `json:"meta"`
+}
+
+func pagination(writer http.ResponseWriter, v interface{}, status int, meta PaginationMeta) {
+	json(writer, Pagination{
+		Data: v,
+		Meta: meta,
+	}, status)
 }
