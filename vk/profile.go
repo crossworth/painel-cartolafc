@@ -2,22 +2,18 @@ package vk
 
 import (
 	"errors"
-	"regexp"
-)
-
-var (
-	profileRegex = regexp.MustCompile(`(http(s?)://)?(m\.)?vk.com/([a-z0-9._]+)$`)
 )
 
 var (
 	ErrInvalidProfileURL = errors.New("link de perfil inválido")
 )
 
+// ProfileScreenNameOrIDFromURL retorna o screen name ou id de um link de perfil
 func ProfileScreenNameOrIDFromURL(profileURL string) (string, error) {
-	if !profileRegex.Match([]byte(profileURL)) {
+	if !ProfileRegex.Match([]byte(profileURL)) {
 		return "", ErrInvalidProfileURL
 	}
 
-	matches := profileRegex.FindStringSubmatch(profileURL)
+	matches := ProfileRegex.FindStringSubmatch(profileURL)
 	return matches[4], nil
 }

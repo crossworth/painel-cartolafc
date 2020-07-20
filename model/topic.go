@@ -5,8 +5,8 @@ type Topic struct {
 	Title     string `json:"title"`
 	IsClosed  bool   `json:"is_closed"`
 	IsFixed   bool   `json:"is_fixed"`
-	CreatedAt int64  `json:"created_at"`
-	UpdatedAt int64  `json:"updated_at"`
+	CreatedAt int    `json:"created_at"`
+	UpdatedAt int    `json:"updated_at"`
 	CreatedBy int    `json:"created_by"`
 	UpdatedBy int    `json:"updated_by"`
 	Deleted   bool   `json:"-"`

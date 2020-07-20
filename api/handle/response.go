@@ -33,9 +33,8 @@ func databaseError(writer http.ResponseWriter, err error) {
 
 type PaginationMeta struct {
 	Current string `json:"current"`
-	Next    string `json:"next"`
-	Prev    string `json:"prev"`
-	Total   int64  `json:"total"`
+	Next    string `json:"next,omitempty"`
+	Total   int    `json:"total"`
 }
 
 type Pagination struct {

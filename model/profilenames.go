@@ -1,14 +1,10 @@
 package model
 
-import (
-	"time"
-)
-
 type ProfileNames struct {
-	ProfileID  int
-	FirstName  string
-	LastName   string
-	ScreenName string
-	Photo      string
-	Date       time.Time
+	ProfileID  int    `json:"profile_id"`
+	FirstName  string `json:"first_name"`
+	LastName   string `json:"last_name"`
+	ScreenName string `json:"screen_name"`
+	Photo      string `json:"photo"`
+	Date       int    `json:"date"`
 }

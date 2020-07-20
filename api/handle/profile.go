@@ -55,7 +55,8 @@ func ProfileLinkToID(provider ScreeNameProvider) func(w http.ResponseWriter, r *
 }
 
 type ProfileByIDProvider interface {
-	FindProfileByID(id int) (model.Profile, error)
+	ProfileByUserID(id int) (model.Profile, error)
+	ProfileHistoryByUserID(id int) ([]model.ProfileNames, error)
 }
 
 func ProfileByID(provider ProfileByIDProvider) func(w http.ResponseWriter, r *http.Request) {
@@ -67,7 +68,7 @@ func ProfileByID(provider ProfileByIDProvider) func(w http.ResponseWriter, r *ht
 			return
 		}
 
-		profile, err := provider.FindProfileByID(id)
+		profile, err := provider.ProfileByUserID(id)
 		if err != nil {
 			databaseError(w, err)
 			return
@@ -77,15 +78,34 @@ func ProfileByID(provider ProfileByIDProvider) func(w http.ResponseWriter, r *ht
 	}
 }
 
-type TopicsByIDProvider interface {
-	FindTopicByUser(id int, before int64, after int64, limit int) ([]model.Topic, int64, error)
-}
-
-func TopicsByID(provider TopicsByIDProvider) func(w http.ResponseWriter, r *http.Request) {
+func ProfileHistoryByID(provider ProfileByIDProvider) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := util.ToInt(chi.URLParam(r, "profile"))
-		after := util.ToInt64(r.URL.Query().Get("after"))
-		before := util.ToInt64(r.URL.Query().Get("before"))
+
+		if id == 0 {
+			json(w, NewError("id de perfil inválido"), 400)
+			return
+		}
+
+		profileHistory, err := provider.ProfileHistoryByUserID(id)
+		if err != nil {
+			databaseError(w, err)
+			return
+		}
+
+		json(w, profileHistory, 200)
+	}
+}
+
+type UserTopicProvider interface {
+	TopicsByUserID(id int, before int, limit int) ([]model.Topic, error)
+	TopicsCountByUserID(id int) (int, error)
+}
+
+func TopicsByID(provider UserTopicProvider) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := util.ToInt(chi.URLParam(r, "profile"))
+		before := util.ToIntWithDefault(r.URL.Query().Get("before"), int(time.Now().Unix()))
 		limit := util.ToIntWithDefault(r.URL.Query().Get("limit"), 10)
 
 		if id == 0 {
@@ -93,31 +113,110 @@ func TopicsByID(provider TopicsByIDProvider) func(w http.ResponseWriter, r *http
 			return
 		}
 
-		// TODO(Pedro): This is not working!
-		if before == 0 && after == 0 {
-			before = time.Now().Unix()
+		total, err := provider.TopicsCountByUserID(id)
+		if err != nil {
+			databaseError(w, err)
+			return
 		}
 
-		topics, total, err := provider.FindTopicByUser(id, before, after, limit)
+		topics, err := provider.TopicsByUserID(id, before, limit)
 		if err != nil {
 			databaseError(w, err)
 			return
 		}
 
 		next := ""
-		prev := ""
 
-		// TODO(Pedro): Handle this in a better, reusable way
-		if len(topics) > 0 {
-			next = fmt.Sprintf("%s/topics/%d?limit=%d&before=%d", os.Getenv("APP_API_URL"), id, limit, topics[len(topics)-1].CreatedAt)
-			prev = fmt.Sprintf("%s/topics/%d?limit=%d&after=%d", os.Getenv("APP_API_URL"), id, limit, topics[0].CreatedAt)
+		lenTopics := len(topics)
+		if lenTopics > 0 && lenTopics < total {
+			next = fmt.Sprintf("%s/topics/%d?limit=%d&before=%d", os.Getenv("APP_API_URL"), id, limit, topics[lenTopics-1].CreatedAt)
 		}
 
 		pagination(w, topics, 200, PaginationMeta{
 			Current: fmt.Sprintf("%s/topics/%d?limit=%d&before=%d", os.Getenv("APP_API_URL"), id, limit, before),
 			Next:    next,
-			Prev:    prev,
 			Total:   total,
 		})
+	}
+}
+
+type UserCommentProvider interface {
+	CommentsByUserID(id int, before int, limit int) ([]model.Comment, error)
+	CommentsCountByUserID(id int) (int, error)
+}
+
+func CommentsByID(provider UserCommentProvider) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := util.ToInt(chi.URLParam(r, "profile"))
+		before := util.ToIntWithDefault(r.URL.Query().Get("before"), int(time.Now().Unix()))
+		limit := util.ToIntWithDefault(r.URL.Query().Get("limit"), 10)
+
+		if id == 0 {
+			json(w, NewError("id de perfil inválido"), 400)
+			return
+		}
+
+		total, err := provider.CommentsCountByUserID(id)
+		if err != nil {
+			databaseError(w, err)
+			return
+		}
+
+		comments, err := provider.CommentsByUserID(id, before, limit)
+		if err != nil {
+			databaseError(w, err)
+			return
+		}
+
+		next := ""
+
+		lenComments := len(comments)
+		if lenComments > 0 && lenComments < total {
+			next = fmt.Sprintf("%s/comments/%d?limit=%d&before=%d", os.Getenv("APP_API_URL"), id, limit, comments[lenComments-1].Date)
+		}
+
+		pagination(w, comments, 200, PaginationMeta{
+			Current: fmt.Sprintf("%s/comments/%d?limit=%d&before=%d", os.Getenv("APP_API_URL"), id, limit, before),
+			Next:    next,
+			Total:   total,
+		})
+	}
+}
+
+type UserTopicCommentProvider interface {
+	UserTopicProvider
+	UserCommentProvider
+}
+
+type ProfileStatsResponse struct {
+	TotalTopics   int `json:"total_topics"`
+	TotalComments int `json:"total_comments"`
+}
+
+func ProfileStatsByID(provider UserTopicCommentProvider) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := util.ToInt(chi.URLParam(r, "profile"))
+
+		if id == 0 {
+			json(w, NewError("id de perfil inválido"), 400)
+			return
+		}
+
+		totalTopics, err := provider.TopicsCountByUserID(id)
+		if err != nil {
+			databaseError(w, err)
+			return
+		}
+
+		totalComments, err := provider.CommentsCountByUserID(id)
+		if err != nil {
+			databaseError(w, err)
+			return
+		}
+
+		json(w, ProfileStatsResponse{
+			TotalTopics:   totalTopics,
+			TotalComments: totalComments,
+		}, 200)
 	}
 }

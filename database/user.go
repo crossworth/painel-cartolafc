@@ -6,7 +6,7 @@ import (
 	"github.com/crossworth/cartola-web-admin/model"
 )
 
-func (d *PostgreSQL) FindProfileByID(id int) (model.Profile, error) {
+func (d *PostgreSQL) ProfileByUserID(id int) (model.Profile, error) {
 	var profile model.Profile
 
 	err := sx.Do(d.db, func(tx *sx.Tx) {
@@ -16,44 +16,70 @@ func (d *PostgreSQL) FindProfileByID(id int) (model.Profile, error) {
 	return profile, err
 }
 
-func (d *PostgreSQL) FindTopicByUser(id int, before int64, after int64, limit int) ([]model.Topic, int64, error) {
+func (d *PostgreSQL) TopicsByUserID(id int, before int, limit int) ([]model.Topic, error) {
 	var topics []model.Topic
-	var total int64
 
 	err := sx.Do(d.db, func(tx *sx.Tx) {
-		tx.MustQueryRow(`SELECT COUNT(*) FROM topics WHERE created_by = $1`, id).MustScan(&total)
-
 		query := `SELECT * FROM topics WHERE created_by = $1 AND created_at < $2 ORDER BY created_at DESC LIMIT $3`
-		cond := before
 
-		// TODO(Pedro): Does this work?
-		if cond == 0 {
-			query = `SELECT * FROM topics WHERE created_by = $1 AND created_at > $2 ORDER BY created_at DESC LIMIT $3`
-			cond = after
-		}
-
-		tx.MustQuery(query, id, cond, limit).Each(func(r *sx.Rows) {
-			var o model.Topic
-			r.MustScans(&o)
-			topics = append(topics, o)
+		tx.MustQuery(query, id, before, limit).Each(func(r *sx.Rows) {
+			var t model.Topic
+			r.MustScans(&t)
+			topics = append(topics, t)
 		})
 	})
 
-	return topics, total, err
+	return topics, err
 }
 
-func (d *PostgreSQL) FindTopicCount(id int) (uint64, error) {
-	return 0, nil
+func (d *PostgreSQL) TopicsCountByUserID(id int) (int, error) {
+	var total int
+
+	err := sx.Do(d.db, func(tx *sx.Tx) {
+		tx.MustQueryRow(`SELECT COUNT(*) FROM topics WHERE created_by = $1`, id).MustScan(&total)
+	})
+
+	return total, err
 }
 
-func (d *PostgreSQL) FindCommentsByUser(id int) ([]model.Comment, error) {
-	return []model.Comment{}, nil
+func (d *PostgreSQL) CommentsByUserID(id int, before int, limit int) ([]model.Comment, error) {
+	var comments []model.Comment
+
+	err := sx.Do(d.db, func(tx *sx.Tx) {
+		query := `SELECT * FROM comments WHERE from_id = $1 AND date < $2 ORDER BY date DESC LIMIT $3`
+
+		tx.MustQuery(query, id, before, limit).Each(func(r *sx.Rows) {
+			var c model.Comment
+			r.MustScans(&c)
+			comments = append(comments, c)
+		})
+	})
+
+	return comments, err
 }
 
-func (d *PostgreSQL) FindCommentCount(id int) (uint64, error) {
-	return 0, nil
+func (d *PostgreSQL) CommentsCountByUserID(id int) (int, error) {
+	var total int
+
+	err := sx.Do(d.db, func(tx *sx.Tx) {
+		tx.MustQueryRow(`SELECT COUNT(*) FROM comments WHERE from_id = $1`, id).MustScan(&total)
+	})
+
+	return total, err
 }
 
-func (d *PostgreSQL) FindProfileHistory(id int) ([]model.ProfileNames, error) {
-	return []model.ProfileNames{}, nil
+func (d *PostgreSQL) ProfileHistoryByUserID(id int) ([]model.ProfileNames, error) {
+	var profileHistory []model.ProfileNames
+
+	err := sx.Do(d.db, func(tx *sx.Tx) {
+		query := `SELECT * FROM profile_names WHERE profile_id = $1 ORDER BY date DESC`
+
+		tx.MustQuery(query, id).Each(func(r *sx.Rows) {
+			var p model.ProfileNames
+			r.MustScans(&p)
+			profileHistory = append(profileHistory, p)
+		})
+	})
+
+	return profileHistory, err
 }

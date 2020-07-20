@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"net/url"
-	"regexp"
 
 	vkapi "github.com/himidori/golang-vk-api"
 )
@@ -14,12 +13,8 @@ var (
 	ErrInvalidScreenNameOrId = errors.New("o nome de perfil ou id é inválido")
 )
 
-var (
-	screenNameOrIDRegex = regexp.MustCompile(`([a-z0-9._]+)$`)
-)
-
 func (v *VKClient) ScreenNameToUserID(screenNameOrID string) (int, string, error) {
-	if !screenNameOrIDRegex.MatchString(screenNameOrID) {
+	if !ScreenNameOrIDRegex.MatchString(screenNameOrID) {
 		return 0, "", ErrInvalidScreenNameOrId
 	}
 

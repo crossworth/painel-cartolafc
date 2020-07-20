@@ -35,10 +35,15 @@ func NewServer(vk *vk.VKClient, db *database.PostgreSQL) *Server {
 		db:     db,
 	}
 
+	s.router.Use(middleware.RequestID)
+	s.router.Use(middleware.RealIP)
 	s.router.Use(middleware.Recoverer)
 	s.router.Use(middleware.NoCache)
 	s.router.Use(middleware.Compress(flate.DefaultCompression))
 	s.router.Use(cors.New(corsOpts).Handler)
+	s.router.Use(middleware.Logger)
+
+	// TODO(Pedro): add timeout to routes?
 
 	s.router.NotFound(handle.NotFoundHandler)
 	s.router.MethodNotAllowed(handle.MethodNotAllowedHandler)
@@ -49,7 +54,11 @@ func NewServer(vk *vk.VKClient, db *database.PostgreSQL) *Server {
 	// authenticated routes
 	s.router.Group(func(r chi.Router) {
 		r.Get("/user/{profile}", handle.ProfileByID(s.db))
+		r.Get("/user/{profile}/history", handle.ProfileHistoryByID(s.db))
+		r.Get("/user/{profile}/stats", handle.ProfileStatsByID(s.db))
+
 		r.Get("/topics/{profile}", handle.TopicsByID(s.db))
+		r.Get("/comments/{profile}", handle.CommentsByID(s.db))
 	})
 
 	return s
