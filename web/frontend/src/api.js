@@ -2,7 +2,7 @@ import axios from 'axios'
 import { message } from 'antd'
 import { checkNested } from './util'
 
-const baseURL = 'http://localhost:8080/api'
+const baseURL = process.env.REACT_APP_API_URL
 
 const api = axios.create({
   baseURL: baseURL,

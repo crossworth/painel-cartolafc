@@ -14,7 +14,7 @@ type Server struct {
 func New() *Server {
 	server := Server{}
 
-	dir := http.Dir("web/frontend/dist")
+	dir := http.Dir("web/frontend/build")
 	fs := http.FileServer(dir)
 
 	server.Handler = chi.NewRouter()

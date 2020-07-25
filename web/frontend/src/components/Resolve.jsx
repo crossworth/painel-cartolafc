@@ -109,7 +109,7 @@ const Resolve = (props) => {
                 </Option>
               ))}
             </AutoComplete>
-            <Button type="submit" onClick={onClick} style={{ marginTop: 20 }} type="primary">Pesquisar</Button>
+            <Button onClick={onClick} style={{ marginTop: 20 }} type="primary">Pesquisar</Button>
           </form>
         </div>
       </Spin>
