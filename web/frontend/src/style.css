@@ -22,3 +22,15 @@
 .ant-pagination-jump-prev {
     display: none !important;
 }
+
+
+@media (max-width: 991px) {
+    .logo svg {
+        width: 50px !important;
+    }
+}
+
+.resolveInput {
+    width: 100%;
+    min-width: 300px;
+}

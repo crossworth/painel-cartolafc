@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Table } from 'antd'
+import { Button, Table } from 'antd'
 import { getCommentsFromUser } from '../api'
 import { getBeforeFromURL, normalizeQuote, timeStampToDate } from '../util'
 
@@ -8,9 +8,6 @@ const columns = [
     title: 'ID',
     dataIndex: 'id',
     key: 'id',
-    render: (text, data) => <a href={`https://vk.com/topic-73721457_${data.topic_id}?post=${data.id}`}
-                               rel="noopener noreferrer"
-                               target="_blank">{text}</a>
   },
   {
     title: 'Comentário',
@@ -29,12 +26,29 @@ const columns = [
     key: 'date',
     render: (text, data) => timeStampToDate(text)
   },
+  {
+    title: '',
+    dataIndex: 'id',
+    key: 'id',
+    render: (text, data) => <div>
+      <Button type="primary" block target="_blank" rel="noopener noreferrer"
+              href={`https://vk.com/topic-73721457_${data.topic_id}?post=${data.id}`}>
+        Link original
+      </Button>
+      <Button style={{ marginTop: 5 }} block target="_blank" rel="noopener noreferrer"
+              href={`/topico/${data.topic_id}?post=${data.id}`}>
+        Reconstituído
+      </Button>
+    </div>
+
+  },
 ]
 
-const CommentList = (props) => {
+const CommentList = ({ onCommentsTotal, profileID }) => {
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
+    position: ['topLeft']
   })
 
   const [loading, setLoading] = useState(true)
@@ -42,16 +56,16 @@ const CommentList = (props) => {
   const [tableMeta, setTableMeta] = useState({})
 
   useEffect(() => {
-    if (props.onCommentsTotal && tableMeta.total) {
-      props.onCommentsTotal(tableMeta.total)
+    if (onCommentsTotal && tableMeta.total !== undefined) {
+      onCommentsTotal(tableMeta.total)
     }
 
     setPagination(Object.assign({}, pagination, {
       total: tableMeta.total
     }))
 
-  }, [tableMeta])
-
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onCommentsTotal, tableMeta])
 
   const handleTableChange = pag => {
     let beforeURL = tableMeta.current
@@ -62,7 +76,7 @@ const CommentList = (props) => {
 
     setLoading(true)
 
-    getCommentsFromUser(props.profileID, getBeforeFromURL(beforeURL), pag.pageSize).then(data => {
+    getCommentsFromUser(profileID, getBeforeFromURL(beforeURL), pag.pageSize).then(data => {
       setTableData(data.data)
       setTableMeta(data.meta)
     }).finally(() => {
@@ -73,13 +87,13 @@ const CommentList = (props) => {
   }
 
   useEffect(() => {
-    getCommentsFromUser(props.profileID).then(data => {
+    getCommentsFromUser(profileID).then(data => {
       setTableData(data.data)
       setTableMeta(data.meta)
     }).finally(() => {
       setLoading(false)
     })
-  }, [])
+  }, [profileID])
 
   return (
     <div>

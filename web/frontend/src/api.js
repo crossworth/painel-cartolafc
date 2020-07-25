@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { message } from 'antd'
+import { checkNested } from './util'
 
 const baseURL = 'http://localhost:8080/api'
 
@@ -13,14 +14,14 @@ api.interceptors.response.use((response) => {
 
   let errorMessage = error
 
-  if (error.response &&
-    error.response.data &&
-    error.response.data.message) {
+  if (checkNested(error, 'response', 'data', 'message')) {
     errorMessage = error.response.data.message
   }
 
-  const errorMessageNormalized = errorMessage.charAt(0).toUpperCase() + errorMessage.slice(1)
-  message.error(errorMessageNormalized)
+  if (errorMessage instanceof String) {
+    const errorMessageNormalized = errorMessage.charAt(0).toUpperCase() + errorMessage.slice(1)
+    message.error(errorMessageNormalized)
+  }
 
   return Promise.reject(error)
 })
@@ -30,8 +31,28 @@ const unixNow = () => {
   return time / 1000
 }
 
+const resolveProfile = name => {
+  if (name.indexOf('vk.com') === -1) {
+    name = `vk.com/${name}`
+  }
+
+  return api.get(`/resolve-profile?link=${name}`)
+}
+
+const autoCompleteProfileNames = name => {
+  return api.get(`/auto-complete/profile/${name}`)
+}
+
 const getUserInfo = id => {
   return api.get(`/user/${id}`)
+}
+
+const getUserStats = id => {
+  return api.get(`/user/${id}/stats`)
+}
+
+const getUserProfileHistory = id => {
+  return api.get(`/user/${id}/history`)
 }
 
 const getTopicsFromUser = (id, before = unixNow(), limit = 10) => {
@@ -43,7 +64,11 @@ const getCommentsFromUser = (id, before = unixNow(), limit = 10) => {
 }
 
 export {
+  resolveProfile,
+  autoCompleteProfileNames,
   getUserInfo,
+  getUserStats,
+  getUserProfileHistory,
   getTopicsFromUser,
   getCommentsFromUser
 }

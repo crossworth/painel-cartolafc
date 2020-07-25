@@ -213,11 +213,13 @@ func CommentsByID(provider UserCommentProvider) func(w http.ResponseWriter, r *h
 type UserTopicCommentProvider interface {
 	UserTopicProvider
 	UserCommentProvider
+	ProfileHistoryByUserID(id int) ([]model.ProfileNames, error)
 }
 
 type ProfileStatsResponse struct {
-	TotalTopics   int `json:"total_topics"`
-	TotalComments int `json:"total_comments"`
+	TotalTopics         int `json:"total_topics"`
+	TotalComments       int `json:"total_comments"`
+	TotalProfileChanges int `json:"total_profile_changes"`
 }
 
 func ProfileStatsByID(provider UserTopicCommentProvider) func(w http.ResponseWriter, r *http.Request) {
@@ -241,9 +243,38 @@ func ProfileStatsByID(provider UserTopicCommentProvider) func(w http.ResponseWri
 			return
 		}
 
+		totalProfileChanges, err := provider.ProfileHistoryByUserID(id)
+		if err != nil {
+			databaseError(w, err)
+			return
+		}
+
 		json(w, ProfileStatsResponse{
-			TotalTopics:   totalTopics,
-			TotalComments: totalComments,
+			TotalTopics:         totalTopics,
+			TotalComments:       totalComments,
+			TotalProfileChanges: len(totalProfileChanges),
 		}, 200)
+	}
+}
+
+type UserProfileNameProvider interface {
+	SearchProfileName(text string) ([]model.Profile, error)
+}
+func AutoCompleteProfileName(provider UserProfileNameProvider) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		profile := chi.URLParam(r, "profile")
+
+		if profile == "" {
+			json(w, []model.Profile{}, 200)
+			return
+		}
+
+		profiles, err := provider.SearchProfileName(profile)
+		if err != nil {
+			databaseError(w, err)
+			return
+		}
+
+		json(w, profiles, 200)
 	}
 }

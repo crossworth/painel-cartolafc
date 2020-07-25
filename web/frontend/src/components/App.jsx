@@ -10,6 +10,9 @@ import ProfileTopics from './ProfileTopics'
 import ProfileNotFound from './ProfileNotFound'
 import PageNotFound from './PageNotFound'
 import ProfileComments from './ProfileComments'
+import Profile from './Profile'
+import Resolve from './Resolve'
+import LinkOutlined from '@ant-design/icons/lib/icons/LinkOutlined'
 
 const { Sider, Content } = Layout
 
@@ -48,6 +51,13 @@ export default () => {
                   <span>Perfil</span>
                 </Link>
               </Menu.Item>
+
+              <Menu.Item key="/resolver">
+                <Link to="/resolver">
+                  <LinkOutlined/>
+                  <span>Resolver nome/link</span>
+                </Link>
+              </Menu.Item>
             </Menu>
           </Sider>
 
@@ -57,12 +67,14 @@ export default () => {
                 Home
               </Route>
 
-              <Route path='/perfil' exact>
-                Perfil
+              <Route path='/resolver/:name?' render={(props) => <Resolve {...props}/>}>
               </Route>
 
               <Route path='/perfil/nao-encontrado' exact>
                 <ProfileNotFound/>
+              </Route>
+
+              <Route path='/perfil/:id' exact render={(props) => <Profile {...props}/>}>
               </Route>
 
               <Route path='/perfil/:id/topicos' exact render={(props) => <ProfileTopics {...props}/>}>

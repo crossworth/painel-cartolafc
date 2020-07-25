@@ -15,8 +15,32 @@ const getBeforeFromURL = url => {
   return urlParams.get('before')
 }
 
+function checkNested(obj, level, ...rest) {
+  if (obj === undefined) {
+    return false
+  }
+
+  if (rest.length === 0 && obj.hasOwnProperty(level)) {
+    return true
+  }
+
+  return checkNested(obj[level], ...rest)
+}
+
+const debounce = (func, wait = 250) => {
+  let inDebounce
+  return function () {
+    const context = this
+    const args = arguments
+    clearTimeout(inDebounce)
+    inDebounce = setTimeout(() => func.apply(context, args), wait)
+  }
+}
+
 export {
   timeStampToDate,
   getBeforeFromURL,
-  normalizeQuote
+  normalizeQuote,
+  checkNested,
+  debounce
 }

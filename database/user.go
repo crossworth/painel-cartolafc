@@ -1,6 +1,9 @@
 package database
 
 import (
+	"strconv"
+	"strings"
+
 	"github.com/travelaudience/go-sx"
 
 	"github.com/crossworth/cartola-web-admin/model"
@@ -124,4 +127,25 @@ func (d *PostgreSQL) ProfileHistoryByUserID(id int) ([]model.ProfileNames, error
 	})
 
 	return profileHistory, err
+}
+
+func (d *PostgreSQL) SearchProfileName(text string) ([]model.Profile, error) {
+	var profiles []model.Profile
+
+	err := sx.Do(d.db, func(tx *sx.Tx) {
+		query := `SELECT * FROM profiles WHERE LOWER(first_name) LIKE '%' || $1 || '%' OR LOWER(last_name) LIKE '%' || $1 || '%' OR LOWER(screen_name) LIKE '%' || $1 || '%' OR LOWER(CONCAT(first_name, ' ', last_name)) LIKE '%' || $1 || '%'`
+
+		tx.MustQuery(query, strings.ToLower(text)).Each(func(r *sx.Rows) {
+			var p model.Profile
+			r.MustScans(&p)
+
+			if p.ScreenName == "" {
+				p.ScreenName = "id" + strconv.Itoa(p.ID)
+			}
+
+			profiles = append(profiles, p)
+		})
+	})
+
+	return profiles, err
 }
