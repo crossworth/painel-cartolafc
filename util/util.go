@@ -18,6 +18,19 @@ func ToIntWithDefault(n string, def int) int {
 	return i
 }
 
+func ToIntWithDefaultMin(n string, def int) int {
+	i, err := strconv.Atoi(n)
+	if err != nil {
+		return def
+	}
+
+	if i < def {
+		return def
+	}
+
+	return i
+}
+
 func ToString(n int) string {
 	return strconv.Itoa(n)
 }

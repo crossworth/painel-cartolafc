@@ -32,6 +32,27 @@ func (d *PostgreSQL) TopicsByUserID(id int, before int, limit int) ([]model.Topi
 	return topics, err
 }
 
+func (d *PostgreSQL) PrevTopicTimestampByUserID(id int, before int, limit int) (int, error) {
+	var prev int
+
+	err := sx.Do(d.db, func(tx *sx.Tx) {
+		query := `SELECT * FROM topics WHERE created_by = $1 AND created_at > $2 ORDER BY created_at ASC limit $3`
+
+		var topics []model.Topic
+		tx.MustQuery(query, id, before, limit).Each(func(r *sx.Rows) {
+			var t model.Topic
+			r.MustScans(&t)
+			topics = append(topics, t)
+		})
+
+		if len(topics) > 0 {
+			prev = topics[len(topics)-1].CreatedAt + 1 // NOTE(Pedro): para incluir o tópico já que usamos before < e não <=
+		}
+	})
+
+	return prev, err
+}
+
 func (d *PostgreSQL) TopicsCountByUserID(id int) (int, error) {
 	var total int
 
@@ -66,6 +87,27 @@ func (d *PostgreSQL) CommentsCountByUserID(id int) (int, error) {
 	})
 
 	return total, err
+}
+
+func (d *PostgreSQL) PrevCommentTimestampByUserID(id int, before int, limit int) (int, error) {
+	var prev int
+
+	err := sx.Do(d.db, func(tx *sx.Tx) {
+		query := `SELECT * FROM comments WHERE from_id = $1 AND date > $2 ORDER BY date ASC limit $3`
+
+		var comments []model.Comment
+		tx.MustQuery(query, id, before, limit).Each(func(r *sx.Rows) {
+			var t model.Comment
+			r.MustScans(&t)
+			comments = append(comments, t)
+		})
+
+		if len(comments) > 0 {
+			prev = comments[len(comments)-1].Date + 1 // NOTE(Pedro): para incluir o tópico já que usamos before < e não <=
+		}
+	})
+
+	return prev, err
 }
 
 func (d *PostgreSQL) ProfileHistoryByUserID(id int) ([]model.ProfileNames, error) {

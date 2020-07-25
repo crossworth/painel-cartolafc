@@ -1,6 +1,16 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
-import App from './App'
 
-// eslint-disable-next-line no-undef
-ReactDOM.render(<App/>, document.getElementById('app-root'))
+import './style.css'
+import App from './components/App'
+
+import dotenv from 'dotenv'
+
+dotenv.config()
+
+ReactDOM.render(
+  <React.StrictMode>
+    <App/>
+  </React.StrictMode>,
+  document.getElementById('root')
+)
