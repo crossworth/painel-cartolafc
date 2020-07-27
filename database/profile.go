@@ -15,7 +15,7 @@ var (
 	ErrInvalidMemberOrderBy = errors.New("order by de membros inválido")
 )
 
-func (d *PostgreSQL) ProfileByUserID(context context.Context, id int) (model.Profile, error) {
+func (d *PostgreSQL) ProfileByID(context context.Context, id int) (model.Profile, error) {
 	var profile model.Profile
 
 	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
@@ -25,7 +25,7 @@ func (d *PostgreSQL) ProfileByUserID(context context.Context, id int) (model.Pro
 	return profile, err
 }
 
-func (d *PostgreSQL) TopicsByUserID(context context.Context, id int, before int, limit int) ([]model.Topic, error) {
+func (d *PostgreSQL) TopicsByID(context context.Context, id int, before int, limit int) ([]model.Topic, error) {
 	var topics []model.Topic
 
 	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
@@ -41,7 +41,7 @@ func (d *PostgreSQL) TopicsByUserID(context context.Context, id int, before int,
 	return topics, err
 }
 
-func (d *PostgreSQL) PaginationTimestampTopicByUserID(context context.Context, id int, before int, limit int) (PaginationTimestamps, error) {
+func (d *PostgreSQL) PaginationTimestampTopicByID(context context.Context, id int, before int, limit int) (PaginationTimestamps, error) {
 	var timestamps PaginationTimestamps
 
 	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
@@ -55,7 +55,7 @@ func (d *PostgreSQL) PaginationTimestampTopicByUserID(context context.Context, i
 	return timestamps, err
 }
 
-func (d *PostgreSQL) TopicsCountByUserID(context context.Context, id int) (int, error) {
+func (d *PostgreSQL) TopicsCountByID(context context.Context, id int) (int, error) {
 	var total int
 
 	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
@@ -65,7 +65,7 @@ func (d *PostgreSQL) TopicsCountByUserID(context context.Context, id int) (int, 
 	return total, err
 }
 
-func (d *PostgreSQL) CommentsByUserID(context context.Context, id int, before int, limit int) ([]model.Comment, error) {
+func (d *PostgreSQL) CommentsByID(context context.Context, id int, before int, limit int) ([]model.Comment, error) {
 	var comments []model.Comment
 
 	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
@@ -81,7 +81,7 @@ func (d *PostgreSQL) CommentsByUserID(context context.Context, id int, before in
 	return comments, err
 }
 
-func (d *PostgreSQL) CommentsCountByUserID(context context.Context, id int) (int, error) {
+func (d *PostgreSQL) CommentsCountByID(context context.Context, id int) (int, error) {
 	var total int
 
 	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
@@ -91,7 +91,7 @@ func (d *PostgreSQL) CommentsCountByUserID(context context.Context, id int) (int
 	return total, err
 }
 
-func (d *PostgreSQL) LikesCountByUserID(context context.Context, id int) (int, error) {
+func (d *PostgreSQL) LikesCountByID(context context.Context, id int) (int, error) {
 	var total int
 
 	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
@@ -101,7 +101,7 @@ func (d *PostgreSQL) LikesCountByUserID(context context.Context, id int) (int, e
 	return total, err
 }
 
-func (d *PostgreSQL) PaginationTimestampCommentByUserID(context context.Context, id int, before int, limit int) (PaginationTimestamps, error) {
+func (d *PostgreSQL) PaginationTimestampCommentByID(context context.Context, id int, before int, limit int) (PaginationTimestamps, error) {
 	var timestamps PaginationTimestamps
 
 	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
@@ -115,7 +115,7 @@ func (d *PostgreSQL) PaginationTimestampCommentByUserID(context context.Context,
 	return timestamps, err
 }
 
-func (d *PostgreSQL) ProfileHistoryByUserID(context context.Context, id int) ([]model.ProfileNames, error) {
+func (d *PostgreSQL) ProfileHistoryByID(context context.Context, id int) ([]model.ProfileNames, error) {
 	var profileHistory []model.ProfileNames
 
 	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
@@ -141,7 +141,7 @@ func (d *PostgreSQL) SearchProfileName(context context.Context, text string) ([]
 			var p model.Profile
 			r.MustScans(&p)
 
-			// NOTE(Pedro): when the user dont have an screen name we normalize to the conical name
+			// NOTE(Pedro): when the profile dont have an screen name we normalize to the conical name
 			if p.ScreenName == "" {
 				p.ScreenName = "id" + strconv.Itoa(p.ID)
 			}

@@ -59,11 +59,11 @@ func NewServer(vk *vk.VKClient, db *database.PostgreSQL) *Server {
 	s.router.Group(func(r chi.Router) {
 		r.Get("/auto-complete/profile/{profile}", handle.AutoCompleteProfileName(s.db))
 
-		r.Get("/user/{profile}", handle.ProfileByID(s.db))
-		r.Get("/user/{profile}/history", handle.ProfileHistoryByID(s.db))
-		r.Get("/user/{profile}/stats", handle.ProfileStatsByID(s.db))
+		r.Get("/profile/{profile}", handle.ProfileByID(s.db))
+		r.Get("/profile/{profile}/history", handle.ProfileHistoryByID(s.db))
+		r.Get("/profile/{profile}/stats", handle.ProfileStatsByID(s.db))
 
-		r.Get("/users", handle.Users(s.db, s.cache))
+		r.Get("/profiles", handle.Profiles(s.db, s.cache))
 
 		r.Get("/topics/{profile}", handle.TopicsByID(s.db))
 		r.Get("/comments/{profile}", handle.CommentsByID(s.db))
