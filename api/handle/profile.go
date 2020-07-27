@@ -1,6 +1,7 @@
 package handle
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"os"
@@ -14,7 +15,7 @@ import (
 )
 
 type ScreeNameProvider interface {
-	ScreenNameToUserID(screenNameOrID string) (int, string, error)
+	ScreenNameToUserID(context context.Context, screenNameOrID string) (int, string, error)
 }
 
 type ProfileLinkResponse struct {
@@ -39,7 +40,7 @@ func ProfileLinkToID(provider ScreeNameProvider) func(w http.ResponseWriter, r *
 			return
 		}
 
-		id, screenName, err := provider.ScreenNameToUserID(screenName)
+		id, screenName, err := provider.ScreenNameToUserID(r.Context(), screenName)
 		if err != nil {
 			errorCode(w, err, 400)
 			return
@@ -55,8 +56,8 @@ func ProfileLinkToID(provider ScreeNameProvider) func(w http.ResponseWriter, r *
 }
 
 type ProfileByIDProvider interface {
-	ProfileByUserID(id int) (model.Profile, error)
-	ProfileHistoryByUserID(id int) ([]model.ProfileNames, error)
+	ProfileByUserID(context context.Context, id int) (model.Profile, error)
+	ProfileHistoryByUserID(context context.Context, id int) ([]model.ProfileNames, error)
 }
 
 func ProfileByID(provider ProfileByIDProvider) func(w http.ResponseWriter, r *http.Request) {
@@ -68,7 +69,7 @@ func ProfileByID(provider ProfileByIDProvider) func(w http.ResponseWriter, r *ht
 			return
 		}
 
-		profile, err := provider.ProfileByUserID(id)
+		profile, err := provider.ProfileByUserID(r.Context(), id)
 		if err != nil {
 			databaseError(w, err)
 			return
@@ -87,7 +88,7 @@ func ProfileHistoryByID(provider ProfileByIDProvider) func(w http.ResponseWriter
 			return
 		}
 
-		profileHistory, err := provider.ProfileHistoryByUserID(id)
+		profileHistory, err := provider.ProfileHistoryByUserID(r.Context(), id)
 		if err != nil {
 			databaseError(w, err)
 			return
@@ -98,9 +99,9 @@ func ProfileHistoryByID(provider ProfileByIDProvider) func(w http.ResponseWriter
 }
 
 type UserTopicProvider interface {
-	TopicsByUserID(id int, before int, limit int) ([]model.Topic, error)
-	TopicsCountByUserID(id int) (int, error)
-	PrevTopicTimestampByUserID(id int, before int, limit int) (int, error)
+	TopicsByUserID(context context.Context, id int, before int, limit int) ([]model.Topic, error)
+	TopicsCountByUserID(context context.Context, id int) (int, error)
+	PrevTopicTimestampByUserID(context context.Context, id int, before int, limit int) (int, error)
 }
 
 func TopicsByID(provider UserTopicProvider) func(w http.ResponseWriter, r *http.Request) {
@@ -114,19 +115,19 @@ func TopicsByID(provider UserTopicProvider) func(w http.ResponseWriter, r *http.
 			return
 		}
 
-		total, err := provider.TopicsCountByUserID(id)
+		total, err := provider.TopicsCountByUserID(r.Context(), id)
 		if err != nil {
 			databaseError(w, err)
 			return
 		}
 
-		topics, err := provider.TopicsByUserID(id, before, limit)
+		topics, err := provider.TopicsByUserID(r.Context(), id, before, limit)
 		if err != nil {
 			databaseError(w, err)
 			return
 		}
 
-		prevTimestamp, err := provider.PrevTopicTimestampByUserID(id, before, limit)
+		prevTimestamp, err := provider.PrevTopicTimestampByUserID(r.Context(), id, before, limit)
 		if err != nil {
 			databaseError(w, err)
 			return
@@ -155,9 +156,9 @@ func TopicsByID(provider UserTopicProvider) func(w http.ResponseWriter, r *http.
 }
 
 type UserCommentProvider interface {
-	CommentsByUserID(id int, before int, limit int) ([]model.Comment, error)
-	CommentsCountByUserID(id int) (int, error)
-	PrevCommentTimestampByUserID(id int, before int, limit int) (int, error)
+	CommentsByUserID(context context.Context, id int, before int, limit int) ([]model.Comment, error)
+	CommentsCountByUserID(context context.Context, id int) (int, error)
+	PrevCommentTimestampByUserID(context context.Context, id int, before int, limit int) (int, error)
 }
 
 func CommentsByID(provider UserCommentProvider) func(w http.ResponseWriter, r *http.Request) {
@@ -171,19 +172,19 @@ func CommentsByID(provider UserCommentProvider) func(w http.ResponseWriter, r *h
 			return
 		}
 
-		total, err := provider.CommentsCountByUserID(id)
+		total, err := provider.CommentsCountByUserID(r.Context(), id)
 		if err != nil {
 			databaseError(w, err)
 			return
 		}
 
-		comments, err := provider.CommentsByUserID(id, before, limit)
+		comments, err := provider.CommentsByUserID(r.Context(), id, before, limit)
 		if err != nil {
 			databaseError(w, err)
 			return
 		}
 
-		prevTimestamp, err := provider.PrevCommentTimestampByUserID(id, before, limit)
+		prevTimestamp, err := provider.PrevCommentTimestampByUserID(r.Context(), id, before, limit)
 		if err != nil {
 			databaseError(w, err)
 			return
@@ -213,7 +214,7 @@ func CommentsByID(provider UserCommentProvider) func(w http.ResponseWriter, r *h
 type UserTopicCommentProvider interface {
 	UserTopicProvider
 	UserCommentProvider
-	ProfileHistoryByUserID(id int) ([]model.ProfileNames, error)
+	ProfileHistoryByUserID(context context.Context, id int) ([]model.ProfileNames, error)
 }
 
 type ProfileStatsResponse struct {
@@ -231,19 +232,19 @@ func ProfileStatsByID(provider UserTopicCommentProvider) func(w http.ResponseWri
 			return
 		}
 
-		totalTopics, err := provider.TopicsCountByUserID(id)
+		totalTopics, err := provider.TopicsCountByUserID(r.Context(), id)
 		if err != nil {
 			databaseError(w, err)
 			return
 		}
 
-		totalComments, err := provider.CommentsCountByUserID(id)
+		totalComments, err := provider.CommentsCountByUserID(r.Context(), id)
 		if err != nil {
 			databaseError(w, err)
 			return
 		}
 
-		totalProfileChanges, err := provider.ProfileHistoryByUserID(id)
+		totalProfileChanges, err := provider.ProfileHistoryByUserID(r.Context(), id)
 		if err != nil {
 			databaseError(w, err)
 			return
@@ -258,8 +259,9 @@ func ProfileStatsByID(provider UserTopicCommentProvider) func(w http.ResponseWri
 }
 
 type UserProfileNameProvider interface {
-	SearchProfileName(text string) ([]model.Profile, error)
+	SearchProfileName(context context.Context, text string) ([]model.Profile, error)
 }
+
 func AutoCompleteProfileName(provider UserProfileNameProvider) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		profile := chi.URLParam(r, "profile")
@@ -269,7 +271,7 @@ func AutoCompleteProfileName(provider UserProfileNameProvider) func(w http.Respo
 			return
 		}
 
-		profiles, err := provider.SearchProfileName(profile)
+		profiles, err := provider.SearchProfileName(r.Context(), profile)
 		if err != nil {
 			databaseError(w, err)
 			return

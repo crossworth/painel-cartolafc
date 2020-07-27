@@ -1,6 +1,7 @@
 package vk
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/url"
@@ -13,7 +14,7 @@ var (
 	ErrInvalidScreenNameOrId = errors.New("o nome de perfil ou id é inválido")
 )
 
-func (v *VKClient) ScreenNameToUserID(screenNameOrID string) (int, string, error) {
+func (v *VKClient) ScreenNameToUserID(context context.Context, screenNameOrID string) (int, string, error) {
 	if !ScreenNameOrIDRegex.MatchString(screenNameOrID) {
 		return 0, "", ErrInvalidScreenNameOrId
 	}
