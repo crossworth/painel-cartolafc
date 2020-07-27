@@ -2,12 +2,17 @@ package database
 
 import (
 	"context"
+	"errors"
 	"strconv"
 	"strings"
 
 	"github.com/travelaudience/go-sx"
 
 	"github.com/crossworth/cartola-web-admin/model"
+)
+
+var (
+	ErrInvalidMemberOrderBy = errors.New("order by de membros inválido")
 )
 
 func (d *PostgreSQL) ProfileByUserID(context context.Context, id int) (model.Profile, error) {
@@ -86,6 +91,16 @@ func (d *PostgreSQL) CommentsCountByUserID(context context.Context, id int) (int
 	return total, err
 }
 
+func (d *PostgreSQL) LikesCountByUserID(context context.Context, id int) (int, error) {
+	var total int
+
+	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
+		tx.MustQueryRowContext(context, `SELECT SUM(likes) FROM comments WHERE from_id = $1`, id).MustScan(&total)
+	})
+
+	return total, err
+}
+
 func (d *PostgreSQL) PaginationTimestampCommentByUserID(context context.Context, id int, before int, limit int) (PaginationTimestamps, error) {
 	var timestamps PaginationTimestamps
 
@@ -136,4 +151,94 @@ func (d *PostgreSQL) SearchProfileName(context context.Context, text string) ([]
 	})
 
 	return profiles, err
+}
+
+func (d *PostgreSQL) ProfileStatsByID(context context.Context, id int) (ProfileWithStats, error) {
+	var profile ProfileWithStats
+
+	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
+		query := `SELECT
+    p.*,
+    COALESCE(t.total, 0) as topics,
+    COALESCE(c.total, 0) as comments,
+    COALESCE(l.total, 0) as likes
+FROM profiles p
+    LEFT JOIN (
+        SELECT created_by, COUNT(id) as total FROM topics GROUP BY created_by
+    ) as t ON t.created_by = p.id
+    LEFT JOIN (
+        SELECT from_id, COUNT(id) as total FROM comments GROUP BY from_id
+    ) as c ON c.from_id = p.id
+    LEFT JOIN (
+        SELECT from_id, SUM(likes) as total FROM comments GROUP BY from_id
+    ) as l ON l.from_id = p.id
+GROUP BY p.id, t.total, c.total, l.total HAVING p.id = $1`
+
+		tx.MustQueryRowContext(context, query, id).MustScan(
+			&profile.ID,
+			&profile.FirstName,
+			&profile.LastName,
+			&profile.ScreenName,
+			&profile.Photo,
+			&profile.Topics,
+			&profile.Comments,
+			&profile.Likes,
+		)
+	})
+
+	return profile, err
+}
+
+func (d *PostgreSQL) ProfileWithStats(context context.Context, orderBy string, orderDirection OrderByDirection, page int, limit int) ([]ProfileWithStats, error) {
+	var profiles []ProfileWithStats
+
+	if orderBy != "topics" && orderBy != "comments" && orderBy != "likes" {
+		return profiles, ErrInvalidMemberOrderBy
+	}
+
+	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
+		query := `SELECT
+    p.*,
+    COALESCE(t.total, 0) as topics,
+    COALESCE(c.total, 0) as comments,
+    COALESCE(l.total, 0) as likes
+FROM profiles p
+    LEFT JOIN (
+        SELECT created_by, COUNT(id) as total FROM topics GROUP BY created_by
+    ) as t ON t.created_by = p.id
+    LEFT JOIN (
+        SELECT from_id, COUNT(id) as total FROM comments GROUP BY from_id
+    ) as c ON c.from_id = p.id
+    LEFT JOIN (
+        SELECT from_id, SUM(likes) as total FROM comments GROUP BY from_id
+    ) as l ON l.from_id = p.id
+GROUP BY p.id, t.total, c.total, l.total ORDER BY ` + orderBy + " " + orderDirection.Stringer() + ` OFFSET $1 LIMIT $2`
+
+		tx.MustQueryContext(context, query, (page-1)*limit, limit).Each(func(r *sx.Rows) {
+			var p ProfileWithStats
+			r.MustScan(
+				&p.ID,
+				&p.FirstName,
+				&p.LastName,
+				&p.ScreenName,
+				&p.Photo,
+				&p.Topics,
+				&p.Comments,
+				&p.Likes,
+			)
+			profiles = append(profiles, p)
+		})
+	})
+
+	return profiles, err
+}
+
+func (d *PostgreSQL) ProfileCount(context context.Context) (int, error) {
+	var total int
+
+	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
+		tx.MustQueryRowContext(context, `SELECT COUNT(*) FROM profiles`).MustScan(&total)
+	})
+
+	return total, err
 }

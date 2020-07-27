@@ -34,3 +34,11 @@ func ToIntWithDefaultMin(n string, def int) int {
 func ToString(n int) string {
 	return strconv.Itoa(n)
 }
+
+func StringWithDefault(n string, def string) string {
+	if n != "" {
+		return n
+	}
+
+	return def
+}

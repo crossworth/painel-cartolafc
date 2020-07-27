@@ -3,10 +3,12 @@ package api
 import (
 	"compress/flate"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/cors"
+	"github.com/patrickmn/go-cache"
 
 	"github.com/crossworth/cartola-web-admin/api/handle"
 	"github.com/crossworth/cartola-web-admin/database"
@@ -26,6 +28,7 @@ type Server struct {
 	router chi.Router
 	vk     *vk.VKClient
 	db     *database.PostgreSQL
+	cache  *cache.Cache
 }
 
 func NewServer(vk *vk.VKClient, db *database.PostgreSQL) *Server {
@@ -33,6 +36,7 @@ func NewServer(vk *vk.VKClient, db *database.PostgreSQL) *Server {
 		router: chi.NewRouter(),
 		vk:     vk,
 		db:     db,
+		cache:  cache.New(5*time.Hour, 1*time.Hour),
 	}
 
 	s.router.Use(middleware.RequestID)
@@ -58,6 +62,8 @@ func NewServer(vk *vk.VKClient, db *database.PostgreSQL) *Server {
 		r.Get("/user/{profile}", handle.ProfileByID(s.db))
 		r.Get("/user/{profile}/history", handle.ProfileHistoryByID(s.db))
 		r.Get("/user/{profile}/stats", handle.ProfileStatsByID(s.db))
+
+		r.Get("/users", handle.Users(s.db, s.cache))
 
 		r.Get("/topics/{profile}", handle.TopicsByID(s.db))
 		r.Get("/comments/{profile}", handle.CommentsByID(s.db))

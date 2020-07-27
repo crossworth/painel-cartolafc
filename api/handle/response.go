@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"net/http"
+	"time"
 
 	json2 "github.com/helloeave/json"
 )
@@ -32,10 +33,11 @@ func databaseError(writer http.ResponseWriter, err error) {
 }
 
 type PaginationMeta struct {
-	Prev    string `json:"prev,omitempty"`
-	Current string `json:"current"`
-	Next    string `json:"next,omitempty"`
-	Total   int    `json:"total"`
+	Prev     string    `json:"prev,omitempty"`
+	Current  string    `json:"current"`
+	Next     string    `json:"next,omitempty"`
+	Total    int       `json:"total"`
+	CachedAt time.Time `json:"cached_at,omitempty"`
 }
 
 type Pagination struct {

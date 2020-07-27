@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi"
+	"github.com/patrickmn/go-cache"
 
 	"github.com/crossworth/cartola-web-admin/database"
 	"github.com/crossworth/cartola-web-admin/model"
@@ -215,19 +217,19 @@ func CommentsByID(provider UserCommentProvider) func(w http.ResponseWriter, r *h
 	}
 }
 
-type UserTopicCommentProvider interface {
-	UserTopicProvider
-	UserCommentProvider
+type UserStatsProvider interface {
+	ProfileStatsByID(context context.Context, id int) (database.ProfileWithStats, error)
 	ProfileHistoryByUserID(context context.Context, id int) ([]model.ProfileNames, error)
 }
 
 type ProfileStatsResponse struct {
 	TotalTopics         int `json:"total_topics"`
 	TotalComments       int `json:"total_comments"`
+	TotalLikes          int `json:"total_likes"`
 	TotalProfileChanges int `json:"total_profile_changes"`
 }
 
-func ProfileStatsByID(provider UserTopicCommentProvider) func(w http.ResponseWriter, r *http.Request) {
+func ProfileStatsByID(provider UserStatsProvider) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := util.ToInt(chi.URLParam(r, "profile"))
 
@@ -236,13 +238,7 @@ func ProfileStatsByID(provider UserTopicCommentProvider) func(w http.ResponseWri
 			return
 		}
 
-		totalTopics, err := provider.TopicsCountByUserID(r.Context(), id)
-		if err != nil {
-			databaseError(w, err)
-			return
-		}
-
-		totalComments, err := provider.CommentsCountByUserID(r.Context(), id)
+		stats, err := provider.ProfileStatsByID(r.Context(), id)
 		if err != nil {
 			databaseError(w, err)
 			return
@@ -255,8 +251,9 @@ func ProfileStatsByID(provider UserTopicCommentProvider) func(w http.ResponseWri
 		}
 
 		json(w, ProfileStatsResponse{
-			TotalTopics:         totalTopics,
-			TotalComments:       totalComments,
+			TotalTopics:         stats.Topics,
+			TotalComments:       stats.Comments,
+			TotalLikes:          stats.Likes,
 			TotalProfileChanges: len(totalProfileChanges),
 		}, 200)
 	}
@@ -282,5 +279,77 @@ func AutoCompleteProfileName(provider UserProfileNameProvider) func(w http.Respo
 		}
 
 		json(w, profiles, 200)
+	}
+}
+
+type UsersProvider interface {
+	ProfileWithStats(context context.Context, order string, orderDirection database.OrderByDirection, page int, limit int) ([]database.ProfileWithStats, error)
+	ProfileCount(context context.Context) (int, error)
+}
+
+type UsersCache struct {
+	Users     []database.ProfileWithStats
+	Total     int
+	CreatedAt time.Time
+}
+
+func Users(provider UsersProvider, cache *cache.Cache) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		orderBy := util.StringWithDefault(r.URL.Query().Get("orderBy"), "topics")
+		orderDirStr := util.StringWithDefault(r.URL.Query().Get("orderDir"), "DESC")
+		page := util.ToIntWithDefaultMin(r.URL.Query().Get("page"), 1)
+		limit := util.ToIntWithDefaultMin(r.URL.Query().Get("limit"), 10)
+
+		orderDir := database.OrderByASC
+
+		if strings.ToLower(orderDirStr) == "desc" {
+			orderDir = database.OrderByDESC
+		}
+
+		cacheKey := fmt.Sprintf("users_%s_%s_%d_%d", orderBy, orderDir.Stringer(), page, limit)
+
+		usersCache, found := cache.Get(cacheKey)
+		if !found {
+			users, err := provider.ProfileWithStats(r.Context(), orderBy, orderDir, page, limit)
+			if err != nil {
+				databaseError(w, err)
+				return
+			}
+
+			total, err := provider.ProfileCount(r.Context())
+			if err != nil {
+				databaseError(w, err)
+				return
+			}
+
+			usersCache = UsersCache{
+				Users:     users,
+				Total:     total,
+				CreatedAt: time.Now(),
+			}
+
+			cache.SetDefault(cacheKey, usersCache)
+		}
+
+		data := usersCache.(UsersCache)
+
+		next := ""
+		prev := ""
+
+		if page != 1 {
+			prev = fmt.Sprintf("%s/users?limit=%d&page=%d&orderBy=%s&orderDir=%s", os.Getenv("APP_API_URL"), limit, page-1, orderBy, orderDir.Stringer())
+		}
+
+		if page*limit < data.Total {
+			next = fmt.Sprintf("%s/users?limit=%d&page=%d&orderBy=%s&orderDir=%s", os.Getenv("APP_API_URL"), limit, page+1, orderBy, orderDir.Stringer())
+		}
+
+		pagination(w, data.Users, 200, PaginationMeta{
+			Prev:     prev,
+			Current:  fmt.Sprintf("%s/users?limit=%d&page=%d&orderBy=%s&orderDir=%s", os.Getenv("APP_API_URL"), limit, page, orderBy, orderDir.Stringer()),
+			Next:     next,
+			Total:    data.Total,
+			CachedAt: data.CreatedAt,
+		})
 	}
 }

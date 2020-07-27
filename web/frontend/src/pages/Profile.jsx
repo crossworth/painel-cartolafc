@@ -54,14 +54,17 @@ const Profile = (props) => {
         <Divider/>
 
         <Row gutter={16}>
-          <Col span={8}>
-            <Statistic title="Número de tópicos" value={userStats.total_topics ? userStats.total_topics : 0}/>
+          <Col span={6}>
+            <Statistic title="Tópicos" value={userStats.total_topics ? userStats.total_topics : 0}/>
           </Col>
-          <Col span={8}>
-            <Statistic title="Número de comentários" value={userStats.total_comments ? userStats.total_comments : 0}/>
+          <Col span={6}>
+            <Statistic title="Comentários" value={userStats.total_comments ? userStats.total_comments : 0}/>
           </Col>
-          <Col span={8}>
-            <Statistic title="Número de alterações do perfil"
+          <Col span={6}>
+            <Statistic title="Likes" value={userStats.total_likes ? userStats.total_likes : 0}/>
+          </Col>
+          <Col span={6}>
+            <Statistic title="Alterações do perfil"
                        value={userStats.total_profile_changes ? userStats.total_profile_changes : 0}/>
           </Col>
         </Row>
