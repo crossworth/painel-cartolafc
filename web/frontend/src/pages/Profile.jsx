@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 
 import { Alert, Avatar, Button, Col, Divider, List, Row, Spin, Statistic, Typography } from 'antd'
-import { getUserInfo, getUserProfileHistory, getUserStats } from '../api'
+import { getProfileInfo, getProfileHistory, getProfileStats } from '../api'
 import { timeStampToDate } from '../util'
 
 const { Title } = Typography
@@ -11,7 +11,7 @@ const Profile = (props) => {
 
   const { history } = props
 
-  const isPossibleScreenName = !(/^\d+$/.test(id))
+  const isPossibleScreenName = !(/^-?\d+$/.test(id))
 
   const [user, setUser] = useState({})
   const [userStats, setUserStats] = useState({})
@@ -22,7 +22,7 @@ const Profile = (props) => {
       return
     }
 
-    Promise.all([getUserInfo(id), getUserStats(id), getUserProfileHistory(id)]).then(values => {
+    Promise.all([getProfileInfo(id), getProfileStats(id), getProfileHistory(id)]).then(values => {
       setUser(values[0])
       setUserStats(values[1])
       setUserProfileHistory(values[2])

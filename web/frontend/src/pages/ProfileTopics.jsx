@@ -2,7 +2,7 @@ import React from 'react'
 import { withRouter } from 'react-router-dom'
 
 import { Button } from 'antd'
-import { getTopicsFromUser } from '../api'
+import { getTopicsFromProfile } from '../api'
 import { timeStampToDate } from '../util'
 import ProfileTabularData from '../components/ProfileTabularData'
 
@@ -45,7 +45,7 @@ const ProfileTopics = (props) => {
   let newProps = Object.assign({}, props, {
     type: 'Tópicos',
     columns: columns,
-    dataFunc: getTopicsFromUser
+    dataFunc: getTopicsFromProfile
   })
 
   return (<div>

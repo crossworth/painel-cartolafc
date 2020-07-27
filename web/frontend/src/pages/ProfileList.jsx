@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { getBeforeFromURL, timeStampToDate } from '../util'
 import { Button, Spin, Table, Typography } from 'antd'
-import { getTopicsFromUser } from '../api'
+import { getTopicsFromProfile } from '../api'
 import { Link } from 'react-router-dom'
 
 const { Title } = Typography

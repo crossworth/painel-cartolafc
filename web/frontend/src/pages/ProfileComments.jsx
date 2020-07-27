@@ -4,7 +4,7 @@ import { withRouter } from 'react-router-dom'
 import { Button } from 'antd'
 import { normalizeQuote, timeStampToDate } from '../util'
 import ProfileTabularData from '../components/ProfileTabularData'
-import { getCommentsFromUser } from '../api'
+import { getCommentsFromProfile } from '../api'
 
 
 const columns = [
@@ -52,7 +52,7 @@ const ProfileComments = (props) => {
   let newProps = Object.assign({}, props, {
     type: 'Comentários',
     columns: columns,
-    dataFunc: getCommentsFromUser
+    dataFunc: getCommentsFromProfile
   })
 
   return (<div>

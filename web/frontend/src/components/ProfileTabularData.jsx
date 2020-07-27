@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { Link, withRouter } from 'react-router-dom'
 import { Spin, Table, Typography } from 'antd'
 import { getBeforeFromURL, parseIntWithDefault } from '../util'
-import { getUserInfo, unixNow } from '../api'
+import { getProfileInfo, unixNow } from '../api'
 
 const { Title } = Typography
 
@@ -19,9 +19,10 @@ const ProfileTabularData = (props) => {
     currentTimestamp: parseIntWithDefault(searchParams.get('current'), unixNow()),
     position: ['topLeft']
   })
+  console.log(pagination)
 
   const [loading, setLoading] = useState(true)
-  const [user, setUser] = useState({})
+  const [profile, setProfile] = useState({})
   const [tableData, setTableData] = useState([])
   const [tableMeta, setTableMeta] = useState({})
 
@@ -63,8 +64,8 @@ const ProfileTabularData = (props) => {
   }
 
   useEffect(() => {
-    Promise.all([getUserInfo(id), dataFunc(id, currentTimestamp, pageSize)]).then(results => {
-      setUser(results[0])
+    Promise.all([getProfileInfo(id), dataFunc(id, currentTimestamp, pageSize)]).then(results => {
+      setProfile(results[0])
       // NOTE(Pedro): Hack to enable cursor pagination
       // when page refreshed
       let page = 1
@@ -125,7 +126,7 @@ const ProfileTabularData = (props) => {
         {
           !loading ?
             <div>{props.type} de <Link
-              to={`/perfil/${user.id}`}>{user.first_name} {user.last_name}</Link> - {tableMeta ? tableMeta.total : '∅'} {props.type ? props.type.toLowerCase() : ''}
+              to={`/perfil/${profile.id}`}>{profile.first_name} {profile.last_name}</Link> - {tableMeta ? tableMeta.total : '∅'} {props.type ? props.type.toLowerCase() : ''}
             </div>
             : <div>Carregando dados</div>
         }

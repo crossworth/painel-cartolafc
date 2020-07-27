@@ -36,23 +36,23 @@ const autoCompleteProfileNames = name => {
   return api.get(`/auto-complete/profile/${name}`)
 }
 
-const getUserInfo = id => {
-  return api.get(`/user/${id}`)
+const getProfileInfo = id => {
+  return api.get(`/profile/${id}`)
 }
 
-const getUserStats = id => {
-  return api.get(`/user/${id}/stats`)
+const getProfileStats = id => {
+  return api.get(`/profile/${id}/stats`)
 }
 
-const getUserProfileHistory = id => {
-  return api.get(`/user/${id}/history`)
+const getProfileHistory = id => {
+  return api.get(`/profile/${id}/history`)
 }
 
-const getTopicsFromUser = (id, before = unixNow(), limit = 10) => {
+const getTopicsFromProfile = (id, before = unixNow(), limit = 10) => {
   return api.get(`/topics/${id}?before=${before}&limit=${limit}`)
 }
 
-const getCommentsFromUser = (id, before = unixNow(), limit = 10) => {
+const getCommentsFromProfile = (id, before = unixNow(), limit = 10) => {
   return api.get(`/comments/${id}?before=${before}&limit=${limit}`)
 }
 
@@ -60,9 +60,9 @@ export {
   unixNow,
   resolveProfile,
   autoCompleteProfileNames,
-  getUserInfo,
-  getUserStats,
-  getUserProfileHistory,
-  getTopicsFromUser,
-  getCommentsFromUser
+  getProfileInfo,
+  getProfileStats,
+  getProfileHistory,
+  getTopicsFromProfile,
+  getCommentsFromProfile
 }
