@@ -37,10 +37,38 @@ const debounce = (func, wait = 250) => {
   }
 }
 
+const getErrorMessage = error => {
+  let errorMessage = error
+  if (checkNested(error, 'response', 'data', 'message')) {
+    errorMessage = error.response.data.message
+  }
+
+  if (errorMessage instanceof String) {
+    return errorMessage.charAt(0).toUpperCase() + errorMessage.slice(1)
+  }
+
+  return errorMessage
+}
+
+
+const parseIntWithDefault = (input, defaultValue) => {
+  if (!input || isNaN(input)) {
+    return defaultValue
+  }
+
+  try {
+    return parseInt(input)
+  } catch (e) {
+    return defaultValue
+  }
+}
+
 export {
   timeStampToDate,
   getBeforeFromURL,
   normalizeQuote,
   checkNested,
-  debounce
+  debounce,
+  getErrorMessage,
+  parseIntWithDefault
 }

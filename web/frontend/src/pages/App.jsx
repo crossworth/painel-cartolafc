@@ -5,14 +5,17 @@ import { ConfigProvider, Layout, Menu } from 'antd'
 import ptBR from 'antd/es/locale/pt_BR'
 
 import HomeOutlined from '@ant-design/icons/lib/icons/HomeOutlined'
-import UserOutlined from '@ant-design/icons/lib/icons/UserOutlined'
-import ProfileTopics from './ProfileTopics'
-import ProfileNotFound from './ProfileNotFound'
-import PageNotFound from './PageNotFound'
-import ProfileComments from './ProfileComments'
-import Profile from './Profile'
-import Resolve from './Resolve'
+import TeamOutlined from '@ant-design/icons/lib/icons/TeamOutlined'
 import LinkOutlined from '@ant-design/icons/lib/icons/LinkOutlined'
+import UnorderedListOutlined from '@ant-design/icons/lib/icons/UnorderedListOutlined'
+
+import Profile from './Profile'
+import ProfileList from './ProfileList'
+import PageNotFound from './PageNotFound'
+import ProfileTopics from './ProfileTopics'
+import ProfileResolve from './ProfileResolve'
+import ProfileComments from './ProfileComments'
+import ProfileNotFound from './ProfileNotFound'
 
 const { Sider, Content } = Layout
 
@@ -45,10 +48,17 @@ export default () => {
                   <span>Home</span>
                 </Link>
               </Menu.Item>
-              <Menu.Item key="/perfil">
-                <Link to="/perfil">
-                  <UserOutlined/>
-                  <span>Perfil</span>
+              <Menu.Item key="/topicos">
+                <Link to="/topicos">
+                  <UnorderedListOutlined/>
+                  <span>Tópicos</span>
+                </Link>
+              </Menu.Item>
+
+              <Menu.Item key="/perfil/todos">
+                <Link to="/perfil/todos">
+                  <TeamOutlined/>
+                  <span>Membros</span>
                 </Link>
               </Menu.Item>
 
@@ -67,11 +77,15 @@ export default () => {
                 Home
               </Route>
 
-              <Route path='/resolver/:name?' render={(props) => <Resolve {...props}/>}>
+              <Route path='/resolver/:name?' render={(props) => <ProfileResolve {...props}/>}>
               </Route>
 
               <Route path='/perfil/nao-encontrado' exact>
                 <ProfileNotFound/>
+              </Route>
+
+              <Route path='/perfil/todos' exact>
+                <ProfileList/>
               </Route>
 
               <Route path='/perfil/:id' exact render={(props) => <Profile {...props}/>}>

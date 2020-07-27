@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from 'react'
-import { Button, Table } from 'antd'
-import { getTopicsFromUser } from '../api'
 import { getBeforeFromURL, timeStampToDate } from '../util'
+import { Button, Spin, Table, Typography } from 'antd'
+import { getTopicsFromUser } from '../api'
+import { Link } from 'react-router-dom'
+
+const { Title } = Typography
 
 const columns = [
   {
@@ -38,7 +41,7 @@ const columns = [
   },
 ]
 
-const TopicList = ({ onTopicsTotal, profileID }) => {
+const ProfileList = () => {
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
@@ -49,17 +52,6 @@ const TopicList = ({ onTopicsTotal, profileID }) => {
   const [tableData, setTableData] = useState([])
   const [tableMeta, setTableMeta] = useState({})
 
-  useEffect(() => {
-    if (onTopicsTotal && tableMeta.total !== undefined) {
-      onTopicsTotal(tableMeta.total)
-    }
-
-    setPagination(Object.assign({}, pagination, {
-      total: tableMeta.total
-    }))
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onTopicsTotal, tableMeta])
 
   const handleTableChange = pag => {
     let beforeURL = tableMeta.current
@@ -70,27 +62,35 @@ const TopicList = ({ onTopicsTotal, profileID }) => {
 
     setLoading(true)
 
-    getTopicsFromUser(profileID, getBeforeFromURL(beforeURL), pag.pageSize).then(data => {
-      setTableData(data.data)
-      setTableMeta(data.meta)
-    }).finally(() => {
-      setLoading(false)
-    })
+    // getTopicsFromUser(profileID, getBeforeFromURL(beforeURL), pag.pageSize).then(data => {
+    //   setTableData(data.data)
+    //   setTableMeta(data.meta)
+    // }).finally(() => {
+    //   setLoading(false)
+    // })
 
     setPagination(pag)
   }
 
   useEffect(() => {
-    getTopicsFromUser(profileID).then(data => {
-      setTableData(data.data)
-      setTableMeta(data.meta)
-    }).finally(() => {
-      setLoading(false)
-    })
-  }, [profileID])
+    // getTopicsFromUser(profileID).then(data => {
+    //   setTableData(data.data)
+    //   setTableMeta(data.meta)
+    // }).finally(() => {
+    //   setLoading(false)
+    // })
+  }, [])
 
   return (
-    <div>
+    <Spin tip="Carregando..." spinning={loading}>
+      <Title level={4}>
+        {
+          loading ?
+            <div>Lista de membros - {tableMeta.total} membros
+            </div>
+            : <div>Carregando dados</div>
+        }
+      </Title>
       <Table
         bordered={true}
         dataSource={tableData}
@@ -100,8 +100,8 @@ const TopicList = ({ onTopicsTotal, profileID }) => {
         pagination={pagination}
         onChange={handleTableChange}
       />
-    </div>
+    </Spin>
   )
 }
 
-export default TopicList
+export default ProfileList

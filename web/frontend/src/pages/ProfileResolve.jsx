@@ -10,7 +10,7 @@ const debounceFn = debounce(fn => {
   fn()
 }, 300)
 
-const Resolve = (props) => {
+const ProfileResolve = (props) => {
   const name = props.match.params.name
 
   const [loading, setLoading] = useState(false)
@@ -43,7 +43,6 @@ const Resolve = (props) => {
       autoCompleteProfileNames(text).then(data => {
         setOptions(data)
       }).catch(err => {
-        console.log(err)
       })
     })
   }
@@ -56,8 +55,12 @@ const Resolve = (props) => {
       return
     }
 
+    let name = selectedOption.replace('https://', '')
+    name = name.replace('http://', '')
+    name = name.replace('vk.com/', '')
+
     setLoading(true)
-    history.push(`/resolver/${selectedOption}`)
+    history.push(`/resolver/${encodeURIComponent(name)}`)
   }
 
   return (
@@ -98,11 +101,11 @@ const Resolve = (props) => {
               placeholder="Digite um nome/link de perfil aqui">
               {options.map(profile => (
                 <Option key={profile.id} value={profile.screen_name}>
-                  <Row gutter={16}>
-                    <Col span={1}>
+                  <Row>
+                    <Col flex="60px">
                       <img width="50" height="50" src={profile.photo} alt={profile.screen_name}/>
                     </Col>
-                    <Col span={16}>
+                    <Col flex="auto">
                       {`${profile.first_name} ${profile.last_name} (@${profile.screen_name})`}
                     </Col>
                   </Row>
@@ -117,4 +120,4 @@ const Resolve = (props) => {
   )
 }
 
-export default Resolve
+export default ProfileResolve

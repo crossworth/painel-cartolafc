@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { message } from 'antd'
-import { checkNested } from './util'
+import { getErrorMessage } from './util'
 
 const baseURL = process.env.REACT_APP_API_URL
 
@@ -11,24 +11,13 @@ const api = axios.create({
 api.interceptors.response.use((response) => {
   return response.data
 }, (error) => {
-
-  let errorMessage = error
-
-  if (checkNested(error, 'response', 'data', 'message')) {
-    errorMessage = error.response.data.message
-  }
-
-  if (errorMessage instanceof String) {
-    const errorMessageNormalized = errorMessage.charAt(0).toUpperCase() + errorMessage.slice(1)
-    message.error(errorMessageNormalized)
-  }
-
+  message.error(getErrorMessage(error))
   return Promise.reject(error)
 })
 
 const unixNow = () => {
   const time = Date.now()
-  return time / 1000
+  return Math.floor(time / 1000)
 }
 
 const resolveProfile = name => {
@@ -40,6 +29,10 @@ const resolveProfile = name => {
 }
 
 const autoCompleteProfileNames = name => {
+  name = name.replace('https://', '')
+  name = name.replace('http://', '')
+  name = name.replace('vk.com/', '')
+
   return api.get(`/auto-complete/profile/${name}`)
 }
 
@@ -64,6 +57,7 @@ const getCommentsFromUser = (id, before = unixNow(), limit = 10) => {
 }
 
 export {
+  unixNow,
   resolveProfile,
   autoCompleteProfileNames,
   getUserInfo,
