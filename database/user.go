@@ -24,7 +24,7 @@ func (d *PostgreSQL) TopicsByUserID(context context.Context, id int, before int,
 	var topics []model.Topic
 
 	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
-		query := `SELECT * FROM topics WHERE created_by = $1 AND created_at < $2 ORDER BY created_at DESC LIMIT $3`
+		query := `SELECT * FROM topics WHERE created_by = $1 AND created_at <= $2 ORDER BY created_at DESC LIMIT $3`
 
 		tx.MustQueryContext(context, query, id, before, limit).Each(func(r *sx.Rows) {
 			var t model.Topic
@@ -36,25 +36,18 @@ func (d *PostgreSQL) TopicsByUserID(context context.Context, id int, before int,
 	return topics, err
 }
 
-func (d *PostgreSQL) PrevTopicTimestampByUserID(context context.Context, id int, before int, limit int) (int, error) {
-	var prev int
+func (d *PostgreSQL) PaginationTimestampTopicByUserID(context context.Context, id int, before int, limit int) (PaginationTimestamps, error) {
+	var timestamps PaginationTimestamps
 
 	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
-		query := `SELECT * FROM topics WHERE created_by = $1 AND created_at > $2 ORDER BY created_at ASC limit $3`
-
-		var topics []model.Topic
-		tx.MustQueryContext(context, query, id, before, limit).Each(func(r *sx.Rows) {
-			var t model.Topic
-			r.MustScans(&t)
-			topics = append(topics, t)
-		})
-
-		if len(topics) > 0 {
-			prev = topics[len(topics)-1].CreatedAt + 1 // NOTE(Pedro): para incluir o tópico já que usamos before < e não <=
-		}
+		query := `SELECT 
+					COALESCE((SELECT created_at FROM topics WHERE created_by = $1 AND created_at <= $2 ORDER BY created_at DESC OFFSET $3 LIMIT 1), 0) as next,
+					COALESCE((SELECT created_at FROM topics WHERE created_by = $1 AND created_at >= $2 ORDER BY created_at ASC OFFSET $3 LIMIT 1), 0) as prev
+				`
+		tx.MustQueryRowContext(context, query, id, before, limit).MustScan(&timestamps.Next, &timestamps.Prev)
 	})
 
-	return prev, err
+	return timestamps, err
 }
 
 func (d *PostgreSQL) TopicsCountByUserID(context context.Context, id int) (int, error) {
@@ -71,7 +64,7 @@ func (d *PostgreSQL) CommentsByUserID(context context.Context, id int, before in
 	var comments []model.Comment
 
 	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
-		query := `SELECT * FROM comments WHERE from_id = $1 AND date < $2 ORDER BY date DESC LIMIT $3`
+		query := `SELECT * FROM comments WHERE from_id = $1 AND date <= $2 ORDER BY date DESC LIMIT $3`
 
 		tx.MustQueryContext(context, query, id, before, limit).Each(func(r *sx.Rows) {
 			var c model.Comment
@@ -93,25 +86,18 @@ func (d *PostgreSQL) CommentsCountByUserID(context context.Context, id int) (int
 	return total, err
 }
 
-func (d *PostgreSQL) PrevCommentTimestampByUserID(context context.Context, id int, before int, limit int) (int, error) {
-	var prev int
+func (d *PostgreSQL) PaginationTimestampCommentByUserID(context context.Context, id int, before int, limit int) (PaginationTimestamps, error) {
+	var timestamps PaginationTimestamps
 
 	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
-		query := `SELECT * FROM comments WHERE from_id = $1 AND date > $2 ORDER BY date ASC limit $3`
-
-		var comments []model.Comment
-		tx.MustQueryContext(context, query, id, before, limit).Each(func(r *sx.Rows) {
-			var t model.Comment
-			r.MustScans(&t)
-			comments = append(comments, t)
-		})
-
-		if len(comments) > 0 {
-			prev = comments[len(comments)-1].Date + 1 // NOTE(Pedro): para incluir o tópico já que usamos before < e não <=
-		}
+		query := `SELECT 
+					COALESCE((SELECT date FROM comments WHERE from_id = $1 AND date <= $2 ORDER BY date DESC OFFSET $3 LIMIT 1), 0) as next,
+					COALESCE((SELECT date FROM comments WHERE from_id = $1 AND date >= $2 ORDER BY date ASC OFFSET $3 LIMIT 1), 0) as prev
+				`
+		tx.MustQueryRowContext(context, query, id, before, limit).MustScan(&timestamps.Next, &timestamps.Prev)
 	})
 
-	return prev, err
+	return timestamps, err
 }
 
 func (d *PostgreSQL) ProfileHistoryByUserID(context context.Context, id int) ([]model.ProfileNames, error) {

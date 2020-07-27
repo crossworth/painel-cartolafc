@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-chi/chi"
 
+	"github.com/crossworth/cartola-web-admin/database"
 	"github.com/crossworth/cartola-web-admin/model"
 	"github.com/crossworth/cartola-web-admin/util"
 	"github.com/crossworth/cartola-web-admin/vk"
@@ -101,7 +102,7 @@ func ProfileHistoryByID(provider ProfileByIDProvider) func(w http.ResponseWriter
 type UserTopicProvider interface {
 	TopicsByUserID(context context.Context, id int, before int, limit int) ([]model.Topic, error)
 	TopicsCountByUserID(context context.Context, id int) (int, error)
-	PrevTopicTimestampByUserID(context context.Context, id int, before int, limit int) (int, error)
+	PaginationTimestampTopicByUserID(context context.Context, id int, before int, limit int) (database.PaginationTimestamps, error)
 }
 
 func TopicsByID(provider UserTopicProvider) func(w http.ResponseWriter, r *http.Request) {
@@ -127,23 +128,24 @@ func TopicsByID(provider UserTopicProvider) func(w http.ResponseWriter, r *http.
 			return
 		}
 
-		prevTimestamp, err := provider.PrevTopicTimestampByUserID(r.Context(), id, before, limit)
+		paginationTimestamps, err := provider.PaginationTimestampTopicByUserID(r.Context(), id, before, limit)
 		if err != nil {
 			databaseError(w, err)
 			return
 		}
 
-		prev := ""
 		next := ""
+		prev := ""
 
-		lenTopics := len(topics)
-
-		if lenTopics == limit && lenTopics < total {
-			next = fmt.Sprintf("%s/topics/%d?limit=%d&before=%d", os.Getenv("APP_API_URL"), id, limit, topics[lenTopics-1].CreatedAt)
+		if paginationTimestamps.Next != 0 {
+			next = fmt.Sprintf("%s/topics/%d?limit=%d&before=%d", os.Getenv("APP_API_URL"), id, limit, paginationTimestamps.Next)
+		}
+		if paginationTimestamps.Prev != 0 {
+			prev = fmt.Sprintf("%s/topics/%d?limit=%d&before=%d", os.Getenv("APP_API_URL"), id, limit, paginationTimestamps.Prev)
 		}
 
-		if prevTimestamp != 0 {
-			prev = fmt.Sprintf("%s/topics/%d?limit=%d&before=%d", os.Getenv("APP_API_URL"), id, limit, prevTimestamp)
+		if len(topics) != 0 {
+			before = topics[0].CreatedAt
 		}
 
 		pagination(w, topics, 200, PaginationMeta{
@@ -158,7 +160,7 @@ func TopicsByID(provider UserTopicProvider) func(w http.ResponseWriter, r *http.
 type UserCommentProvider interface {
 	CommentsByUserID(context context.Context, id int, before int, limit int) ([]model.Comment, error)
 	CommentsCountByUserID(context context.Context, id int) (int, error)
-	PrevCommentTimestampByUserID(context context.Context, id int, before int, limit int) (int, error)
+	PaginationTimestampCommentByUserID(context context.Context, id int, before int, limit int) (database.PaginationTimestamps, error)
 }
 
 func CommentsByID(provider UserCommentProvider) func(w http.ResponseWriter, r *http.Request) {
@@ -184,7 +186,7 @@ func CommentsByID(provider UserCommentProvider) func(w http.ResponseWriter, r *h
 			return
 		}
 
-		prevTimestamp, err := provider.PrevCommentTimestampByUserID(r.Context(), id, before, limit)
+		paginationTimestamps, err := provider.PaginationTimestampCommentByUserID(r.Context(), id, before, limit)
 		if err != nil {
 			databaseError(w, err)
 			return
@@ -193,13 +195,15 @@ func CommentsByID(provider UserCommentProvider) func(w http.ResponseWriter, r *h
 		next := ""
 		prev := ""
 
-		lenComments := len(comments)
-		if lenComments == limit && lenComments < total {
-			next = fmt.Sprintf("%s/comments/%d?limit=%d&before=%d", os.Getenv("APP_API_URL"), id, limit, comments[lenComments-1].Date)
+		if paginationTimestamps.Next != 0 {
+			next = fmt.Sprintf("%s/comments/%d?limit=%d&before=%d", os.Getenv("APP_API_URL"), id, limit, paginationTimestamps.Next)
+		}
+		if paginationTimestamps.Prev != 0 {
+			prev = fmt.Sprintf("%s/comments/%d?limit=%d&before=%d", os.Getenv("APP_API_URL"), id, limit, paginationTimestamps.Prev)
 		}
 
-		if prevTimestamp != 0 {
-			prev = fmt.Sprintf("%s/comments/%d?limit=%d&before=%d", os.Getenv("APP_API_URL"), id, limit, prevTimestamp)
+		if len(comments) != 0 {
+			before = comments[0].Date
 		}
 
 		pagination(w, comments, 200, PaginationMeta{
