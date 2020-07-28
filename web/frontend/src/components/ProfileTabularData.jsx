@@ -17,7 +17,8 @@ const ProfileTabularData = (props) => {
     current: 1,
     pageSize: parseIntWithDefault(searchParams.get('limit'), 10),
     currentTimestamp: parseIntWithDefault(searchParams.get('current'), unixNow()),
-    position: ['topLeft']
+    position: ['topLeft'],
+    showSizeChanger: true
   })
   console.log(pagination)
 
