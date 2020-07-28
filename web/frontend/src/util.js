@@ -64,7 +64,7 @@ const parseIntWithDefault = (input, defaultValue) => {
 }
 
 const stringWithDefault = (input, defaultValue) => {
-  if (!input || input.length == 0) {
+  if (!input || input.length === 0) {
     return defaultValue
   }
 

@@ -7,7 +7,6 @@ import ptBR from 'antd/es/locale/pt_BR'
 import HomeOutlined from '@ant-design/icons/lib/icons/HomeOutlined'
 import TeamOutlined from '@ant-design/icons/lib/icons/TeamOutlined'
 import LinkOutlined from '@ant-design/icons/lib/icons/LinkOutlined'
-import UnorderedListOutlined from '@ant-design/icons/lib/icons/UnorderedListOutlined'
 
 import Profile from './Profile'
 import ProfileList from './ProfileList'
@@ -48,12 +47,12 @@ export default () => {
                   <span>Home</span>
                 </Link>
               </Menu.Item>
-              <Menu.Item key="/topicos">
-                <Link to="/topicos">
-                  <UnorderedListOutlined/>
-                  <span>Tópicos</span>
-                </Link>
-              </Menu.Item>
+              {/*<Menu.Item key="/topicos">*/}
+              {/*  <Link to="/topicos">*/}
+              {/*    <UnorderedListOutlined/>*/}
+              {/*    <span>Tópicos</span>*/}
+              {/*  </Link>*/}
+              {/*</Menu.Item>*/}
 
               <Menu.Item key="/perfil/todos">
                 <Link to="/perfil/todos">
@@ -74,7 +73,16 @@ export default () => {
           <Content className="main-content">
             <Switch>
               <Route path='/' exact>
-                Home
+                <h3>WIP: Preview!</h3>
+                Faltando: <br/>
+                - Lista de tópicos<br/>
+                - Busca por título de tópico, conteúdo comentário, data, membro, número de comentários<br/>
+                - Reconstituir tópicos apagados (recriar uma visualização de um tópico apagado)<br/>
+                - Opções de exportar dados para Excel, CSV<br/>
+                - Verificações se tópico foi apagado<br/>
+                - Verificações se membro foi/está banido<br/>
+                - Na lista de membros, adicionar filtros por períodos (membro com mais tópicos na semana, mês e
+                geral)<br/>
               </Route>
 
               <Route path='/resolver/:name?' render={(props) => <ProfileResolve {...props}/>}>

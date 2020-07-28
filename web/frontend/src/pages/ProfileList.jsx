@@ -154,6 +154,7 @@ const ProfileList = (props) => {
   }
 
   useEffect(() => {
+    setLoading(true)
     getProfiles(current, pageSize, orderBy, orderDir).then(data => {
       setTableData(data.data)
       setTableMeta(data.meta)

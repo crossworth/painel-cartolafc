@@ -25,9 +25,13 @@ func main() {
 
 	log.Println("iniciando servidor")
 
+	creds := make(map[string]string)
+	creds["admin"] = "cartolavk"
+
 	router := chi.NewRouter()
 	router.Use(middleware.Recoverer)
 	router.Use(middleware.Compress(flate.DefaultCompression))
+	router.Use(middleware.BasicAuth("CartolaFC", creds))
 
 	log.Println("criando cliente VK")
 	vkClient, err := vk.NewVKClient(os.Getenv("VK_EMAIL"), os.Getenv("VK_PASSWORD"))

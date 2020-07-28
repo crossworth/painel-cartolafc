@@ -32,10 +32,10 @@ const columns = [
               href={`https://vk.com/topic-73721457_${data.id}`}>
         Link original
       </Button>
-      <Button style={{ marginTop: 5 }} block target="_blank" rel="noopener noreferrer"
-              href={`/topico/${data.id}`}>
-        Reconstituído
-      </Button>
+      {/*<Button style={{ marginTop: 5 }} block target="_blank" rel="noopener noreferrer"*/}
+      {/*        href={`/topico/${data.id}`}>*/}
+      {/*  Reconstituído*/}
+      {/*</Button>*/}
     </div>
 
   },
