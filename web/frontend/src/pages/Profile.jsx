@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react'
 
 import { Alert, Avatar, Button, Col, Divider, List, Row, Spin, Statistic, Typography } from 'antd'
-import { getProfileInfo, getProfileHistory, getProfileStats } from '../api'
+import { getProfileHistory, getProfileInfo, getProfileStats } from '../api'
 import { timeStampToDate } from '../util'
+import { Link } from 'react-router-dom'
 
 const { Title } = Typography
 
@@ -51,6 +52,33 @@ const Profile = (props) => {
               : <div>Carregando dados</div>
           }
         </Title>
+
+        {
+          user.id < 0 &&
+          <Alert
+            message="Perfil de comunidade"
+            description={<div>
+              Este é um perfil de comunidade, porém exibe somente os comentários feitos pelo perfil,
+              o VK separa os tópicos criados pela comunidade no perfil <Link to={`/perfil/101`}>Administrator</Link>
+            </div>}
+            type="info"
+            showIcon
+          />
+        }
+
+        {
+          user.id === 101 &&
+          <Alert
+            message="Perfil de comunidade"
+            description={<div>
+              Este é um perfil de comunidade, porém exibe somente os tópicos feitos pelo perfil,
+              o VK separa os comentários criados pela comunidade no perfil com nome da comunidade.
+            </div>}
+            type="info"
+            showIcon
+          />
+        }
+
         <Divider/>
 
         <Row gutter={16}>
@@ -83,12 +111,14 @@ const Profile = (props) => {
         <Divider/>
         <Title level={4}>Histórico de alteração de perfil ({userProfileHistory.length})</Title>
 
-        <Alert
-          message="Porque existe registros duplicados?"
-          description="O VK algumas vezes retorna o link da foto de outro servidor do CDN, isso efetivamente significa que o link é diferente, por isso é registrado como uma alteração de foto, mesmo sendo a mesma foto."
-          type="info"
-          showIcon
-        />
+        {
+          userProfileHistory.length > 1 && <Alert
+            message="Porque existe registros duplicados?"
+            description="O VK algumas vezes retorna o link da foto de outro servidor do CDN, isso efetivamente significa que o link é diferente, por isso é registrado como uma alteração de foto, mesmo sendo a mesma foto."
+            type="info"
+            showIcon
+          />
+        }
         <br/>
         <List
           itemLayout="horizontal"

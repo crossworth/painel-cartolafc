@@ -63,6 +63,14 @@ const parseIntWithDefault = (input, defaultValue) => {
   }
 }
 
+const stringWithDefault = (input, defaultValue) => {
+  if (!input || input.length == 0) {
+    return defaultValue
+  }
+
+  return input
+}
+
 export {
   timeStampToDate,
   getBeforeFromURL,
@@ -70,5 +78,6 @@ export {
   checkNested,
   debounce,
   getErrorMessage,
-  parseIntWithDefault
+  parseIntWithDefault,
+  stringWithDefault
 }

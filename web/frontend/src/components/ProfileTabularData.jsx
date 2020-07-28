@@ -20,7 +20,6 @@ const ProfileTabularData = (props) => {
     position: ['topLeft'],
     showSizeChanger: true
   })
-  console.log(pagination)
 
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState({})

@@ -56,6 +56,10 @@ const getCommentsFromProfile = (id, before = unixNow(), limit = 10) => {
   return api.get(`/comments/${id}?before=${before}&limit=${limit}`)
 }
 
+const getProfiles = (page, limit, orderBy = 'topics', orderDir = 'desc') => {
+  return api.get(`/profiles?orderBy=${orderBy}&orderDir=${orderDir}&page=${page}&limit=${limit}`)
+}
+
 export {
   unixNow,
   resolveProfile,
@@ -64,5 +68,6 @@ export {
   getProfileStats,
   getProfileHistory,
   getTopicsFromProfile,
-  getCommentsFromProfile
+  getCommentsFromProfile,
+  getProfiles
 }

@@ -12,7 +12,7 @@ import (
 var (
 	ErrInvalidProfileURL = errors.New("link de perfil inválido")
 
-	ErrProfileIDNotFound        = errors.New("id do perfil do usuário não encontrado")
+	ErrProfileIDNotFound     = errors.New("id do perfil do usuário não encontrado")
 	ErrInvalidScreenNameOrId = errors.New("o nome de perfil ou id é inválido")
 )
 
@@ -27,7 +27,7 @@ func ProfileScreenNameOrIDFromURL(profileURL string) (string, error) {
 }
 
 func (v *VKClient) ScreenNameToProfileID(context context.Context, screenNameOrID string) (int, string, error) {
-	if !ScreenNameOrIDRegex.MatchString(screenNameOrID) {
+	if !ScreenNameOrIDMemberRegex.MatchString(screenNameOrID) {
 		return 0, "", ErrInvalidScreenNameOrId
 	}
 

@@ -103,7 +103,7 @@ const ProfileResolve = (props) => {
                 <Option key={profile.id} value={profile.screen_name}>
                   <Row>
                     <Col flex="60px">
-                      <img width="50" height="50" src={profile.photo} alt={profile.screen_name}/>
+                      <img width="50" height="50" src={profile.photo} alt=''/>
                     </Col>
                     <Col flex="auto">
                       {`${profile.first_name} ${profile.last_name} (@${profile.screen_name})`}

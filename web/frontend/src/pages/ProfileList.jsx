@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react'
-import { getBeforeFromURL, timeStampToDate } from '../util'
-import { Button, Spin, Table, Typography } from 'antd'
-import { getTopicsFromProfile } from '../api'
-import { Link } from 'react-router-dom'
+import { Button, Col, Radio, Row, Spin, Table, Typography } from 'antd'
+import { getProfiles } from '../api'
+import { parseIntWithDefault, stringWithDefault } from '../util'
+import { withRouter } from 'react-router-dom'
 
 const { Title } = Typography
 
@@ -13,15 +13,33 @@ const columns = [
     key: 'id',
   },
   {
-    title: 'Título',
-    dataIndex: 'title',
-    key: 'title',
+    title: 'Nome',
+    dataIndex: 'name',
+    render: (text, data) => <div>
+      <Row>
+        <Col flex="60px">
+          <img width="50" height="50" src={data.photo} alt=''/>
+        </Col>
+        <Col flex="auto">
+          {`${data.first_name} ${data.last_name} (@${data.screen_name})`}
+        </Col>
+      </Row>
+    </div>
   },
   {
-    title: 'Data',
-    dataIndex: 'created_at',
-    key: 'created_at',
-    render: (text, data) => timeStampToDate(text)
+    title: 'Tópicos',
+    dataIndex: 'topics',
+    key: 'topics',
+  },
+  {
+    title: 'Comentários',
+    dataIndex: 'comments',
+    key: 'comments',
+  },
+  {
+    title: 'Likes',
+    dataIndex: 'likes',
+    key: 'likes',
   },
   {
     title: '',
@@ -29,64 +47,135 @@ const columns = [
     key: 'id',
     render: (text, data) => <div>
       <Button type="primary" block target="_blank" rel="noopener noreferrer"
-              href={`https://vk.com/topic-73721457_${data.id}`}>
-        Link original
+              href={`https://vk.com/id${data.id}`}>
+        VK
       </Button>
       <Button style={{ marginTop: 5 }} block target="_blank" rel="noopener noreferrer"
-              href={`/topico/${data.id}`}>
-        Reconstituído
+              href={`/perfil/${data.id}`}>
+        Perfil
       </Button>
     </div>
 
   },
 ]
 
-const ProfileList = () => {
+const orderByToPTBR = orderBy => {
+  switch (orderBy) {
+    case 'topics':
+      return 'Tópicos'
+    case 'comments':
+      return 'Comentários'
+    default:
+      return 'Likes'
+  }
+}
+
+const ProfileList = (props) => {
+
+  const { history, location } = props
+
+  const searchParams = new URLSearchParams(location.search)
+
   const [pagination, setPagination] = useState({
-    current: 1,
-    pageSize: 10,
-    position: ['topLeft']
+    current: parseIntWithDefault(searchParams.get('page'), 1),
+    pageSize: parseIntWithDefault(searchParams.get('limit'), 10),
+    position: ['topLeft'],
+    showSizeChanger: true,
+    orderBy: stringWithDefault(searchParams.get('orderBy'), 'topics'),
+    orderDir: stringWithDefault(searchParams.get('orderDir'), 'desc'),
   })
 
   const [loading, setLoading] = useState(true)
   const [tableData, setTableData] = useState([])
   const [tableMeta, setTableMeta] = useState({})
 
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search)
+    let shouldUpdate = false
 
-  const handleTableChange = pag => {
-    let beforeURL = tableMeta.current
-
-    if (pag.current !== pagination.current) {
-      beforeURL = pag.current > pagination.current ? tableMeta.next : tableMeta.prev
+    if (!searchParams.has('limit') || pagination.pageSize !== parseInt(searchParams.get('limit'))) {
+      shouldUpdate = true
+      searchParams.set('limit', pagination.pageSize)
     }
 
-    setLoading(true)
+    if (!searchParams.has('page') || pagination.current !== parseInt(searchParams.get('page'))) {
+      shouldUpdate = true
+      searchParams.set('page', pagination.current)
+    }
 
-    // getTopicsFromUser(profileID, getBeforeFromURL(beforeURL), pag.pageSize).then(data => {
-    //   setTableData(data.data)
-    //   setTableMeta(data.meta)
-    // }).finally(() => {
-    //   setLoading(false)
-    // })
+    if (!searchParams.has('orderBy') || pagination.orderBy !== searchParams.get('orderBy')) {
+      shouldUpdate = true
+      searchParams.set('orderBy', pagination.orderBy)
+    }
 
+    if (!searchParams.has('orderDir') || pagination.orderDir !== searchParams.get('orderDir')) {
+      shouldUpdate = true
+      searchParams.set('orderDir', pagination.orderDir)
+    }
+
+    if (shouldUpdate) {
+      history.push({
+        pathname: location.pathname,
+        search: searchParams.toString()
+      })
+    }
+  }, [history, location, pagination])
+
+  const { current, pageSize, orderBy, orderDir } = pagination
+
+  const setPaginationTotal = (total, page = null, orderBy = null, orderDir = null, pageSize = null) => {
+    let pag = Object.assign({}, pagination, {
+      total: total,
+      current: page ? page : pagination.current,
+      orderBy: orderBy ? orderBy : pagination.orderBy,
+      orderDir: orderDir ? orderDir : pagination.orderDir,
+      pageSize: pageSize ? pageSize : pagination.pageSize
+    })
     setPagination(pag)
   }
 
+  const setOrderBy = orderBy => {
+    let pag = Object.assign({}, pagination, {
+      orderBy: orderBy ? orderBy : pagination.orderBy,
+    })
+    setPagination(pag)
+  }
+
+  const handleTableChange = pag => {
+    setLoading(true)
+
+    getProfiles(pag.current, pag.pageSize, pag.orderBy, pag.orderDir).then(data => {
+      setTableData(data.data)
+      setTableMeta(data.meta)
+      setPaginationTotal(data.meta.total, pag.current, pag.orderBy, pag.orderDir, pag.pageSize)
+    }).finally(() => {
+      setLoading(false)
+    })
+  }
+
   useEffect(() => {
-    // getTopicsFromUser(profileID).then(data => {
-    //   setTableData(data.data)
-    //   setTableMeta(data.meta)
-    // }).finally(() => {
-    //   setLoading(false)
-    // })
-  }, [])
+    getProfiles(current, pageSize, orderBy, orderDir).then(data => {
+      setTableData(data.data)
+      setTableMeta(data.meta)
+      setPaginationTotal(data.meta.total)
+    }).finally(() => {
+      setLoading(false)
+    })
+  }, [current, pageSize, orderBy, orderDir])
 
   return (
     <Spin tip="Carregando..." spinning={loading}>
       <Title level={4}>
         {
-          loading ?
-            <div>Lista de membros - {tableMeta.total} membros
+          !loading ?
+            <div>Lista de membros por {orderByToPTBR(pagination.orderBy)} - {tableMeta.total} membros
+              <div>
+                <Radio.Group value={pagination.orderBy} onChange={event => setOrderBy(event.target.value)}>
+                  <Radio.Button value="topics">Por tópicos</Radio.Button>
+                  <Radio.Button value="comments">Por comentários</Radio.Button>
+                  <Radio.Button value="likes">Por likes</Radio.Button>
+                </Radio.Group>
+              </div>
             </div>
             : <div>Carregando dados</div>
         }
@@ -95,7 +184,6 @@ const ProfileList = () => {
         bordered={true}
         dataSource={tableData}
         columns={columns}
-        loading={loading}
         rowKey='id'
         pagination={pagination}
         onChange={handleTableChange}
@@ -104,4 +192,4 @@ const ProfileList = () => {
   )
 }
 
-export default ProfileList
+export default withRouter(ProfileList)

@@ -3,6 +3,7 @@ package handle
 import (
 	"context"
 	"fmt"
+	"math"
 	"net/http"
 	"os"
 	"strings"
@@ -19,6 +20,7 @@ import (
 
 type ScreeNameProvider interface {
 	ScreenNameToProfileID(context context.Context, screenNameOrID string) (int, string, error)
+	GroupScreenNameToProfileID(context context.Context, screenNameOrID string) (int, string, error)
 }
 
 type ProfileLinkResponse struct {
@@ -37,23 +39,34 @@ func ProfileLinkToID(provider ScreeNameProvider) func(w http.ResponseWriter, r *
 			return
 		}
 
-		screenName, err := vk.ProfileScreenNameOrIDFromURL(link)
+		screenNameOrID, err := vk.ProfileScreenNameOrIDFromURL(link)
 		if err != nil {
 			errorCode(w, err, 400)
 			return
 		}
 
-		id, screenName, err := provider.ScreenNameToProfileID(r.Context(), screenName)
+		id, screenName, err := provider.ScreenNameToProfileID(r.Context(), screenNameOrID)
 		if err != nil {
-			errorCode(w, err, 400)
-			return
+
+			// NOTE(Pedro): Maybe group?
+			id, screenName, err = provider.GroupScreenNameToProfileID(r.Context(), screenNameOrID)
+			if err != nil {
+				errorCode(w, err, 400)
+				return
+			}
+		}
+
+		canonicalProfileLink := "https://vk.com/id" + util.ToString(id)
+
+		if id < 0 {
+			canonicalProfileLink = "https://vk.com/club" + util.ToString(int(math.Abs(float64(id))))
 		}
 
 		json(w, ProfileLinkResponse{
 			ID:                   id,
 			ScreenName:           screenName,
 			ProfileLink:          "https://vk.com/" + screenName,
-			CanonicalProfileLink: "https://vk.com/id" + util.ToString(id),
+			CanonicalProfileLink: canonicalProfileLink,
 		}, 200)
 	}
 }
