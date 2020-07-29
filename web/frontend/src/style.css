@@ -17,9 +17,9 @@
 }
 
 /* Hack para poder conseguir usar paginação com cursor em vez de offset */
-.ant-pagination-item,
-.ant-pagination-jump-next,
-.ant-pagination-jump-prev {
+.cursor-pagination .ant-pagination-item,
+.cursor-pagination .ant-pagination-jump-next,
+.cursor-pagination .ant-pagination-jump-prev {
     display: none !important;
 }
 

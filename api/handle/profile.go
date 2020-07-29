@@ -357,6 +357,14 @@ func Profiles(provider ProfilesProvider, cache *cache.Cache) func(w http.Respons
 			next = fmt.Sprintf("%s/profiles?limit=%d&page=%d&orderBy=%s&orderDir=%s", os.Getenv("APP_API_URL"), limit, page+1, orderBy, orderDir.Stringer())
 		}
 
+		// NOTE(Pedro): To calculate the correct position for the records
+		// when in asc order
+		if orderDir == database.OrderByASC {
+			for i := range data.Profiles {
+				data.Profiles[i].Position = (data.Total+1) - data.Profiles[i].Position
+			}
+		}
+
 		pagination(w, data.Profiles, 200, PaginationMeta{
 			Prev:     prev,
 			Current:  fmt.Sprintf("%s/profiles?limit=%d&page=%d&orderBy=%s&orderDir=%s", os.Getenv("APP_API_URL"), limit, page, orderBy, orderDir.Stringer()),

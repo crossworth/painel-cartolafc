@@ -59,7 +59,6 @@ const ProfileResolve = (props) => {
     name = name.replace('http://', '')
     name = name.replace('vk.com/', '')
 
-    setLoading(true)
     history.push(`/resolver/${encodeURIComponent(name)}`)
   }
 

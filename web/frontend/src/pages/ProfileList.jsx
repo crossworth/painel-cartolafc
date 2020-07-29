@@ -1,16 +1,22 @@
 import React, { useEffect, useState } from 'react'
-import { Button, Col, Radio, Row, Spin, Table, Typography } from 'antd'
+import { Button, Col, Radio, Row, Space, Spin, Table, Typography } from 'antd'
 import { getProfiles } from '../api'
-import { parseIntWithDefault, stringWithDefault } from '../util'
+import {
+  getGlobalPageSize,
+  normalizeScreenName,
+  parseIntWithDefault,
+  setGlobalPageSize,
+  stringWithDefault
+} from '../util'
 import { withRouter } from 'react-router-dom'
 
-const { Title } = Typography
+const { Title, Text } = Typography
 
 const columns = [
   {
-    title: 'ID',
-    dataIndex: 'id',
-    key: 'id',
+    title: 'Rank',
+    dataIndex: 'position',
+    key: 'position',
   },
   {
     title: 'Nome',
@@ -21,7 +27,7 @@ const columns = [
           <img width="50" height="50" src={data.photo} alt=''/>
         </Col>
         <Col flex="auto">
-          {`${data.first_name} ${data.last_name} (@${data.screen_name})`}
+          {`${data.first_name} ${data.last_name} (@${normalizeScreenName(data.screen_name, data.id)})`}
         </Col>
       </Row>
     </div>
@@ -62,11 +68,11 @@ const columns = [
 const orderByToPTBR = orderBy => {
   switch (orderBy) {
     case 'topics':
-      return 'Tópicos'
+      return 'tópicos'
     case 'comments':
-      return 'Comentários'
+      return 'comentários'
     default:
-      return 'Likes'
+      return 'likes'
   }
 }
 
@@ -78,11 +84,12 @@ const ProfileList = (props) => {
 
   const [pagination, setPagination] = useState({
     current: parseIntWithDefault(searchParams.get('page'), 1),
-    pageSize: parseIntWithDefault(searchParams.get('limit'), 10),
+    pageSize: parseIntWithDefault(searchParams.get('limit'), getGlobalPageSize(10)),
     position: ['topLeft'],
     showSizeChanger: true,
     orderBy: stringWithDefault(searchParams.get('orderBy'), 'topics'),
     orderDir: stringWithDefault(searchParams.get('orderDir'), 'desc'),
+    period: stringWithDefault(searchParams.get('period'), 'all'),
   })
 
   const [loading, setLoading] = useState(true)
@@ -113,6 +120,11 @@ const ProfileList = (props) => {
       searchParams.set('orderDir', pagination.orderDir)
     }
 
+    if (!searchParams.has('period') || pagination.period !== searchParams.get('period')) {
+      shouldUpdate = true
+      searchParams.set('period', pagination.period)
+    }
+
     if (shouldUpdate) {
       history.push({
         pathname: location.pathname,
@@ -129,14 +141,23 @@ const ProfileList = (props) => {
       current: page ? page : pagination.current,
       orderBy: orderBy ? orderBy : pagination.orderBy,
       orderDir: orderDir ? orderDir : pagination.orderDir,
-      pageSize: pageSize ? pageSize : pagination.pageSize
+      pageSize: pageSize ? pageSize : pagination.pageSize,
     })
+
+
     setPagination(pag)
   }
 
   const setOrderBy = orderBy => {
     let pag = Object.assign({}, pagination, {
       orderBy: orderBy ? orderBy : pagination.orderBy,
+    })
+    setPagination(pag)
+  }
+
+  const setPeriod = period => {
+    let pag = Object.assign({}, pagination, {
+      period: period ? period : pagination.period,
     })
     setPagination(pag)
   }
@@ -148,6 +169,8 @@ const ProfileList = (props) => {
       setTableData(data.data)
       setTableMeta(data.meta)
       setPaginationTotal(data.meta.total, pag.current, pag.orderBy, pag.orderDir, pag.pageSize)
+    }).catch(err => {
+
     }).finally(() => {
       setLoading(false)
     })
@@ -159,9 +182,13 @@ const ProfileList = (props) => {
       setTableData(data.data)
       setTableMeta(data.meta)
       setPaginationTotal(data.meta.total)
+    }).catch(err => {
+
     }).finally(() => {
       setLoading(false)
     })
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current, pageSize, orderBy, orderDir])
 
   return (
@@ -169,18 +196,34 @@ const ProfileList = (props) => {
       <Title level={4}>
         {
           !loading ?
-            <div>Lista de membros por {orderByToPTBR(pagination.orderBy)} - {tableMeta.total} membros
-              <div>
-                <Radio.Group value={pagination.orderBy} onChange={event => setOrderBy(event.target.value)}>
-                  <Radio.Button value="topics">Por tópicos</Radio.Button>
-                  <Radio.Button value="comments">Por comentários</Radio.Button>
-                  <Radio.Button value="likes">Por likes</Radio.Button>
-                </Radio.Group>
-              </div>
-            </div>
+            <div>Lista de membros por {orderByToPTBR(pagination.orderBy)} - {tableMeta.total} membros </div>
             : <div>Carregando dados</div>
         }
       </Title>
+      <div>
+        {!loading &&
+        <div>
+          <Space direction="vertical">
+            <Radio.Group value={pagination.period} onChange={event => setPeriod(event.target.value)}>
+              <Radio.Button value="all">Sempre</Radio.Button>
+              <Radio.Button value="last_month">Último mês</Radio.Button>
+              <Radio.Button value="last_week">Última semana</Radio.Button>
+            </Radio.Group>
+
+            <Radio.Group value={pagination.orderBy} onChange={event => setOrderBy(event.target.value)}>
+              <Radio.Button value="topics">Por tópicos</Radio.Button>
+              <Radio.Button value="comments">Por comentários</Radio.Button>
+              <Radio.Button value="likes">Por likes</Radio.Button>
+            </Radio.Group>
+          </Space>
+        </div>
+        }
+        {
+          !loading && tableMeta.cached_at && <div>
+            <Text type="secondary">Atualizado em: {(new Date(tableMeta.cached_at)).toLocaleString()}</Text>
+          </div>
+        }
+      </div>
       <Table
         bordered={true}
         dataSource={tableData}

@@ -8,10 +8,10 @@ const api = axios.create({
   baseURL: baseURL,
 })
 
-api.interceptors.response.use((response) => {
+api.interceptors.response.use(response => {
   return response.data
-}, (error) => {
-  message.error(getErrorMessage(error))
+}, error => {
+  message.error(getErrorMessage(error).toString())
   return Promise.reject(error)
 })
 

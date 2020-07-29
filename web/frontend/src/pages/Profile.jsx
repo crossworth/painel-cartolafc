@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 
 import { Alert, Avatar, Button, Col, Divider, List, Row, Spin, Statistic, Typography } from 'antd'
 import { getProfileHistory, getProfileInfo, getProfileStats } from '../api'
-import { timeStampToDate } from '../util'
+import { normalizeScreenName, timeStampToDate } from '../util'
 import { Link } from 'react-router-dom'
 
 const { Title } = Typography
@@ -46,7 +46,7 @@ const Profile = (props) => {
           {
             user.first_name ?
               <div><a href={`https://vk.com/id${user.id}`} target="_blank"
-                      rel="noopener noreferrer">{user.first_name} {user.last_name}</a> (@{user.screen_name}) -
+                      rel="noopener noreferrer">{user.first_name} {user.last_name}</a> (@{normalizeScreenName(user.screen_name, user.id)}) -
                 ID {user.id}
               </div>
               : <div>Carregando dados</div>

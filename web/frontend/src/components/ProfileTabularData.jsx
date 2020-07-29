@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { Link, withRouter } from 'react-router-dom'
 import { Spin, Table, Typography } from 'antd'
-import { getBeforeFromURL, parseIntWithDefault } from '../util'
+import { getBeforeFromURL, getGlobalPageSize, parseIntWithDefault, setGlobalPageSize } from '../util'
 import { getProfileInfo, unixNow } from '../api'
 
 const { Title } = Typography
@@ -15,7 +15,7 @@ const ProfileTabularData = (props) => {
 
   const [pagination, setPagination] = useState({
     current: 1,
-    pageSize: parseIntWithDefault(searchParams.get('limit'), 10),
+    pageSize: parseIntWithDefault(searchParams.get('limit'), getGlobalPageSize(10)),
     currentTimestamp: parseIntWithDefault(searchParams.get('current'), unixNow()),
     position: ['topLeft'],
     showSizeChanger: true
@@ -60,6 +60,8 @@ const ProfileTabularData = (props) => {
       total: total,
       pageSize: pageSize ? pageSize : pagination.pageSize
     })
+
+    setGlobalPageSize(pag.pageSize)
     setPagination(pag)
   }
 
@@ -67,7 +69,7 @@ const ProfileTabularData = (props) => {
     Promise.all([getProfileInfo(id), dataFunc(id, currentTimestamp, pageSize)]).then(results => {
       setProfile(results[0])
       // NOTE(Pedro): Hack to enable cursor pagination
-      // when page refreshed
+      // when page is refreshed
       let page = 1
       if (results[1].meta.prev) {
         page = 2
@@ -115,6 +117,8 @@ const ProfileTabularData = (props) => {
 
       setTableData(data.data)
       setTableMeta(data.meta)
+    }).catch(err => {
+
     }).finally(() => {
       setLoading(false)
     })
@@ -131,14 +135,16 @@ const ProfileTabularData = (props) => {
             : <div>Carregando dados</div>
         }
       </Title>
-      <Table
-        bordered={true}
-        dataSource={tableData}
-        columns={props.columns}
-        rowKey='id'
-        pagination={pagination}
-        onChange={handleTableChange}
-      />
+      <div className="cursor-pagination">
+        <Table
+          bordered={true}
+          dataSource={tableData}
+          columns={props.columns}
+          rowKey='id'
+          pagination={pagination}
+          onChange={handleTableChange}
+        />
+      </div>
     </Spin>
   </div>)
 }

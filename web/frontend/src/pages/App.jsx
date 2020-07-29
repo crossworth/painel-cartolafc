@@ -19,6 +19,7 @@ import ProfileNotFound from './ProfileNotFound'
 const { Sider, Content } = Layout
 
 export default () => {
+  const selectedMenu = window.location.pathname.substr(0)
 
   return (
     <ConfigProvider locale={ptBR}>
@@ -40,8 +41,8 @@ export default () => {
             </div>
             <Menu
               mode="inline"
-              defaultSelectedKeys="/">
-              <Menu.Item key="/">
+              defaultSelectedKeys={selectedMenu}>
+              <Menu.Item key="">
                 <Link to="/">
                   <HomeOutlined/>
                   <span>Home</span>
@@ -54,14 +55,14 @@ export default () => {
               {/*  </Link>*/}
               {/*</Menu.Item>*/}
 
-              <Menu.Item key="/perfil/todos">
+              <Menu.Item key="perfil/todos">
                 <Link to="/perfil/todos">
                   <TeamOutlined/>
                   <span>Membros</span>
                 </Link>
               </Menu.Item>
 
-              <Menu.Item key="/resolver">
+              <Menu.Item key="resolver">
                 <Link to="/resolver">
                   <LinkOutlined/>
                   <span>Resolver nome/link</span>

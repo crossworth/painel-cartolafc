@@ -25,4 +25,5 @@ type ProfileWithStats struct {
 	Topics   int `json:"topics"`
 	Comments int `json:"comments"`
 	Likes    int `json:"likes"`
+	Position int `json:"position,omitempty"`
 }

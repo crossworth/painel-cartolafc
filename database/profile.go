@@ -214,6 +214,7 @@ FROM profiles p
     ) as l ON l.from_id = p.id
 GROUP BY p.id, t.total, c.total, l.total ORDER BY ` + orderBy + " " + orderDirection.Stringer() + ` OFFSET $1 LIMIT $2`
 
+		i := 1
 		tx.MustQueryContext(context, query, (page-1)*limit, limit).Each(func(r *sx.Rows) {
 			var p ProfileWithStats
 			r.MustScan(
@@ -226,7 +227,9 @@ GROUP BY p.id, t.total, c.total, l.total ORDER BY ` + orderBy + " " + orderDirec
 				&p.Comments,
 				&p.Likes,
 			)
+			p.Position = ((page - 1) * limit) + i
 			profiles = append(profiles, p)
+			i++
 		})
 	})
 
