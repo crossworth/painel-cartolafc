@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -159,9 +160,9 @@ func (d *PostgreSQL) ProfileStatsByID(context context.Context, id int) (ProfileW
 	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
 		query := `SELECT
     p.*,
-    COALESCE(t.total, 0) as topics,
-    COALESCE(c.total, 0) as comments,
-    COALESCE(l.total, 0) as likes
+    COALESCE(t.total, 0)::INTEGER as topics,
+    COALESCE(c.total, 0)::INTEGER as comments,
+    COALESCE(l.total, 0)::INTEGER as likes
 FROM profiles p
     LEFT JOIN (
         SELECT created_by, COUNT(id) as total FROM topics GROUP BY created_by
@@ -189,30 +190,38 @@ GROUP BY p.id, t.total, c.total, l.total HAVING p.id = $1`
 	return profile, err
 }
 
-func (d *PostgreSQL) ProfileWithStats(context context.Context, orderBy string, orderDirection OrderByDirection, page int, limit int) ([]ProfileWithStats, error) {
+func (d *PostgreSQL) ProfileWithStats(context context.Context, orderBy string, orderDirection OrderByDirection, period Period, page int, limit int) ([]ProfileWithStats, error) {
 	var profiles []ProfileWithStats
 
 	if orderBy != "topics" && orderBy != "comments" && orderBy != "likes" {
 		return profiles, ErrInvalidMemberOrderBy
 	}
 
+	periodTopics := ""
+	periodComments := ""
+
+	if period != PeriodAll {
+		periodTopics = fmt.Sprintf("WHERE created_at >= EXTRACT(epoch FROM date_trunc('%s', current_date - INTERVAL '1' month)) AND created_at < EXTRACT(epoch FROM date_trunc('%s', current_date))", period.Stringer(), period.Stringer())
+		periodComments = fmt.Sprintf("WHERE date >= EXTRACT(epoch FROM date_trunc('%s', current_date - INTERVAL '1' month)) AND date < EXTRACT(epoch FROM date_trunc('%s', current_date))", period.Stringer(), period.Stringer())
+	}
+
 	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
 		query := `SELECT
     p.*,
-    COALESCE(t.total, 0) as topics,
-    COALESCE(c.total, 0) as comments,
-    COALESCE(l.total, 0) as likes
+    COALESCE(t.total, 0)::INTEGER as topics,
+    COALESCE(c.total, 0)::INTEGER as comments,
+    COALESCE(l.total, 0)::INTEGER as likes
 FROM profiles p
     LEFT JOIN (
-        SELECT created_by, COUNT(id) as total FROM topics GROUP BY created_by
+        SELECT created_by, COUNT(id) as total FROM topics ` + periodTopics + ` GROUP BY created_by
     ) as t ON t.created_by = p.id
     LEFT JOIN (
-        SELECT from_id, COUNT(id) as total FROM comments GROUP BY from_id
+        SELECT from_id, COUNT(id) as total FROM comments ` + periodComments + ` GROUP BY from_id
     ) as c ON c.from_id = p.id
     LEFT JOIN (
-        SELECT from_id, SUM(likes) as total FROM comments GROUP BY from_id
+        SELECT from_id, SUM(likes) as total FROM comments ` + periodComments + ` GROUP BY from_id
     ) as l ON l.from_id = p.id
-GROUP BY p.id, t.total, c.total, l.total ORDER BY ` + orderBy + " " + orderDirection.Stringer() + ` OFFSET $1 LIMIT $2`
+GROUP BY p.id, t.total, c.total, l.total ORDER BY ` + orderBy + ` ` + orderDirection.Stringer() + ` OFFSET $1 LIMIT $2`
 
 		i := 1
 		tx.MustQueryContext(context, query, (page-1)*limit, limit).Each(func(r *sx.Rows) {

@@ -133,7 +133,7 @@ const ProfileList = (props) => {
     }
   }, [history, location, pagination])
 
-  const { current, pageSize, orderBy, orderDir } = pagination
+  const { current, pageSize, orderBy, orderDir, period } = pagination
 
   const setPaginationTotal = (total, page = null, orderBy = null, orderDir = null, pageSize = null) => {
     let pag = Object.assign({}, pagination, {
@@ -144,7 +144,7 @@ const ProfileList = (props) => {
       pageSize: pageSize ? pageSize : pagination.pageSize,
     })
 
-
+    setGlobalPageSize(pag.pageSize)
     setPagination(pag)
   }
 
@@ -165,7 +165,7 @@ const ProfileList = (props) => {
   const handleTableChange = pag => {
     setLoading(true)
 
-    getProfiles(pag.current, pag.pageSize, pag.orderBy, pag.orderDir).then(data => {
+    getProfiles(pag.current, pag.pageSize, pag.orderBy, pag.orderDir, pag.period).then(data => {
       setTableData(data.data)
       setTableMeta(data.meta)
       setPaginationTotal(data.meta.total, pag.current, pag.orderBy, pag.orderDir, pag.pageSize)
@@ -178,7 +178,7 @@ const ProfileList = (props) => {
 
   useEffect(() => {
     setLoading(true)
-    getProfiles(current, pageSize, orderBy, orderDir).then(data => {
+    getProfiles(current, pageSize, orderBy, orderDir, period).then(data => {
       setTableData(data.data)
       setTableMeta(data.meta)
       setPaginationTotal(data.meta.total)
@@ -189,7 +189,7 @@ const ProfileList = (props) => {
     })
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [current, pageSize, orderBy, orderDir])
+  }, [current, pageSize, orderBy, orderDir, period])
 
   return (
     <Spin tip="Carregando..." spinning={loading}>

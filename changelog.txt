@@ -7,3 +7,6 @@
 - Adicionar informações de data de cache da página de membros
 - Ajustado botões de ordenação da página de membros
 - Adicionado suporte inicial de período na página de membros
+
+30 Julho
+- Adicionado suporte completo ao período na página de membros

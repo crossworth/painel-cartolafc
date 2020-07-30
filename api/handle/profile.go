@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/go-chi/chi"
-	"github.com/patrickmn/go-cache"
 
+	"github.com/crossworth/cartola-web-admin/cache"
 	"github.com/crossworth/cartola-web-admin/database"
 	"github.com/crossworth/cartola-web-admin/model"
 	"github.com/crossworth/cartola-web-admin/util"
@@ -296,7 +296,7 @@ func AutoCompleteProfileName(provider ProfileNameProvider) func(w http.ResponseW
 }
 
 type ProfilesProvider interface {
-	ProfileWithStats(context context.Context, order string, orderDirection database.OrderByDirection, page int, limit int) ([]database.ProfileWithStats, error)
+	ProfileWithStats(context context.Context, order string, orderDirection database.OrderByDirection, period database.Period, page int, limit int) ([]database.ProfileWithStats, error)
 	ProfileCount(context context.Context) (int, error)
 }
 
@@ -310,6 +310,7 @@ func Profiles(provider ProfilesProvider, cache *cache.Cache) func(w http.Respons
 	return func(w http.ResponseWriter, r *http.Request) {
 		orderBy := util.StringWithDefault(r.URL.Query().Get("orderBy"), "topics")
 		orderDirStr := util.StringWithDefault(r.URL.Query().Get("orderDir"), "DESC")
+		periodStr := util.StringWithDefault(r.URL.Query().Get("period"), "DESC")
 		page := util.ToIntWithDefaultMin(r.URL.Query().Get("page"), 1)
 		limit := util.ToIntWithDefaultMin(r.URL.Query().Get("limit"), 10)
 
@@ -319,55 +320,65 @@ func Profiles(provider ProfilesProvider, cache *cache.Cache) func(w http.Respons
 			orderDir = database.OrderByDESC
 		}
 
-		cacheKey := fmt.Sprintf("profiles_%s_%s_%d_%d", orderBy, orderDir.Stringer(), page, limit)
+		period := database.PeriodAll
 
-		profilesCache, found := cache.Get(cacheKey)
-		if !found {
-			profiles, err := provider.ProfileWithStats(r.Context(), orderBy, orderDir, page, limit)
+		if periodStr == "last_month" {
+			period = database.PeriodMonth
+		}
+
+		if periodStr == "last_week" {
+			period = database.PeriodWeek
+		}
+
+		cacheKey := fmt.Sprintf("profiles_%s_%s_%d_%d_%s", orderBy, orderDir.Stringer(), page, limit, period.Stringer())
+		profilesCache := cache.Get(cacheKey, func() interface{} {
+			profiles, err := provider.ProfileWithStats(r.Context(), orderBy, orderDir, period, page, limit)
 			if err != nil {
-				databaseError(w, err)
-				return
+				return err
 			}
 
 			total, err := provider.ProfileCount(r.Context())
 			if err != nil {
-				databaseError(w, err)
-				return
+				return err
 			}
 
-			profilesCache = ProfilesCache{
+			profilesCache := ProfilesCache{
 				Profiles:  profiles,
 				Total:     total,
 				CreatedAt: time.Now(),
 			}
 
-			cache.SetDefault(cacheKey, profilesCache)
-		}
+			return profilesCache
+		})
 
-		data := profilesCache.(ProfilesCache)
+		data, castOK := profilesCache.(ProfilesCache)
+		if !castOK {
+			databaseError(w, profilesCache.(error))
+			return
+		}
 
 		next := ""
 		prev := ""
 
 		if page != 1 {
-			prev = fmt.Sprintf("%s/profiles?limit=%d&page=%d&orderBy=%s&orderDir=%s", os.Getenv("APP_API_URL"), limit, page-1, orderBy, orderDir.Stringer())
+			prev = fmt.Sprintf("%s/profiles?limit=%d&page=%d&orderBy=%s&orderDir=%s&period=%s", os.Getenv("APP_API_URL"), limit, page-1, orderBy, orderDir.Stringer(), period.URLString())
 		}
 
 		if page*limit < data.Total {
-			next = fmt.Sprintf("%s/profiles?limit=%d&page=%d&orderBy=%s&orderDir=%s", os.Getenv("APP_API_URL"), limit, page+1, orderBy, orderDir.Stringer())
+			next = fmt.Sprintf("%s/profiles?limit=%d&page=%d&orderBy=%s&orderDir=%s&period=%s", os.Getenv("APP_API_URL"), limit, page+1, orderBy, orderDir.Stringer(), period.URLString())
 		}
 
 		// NOTE(Pedro): To calculate the correct position for the records
 		// when in asc order
 		if orderDir == database.OrderByASC {
 			for i := range data.Profiles {
-				data.Profiles[i].Position = (data.Total+1) - data.Profiles[i].Position
+				data.Profiles[i].Position = (data.Total + 1) - data.Profiles[i].Position
 			}
 		}
 
 		pagination(w, data.Profiles, 200, PaginationMeta{
 			Prev:     prev,
-			Current:  fmt.Sprintf("%s/profiles?limit=%d&page=%d&orderBy=%s&orderDir=%s", os.Getenv("APP_API_URL"), limit, page, orderBy, orderDir.Stringer()),
+			Current:  fmt.Sprintf("%s/profiles?limit=%d&page=%d&orderBy=%s&orderDir=%s&period=%s", os.Getenv("APP_API_URL"), limit, page, orderBy, orderDir.Stringer(), period.URLString()),
 			Next:     next,
 			Total:    data.Total,
 			CachedAt: data.CreatedAt,

@@ -3,14 +3,13 @@ package api
 import (
 	"compress/flate"
 	"net/http"
-	"time"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/cors"
-	"github.com/patrickmn/go-cache"
 
 	"github.com/crossworth/cartola-web-admin/api/handle"
+	"github.com/crossworth/cartola-web-admin/cache"
 	"github.com/crossworth/cartola-web-admin/database"
 	"github.com/crossworth/cartola-web-admin/vk"
 )
@@ -36,7 +35,7 @@ func NewServer(vk *vk.VKClient, db *database.PostgreSQL) *Server {
 		router: chi.NewRouter(),
 		vk:     vk,
 		db:     db,
-		cache:  cache.New(5*time.Hour, 1*time.Hour),
+		cache:  cache.NewCache(),
 	}
 
 	s.router.Use(middleware.RequestID)
