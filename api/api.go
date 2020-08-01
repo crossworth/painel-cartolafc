@@ -64,8 +64,8 @@ func NewServer(vk *vk.VKClient, db *database.PostgreSQL) *Server {
 
 		r.Get("/profiles", handle.Profiles(s.db, s.cache))
 
-		r.Get("/topics/{profile}", handle.TopicsByID(s.db))
-		r.Get("/comments/{profile}", handle.CommentsByID(s.db))
+		r.Get("/topics/{profile}", handle.TopicsByProfileID(s.db))
+		r.Get("/comments/{profile}", handle.CommentsByProfileID(s.db))
 	})
 
 	return s

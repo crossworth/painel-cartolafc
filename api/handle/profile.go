@@ -73,7 +73,6 @@ func ProfileLinkToID(provider ScreeNameProvider) func(w http.ResponseWriter, r *
 
 type ProfileByIDProvider interface {
 	ProfileByID(context context.Context, id int) (model.Profile, error)
-	ProfileHistoryByID(context context.Context, id int) ([]model.ProfileNames, error)
 }
 
 func ProfileByID(provider ProfileByIDProvider) func(w http.ResponseWriter, r *http.Request) {
@@ -95,7 +94,11 @@ func ProfileByID(provider ProfileByIDProvider) func(w http.ResponseWriter, r *ht
 	}
 }
 
-func ProfileHistoryByID(provider ProfileByIDProvider) func(w http.ResponseWriter, r *http.Request) {
+type ProfileHistoryProvider interface {
+	ProfileHistoryByProfileID(context context.Context, id int) ([]model.ProfileNames, error)
+}
+
+func ProfileHistoryByID(provider ProfileHistoryProvider) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := util.ToInt(chi.URLParam(r, "profile"))
 
@@ -104,7 +107,7 @@ func ProfileHistoryByID(provider ProfileByIDProvider) func(w http.ResponseWriter
 			return
 		}
 
-		profileHistory, err := provider.ProfileHistoryByID(r.Context(), id)
+		profileHistory, err := provider.ProfileHistoryByProfileID(r.Context(), id)
 		if err != nil {
 			databaseError(w, err)
 			return
@@ -114,13 +117,13 @@ func ProfileHistoryByID(provider ProfileByIDProvider) func(w http.ResponseWriter
 	}
 }
 
-type ProfileTopicProvider interface {
-	TopicsByID(context context.Context, id int, before int, limit int) ([]model.Topic, error)
-	TopicsCountByID(context context.Context, id int) (int, error)
-	PaginationTimestampTopicByID(context context.Context, id int, before int, limit int) (database.PaginationTimestamps, error)
+type ProfileTopicsProvider interface {
+	TopicsByProfileID(context context.Context, id int, before int, limit int) ([]model.Topic, error)
+	TopicsCountByProfileID(context context.Context, id int) (int, error)
+	TopicsPaginationTimestampByProfileID(context context.Context, id int, before int, limit int) (database.PaginationTimestamps, error)
 }
 
-func TopicsByID(provider ProfileTopicProvider) func(w http.ResponseWriter, r *http.Request) {
+func TopicsByProfileID(provider ProfileTopicsProvider) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := util.ToInt(chi.URLParam(r, "profile"))
 		before := util.ToIntWithDefault(r.URL.Query().Get("before"), int(time.Now().Unix()))
@@ -131,19 +134,19 @@ func TopicsByID(provider ProfileTopicProvider) func(w http.ResponseWriter, r *ht
 			return
 		}
 
-		total, err := provider.TopicsCountByID(r.Context(), id)
+		total, err := provider.TopicsCountByProfileID(r.Context(), id)
 		if err != nil {
 			databaseError(w, err)
 			return
 		}
 
-		topics, err := provider.TopicsByID(r.Context(), id, before, limit)
+		topics, err := provider.TopicsByProfileID(r.Context(), id, before, limit)
 		if err != nil {
 			databaseError(w, err)
 			return
 		}
 
-		paginationTimestamps, err := provider.PaginationTimestampTopicByID(r.Context(), id, before, limit)
+		paginationTimestamps, err := provider.TopicsPaginationTimestampByProfileID(r.Context(), id, before, limit)
 		if err != nil {
 			databaseError(w, err)
 			return
@@ -172,13 +175,13 @@ func TopicsByID(provider ProfileTopicProvider) func(w http.ResponseWriter, r *ht
 	}
 }
 
-type ProfileCommentProvider interface {
-	CommentsByID(context context.Context, id int, before int, limit int) ([]model.Comment, error)
-	CommentsCountByID(context context.Context, id int) (int, error)
-	PaginationTimestampCommentByID(context context.Context, id int, before int, limit int) (database.PaginationTimestamps, error)
+type ProfileCommentsProvider interface {
+	CommentsByProfileID(context context.Context, id int, before int, limit int) ([]model.Comment, error)
+	CommentsCountByProfileID(context context.Context, id int) (int, error)
+	CommentsPaginationTimestampByProfileID(context context.Context, id int, before int, limit int) (database.PaginationTimestamps, error)
 }
 
-func CommentsByID(provider ProfileCommentProvider) func(w http.ResponseWriter, r *http.Request) {
+func CommentsByProfileID(provider ProfileCommentsProvider) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := util.ToInt(chi.URLParam(r, "profile"))
 		before := util.ToIntWithDefault(r.URL.Query().Get("before"), int(time.Now().Unix()))
@@ -189,19 +192,19 @@ func CommentsByID(provider ProfileCommentProvider) func(w http.ResponseWriter, r
 			return
 		}
 
-		total, err := provider.CommentsCountByID(r.Context(), id)
+		total, err := provider.CommentsCountByProfileID(r.Context(), id)
 		if err != nil {
 			databaseError(w, err)
 			return
 		}
 
-		comments, err := provider.CommentsByID(r.Context(), id, before, limit)
+		comments, err := provider.CommentsByProfileID(r.Context(), id, before, limit)
 		if err != nil {
 			databaseError(w, err)
 			return
 		}
 
-		paginationTimestamps, err := provider.PaginationTimestampCommentByID(r.Context(), id, before, limit)
+		paginationTimestamps, err := provider.CommentsPaginationTimestampByProfileID(r.Context(), id, before, limit)
 		if err != nil {
 			databaseError(w, err)
 			return
@@ -230,9 +233,9 @@ func CommentsByID(provider ProfileCommentProvider) func(w http.ResponseWriter, r
 	}
 }
 
-type ProfileStatsProvider interface {
-	ProfileStatsByID(context context.Context, id int) (database.ProfileWithStats, error)
-	ProfileHistoryByID(context context.Context, id int) ([]model.ProfileNames, error)
+type ProfileStatsAndHistoryProvider interface {
+	ProfileStatsByProfileID(context context.Context, id int) (database.ProfileWithStats, error)
+	ProfileHistoryProvider
 }
 
 type ProfileStatsResponse struct {
@@ -242,7 +245,7 @@ type ProfileStatsResponse struct {
 	TotalProfileChanges int `json:"total_profile_changes"`
 }
 
-func ProfileStatsByID(provider ProfileStatsProvider) func(w http.ResponseWriter, r *http.Request) {
+func ProfileStatsByID(provider ProfileStatsAndHistoryProvider) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := util.ToInt(chi.URLParam(r, "profile"))
 
@@ -251,13 +254,13 @@ func ProfileStatsByID(provider ProfileStatsProvider) func(w http.ResponseWriter,
 			return
 		}
 
-		stats, err := provider.ProfileStatsByID(r.Context(), id)
+		stats, err := provider.ProfileStatsByProfileID(r.Context(), id)
 		if err != nil {
 			databaseError(w, err)
 			return
 		}
 
-		totalProfileChanges, err := provider.ProfileHistoryByID(r.Context(), id)
+		totalProfileChanges, err := provider.ProfileHistoryByProfileID(r.Context(), id)
 		if err != nil {
 			databaseError(w, err)
 			return

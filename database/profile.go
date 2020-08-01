@@ -26,7 +26,7 @@ func (d *PostgreSQL) ProfileByID(context context.Context, id int) (model.Profile
 	return profile, err
 }
 
-func (d *PostgreSQL) TopicsByID(context context.Context, id int, before int, limit int) ([]model.Topic, error) {
+func (d *PostgreSQL) TopicsByProfileID(context context.Context, id int, before int, limit int) ([]model.Topic, error) {
 	var topics []model.Topic
 
 	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
@@ -42,7 +42,7 @@ func (d *PostgreSQL) TopicsByID(context context.Context, id int, before int, lim
 	return topics, err
 }
 
-func (d *PostgreSQL) PaginationTimestampTopicByID(context context.Context, id int, before int, limit int) (PaginationTimestamps, error) {
+func (d *PostgreSQL) TopicsPaginationTimestampByProfileID(context context.Context, id int, before int, limit int) (PaginationTimestamps, error) {
 	var timestamps PaginationTimestamps
 
 	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
@@ -56,7 +56,7 @@ func (d *PostgreSQL) PaginationTimestampTopicByID(context context.Context, id in
 	return timestamps, err
 }
 
-func (d *PostgreSQL) TopicsCountByID(context context.Context, id int) (int, error) {
+func (d *PostgreSQL) TopicsCountByProfileID(context context.Context, id int) (int, error) {
 	var total int
 
 	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
@@ -66,7 +66,7 @@ func (d *PostgreSQL) TopicsCountByID(context context.Context, id int) (int, erro
 	return total, err
 }
 
-func (d *PostgreSQL) CommentsByID(context context.Context, id int, before int, limit int) ([]model.Comment, error) {
+func (d *PostgreSQL) CommentsByProfileID(context context.Context, id int, before int, limit int) ([]model.Comment, error) {
 	var comments []model.Comment
 
 	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
@@ -82,7 +82,7 @@ func (d *PostgreSQL) CommentsByID(context context.Context, id int, before int, l
 	return comments, err
 }
 
-func (d *PostgreSQL) CommentsCountByID(context context.Context, id int) (int, error) {
+func (d *PostgreSQL) CommentsCountByProfileID(context context.Context, id int) (int, error) {
 	var total int
 
 	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
@@ -92,7 +92,7 @@ func (d *PostgreSQL) CommentsCountByID(context context.Context, id int) (int, er
 	return total, err
 }
 
-func (d *PostgreSQL) LikesCountByID(context context.Context, id int) (int, error) {
+func (d *PostgreSQL) LikesCountByProfileID(context context.Context, id int) (int, error) {
 	var total int
 
 	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
@@ -102,7 +102,7 @@ func (d *PostgreSQL) LikesCountByID(context context.Context, id int) (int, error
 	return total, err
 }
 
-func (d *PostgreSQL) PaginationTimestampCommentByID(context context.Context, id int, before int, limit int) (PaginationTimestamps, error) {
+func (d *PostgreSQL) CommentsPaginationTimestampByProfileID(context context.Context, id int, before int, limit int) (PaginationTimestamps, error) {
 	var timestamps PaginationTimestamps
 
 	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
@@ -116,7 +116,7 @@ func (d *PostgreSQL) PaginationTimestampCommentByID(context context.Context, id 
 	return timestamps, err
 }
 
-func (d *PostgreSQL) ProfileHistoryByID(context context.Context, id int) ([]model.ProfileNames, error) {
+func (d *PostgreSQL) ProfileHistoryByProfileID(context context.Context, id int) ([]model.ProfileNames, error) {
 	var profileHistory []model.ProfileNames
 
 	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
@@ -154,7 +154,7 @@ func (d *PostgreSQL) SearchProfileName(context context.Context, text string) ([]
 	return profiles, err
 }
 
-func (d *PostgreSQL) ProfileStatsByID(context context.Context, id int) (ProfileWithStats, error) {
+func (d *PostgreSQL) ProfileStatsByProfileID(context context.Context, id int) (ProfileWithStats, error) {
 	var profile ProfileWithStats
 
 	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
