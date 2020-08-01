@@ -46,7 +46,8 @@ const Profile = (props) => {
           {
             user.first_name ?
               <div><a href={`https://vk.com/id${user.id}`} target="_blank"
-                      rel="noopener noreferrer">{user.first_name} {user.last_name}</a> (@{normalizeScreenName(user.screen_name, user.id)}) -
+                      rel="noopener noreferrer">{user.first_name} {user.last_name}</a> (@{normalizeScreenName(user.screen_name, user.id)})
+                -
                 ID {user.id}
               </div>
               : <div>Carregando dados</div>
@@ -82,16 +83,16 @@ const Profile = (props) => {
         <Divider/>
 
         <Row gutter={16}>
-          <Col span={6}>
+          <Col md={6}>
             <Statistic title="Tópicos" value={userStats.total_topics ? userStats.total_topics : 0}/>
           </Col>
-          <Col span={6}>
+          <Col md={6}>
             <Statistic title="Comentários" value={userStats.total_comments ? userStats.total_comments : 0}/>
           </Col>
-          <Col span={6}>
+          <Col md={6}>
             <Statistic title="Likes" value={userStats.total_likes ? userStats.total_likes : 0}/>
           </Col>
-          <Col span={6}>
+          <Col md={6}>
             <Statistic title="Alterações do perfil"
                        value={userStats.total_profile_changes ? userStats.total_profile_changes : 0}/>
           </Col>
@@ -99,11 +100,11 @@ const Profile = (props) => {
 
         <Divider/>
 
-        <Button type="primary" rel="noopener noreferrer"
+        <Button style={{ marginRight: 10, marginBottom: 5, marginTop: 5 }} type="primary" rel="noopener noreferrer"
                 href={`/perfil/${user.id}/topicos`}>
           Tópicos
         </Button>
-        <Button style={{ marginLeft: 10 }} type="primary" rel="noopener noreferrer"
+        <Button type="primary" rel="noopener noreferrer"
                 href={`/perfil/${user.id}/comentarios`}>
           Comentários
         </Button>

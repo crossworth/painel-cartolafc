@@ -37,23 +37,23 @@ const autoCompleteProfileNames = name => {
 }
 
 const getProfileInfo = id => {
-  return api.get(`/profile/${id}`)
+  return api.get(`/profiles/${id}`)
 }
 
 const getProfileStats = id => {
-  return api.get(`/profile/${id}/stats`)
+  return api.get(`/profiles/${id}/stats`)
 }
 
 const getProfileHistory = id => {
-  return api.get(`/profile/${id}/history`)
+  return api.get(`/profiles/${id}/history`)
 }
 
 const getTopicsFromProfile = (id, before = unixNow(), limit = 10) => {
-  return api.get(`/topics/${id}?before=${before}&limit=${limit}`)
+  return api.get(`/profiles/${id}/topics?before=${before}&limit=${limit}`)
 }
 
 const getCommentsFromProfile = (id, before = unixNow(), limit = 10) => {
-  return api.get(`/comments/${id}?before=${before}&limit=${limit}`)
+  return api.get(`/profiles/${id}/comments?before=${before}&limit=${limit}`)
 }
 
 const getProfiles = (page, limit, orderBy = 'topics', orderDir = 'desc', period = 'all') => {

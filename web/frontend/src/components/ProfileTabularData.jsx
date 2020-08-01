@@ -141,6 +141,7 @@ const ProfileTabularData = (props) => {
           dataSource={tableData}
           columns={props.columns}
           rowKey='id'
+          scroll={{ x: true }}
           pagination={pagination}
           onChange={handleTableChange}
         />

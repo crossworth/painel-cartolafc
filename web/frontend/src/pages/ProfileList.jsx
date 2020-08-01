@@ -229,6 +229,7 @@ const ProfileList = (props) => {
         dataSource={tableData}
         columns={columns}
         rowKey='id'
+        scroll={{ x: true }}
         pagination={pagination}
         onChange={handleTableChange}
       />
