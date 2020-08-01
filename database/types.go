@@ -51,3 +51,25 @@ type ProfileWithStats struct {
 	Likes    int `json:"likes"`
 	Position int `json:"position,omitempty"`
 }
+
+type CommentWithProfileAndAttachment struct {
+	model.Comment
+	model.Profile
+	Attachments []model.Attachment `json:"attachments"`
+}
+
+type PollWithAnswers struct {
+	model.Poll
+	Answers []model.PollAnswer `json:"answers"`
+}
+
+type TopicWithPoll struct {
+	model.Topic
+	PollWithAnswers
+}
+
+type TopicWithPollAndCommentsCount struct {
+	model.Topic
+	PollWithAnswers
+	CommentsCount int `json:"comments_count"`
+}
