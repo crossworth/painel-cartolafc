@@ -19,7 +19,7 @@ func (d *PostgreSQL) Topics(context context.Context, before int, limit int) ([]T
 			tx.MustQueryRowContext(context, `SELECT * FROM polls WHERE topic_id = $1`, t.Topic.ID).MustScans(&t.Poll)
 			tx.MustQueryRowContext(context, `SELECT COUNT(*) FROM comments WHERE topic_id = $1`, t.Topic.ID).MustScans(&t.CommentsCount)
 
-			tx.MustQueryContext(context, `SELECT * FROM poll_answers WHERE poll_id = $1`, topic.Poll.ID).Each(func(rows *sx.Rows) {
+			tx.MustQueryContext(context, `SELECT * FROM poll_answers WHERE poll_id = $1`, t.Poll.ID).Each(func(rows *sx.Rows) {
 				var pa model.PollAnswer
 				rows.MustScans(&pa)
 				t.PollWithAnswers.Answers = append(t.PollWithAnswers.Answers, pa)
@@ -61,7 +61,7 @@ func (d *PostgreSQL) TopicByID(context context.Context, id int) (TopicWithPoll, 
 
 	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
 		tx.MustQueryRowContext(context, `SELECT * FROM topics WHERE id = $1`, id).MustScans(&topic.Topic)
-		tx.MustQueryRowContext(context, `SELECT * FROM polls WHERE topic_id = $1`, t.ID).MustScans(&topic.Poll)
+		tx.MustQueryRowContext(context, `SELECT * FROM polls WHERE topic_id = $1`, topic.Topic.ID).MustScans(&topic.Poll)
 
 		tx.MustQueryContext(context, `SELECT * FROM poll_answers WHERE poll_id = $1`, topic.Poll.ID).Each(func(rows *sx.Rows) {
 			var pa model.PollAnswer
