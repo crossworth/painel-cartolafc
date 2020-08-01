@@ -10,3 +10,9 @@
 
 30 Julho
 - Adicionado suporte completo ao período na página de membros
+
+1 Agosto
+- Implementação inicial dos endpoints de tópicos
+- Melhorado rotas da API
+- Adicionado suporte a scroll na tabela para dispositivos com telas pequenas
+- Implementado trava para evitar duas requests criarem o mesmo cache de uma rota de API lenta
