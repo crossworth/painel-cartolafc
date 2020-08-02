@@ -70,6 +70,6 @@ type TopicWithPoll struct {
 
 type TopicWithPollAndCommentsCount struct {
 	model.Topic
-	PollWithAnswers
-	CommentsCount int `json:"comments_count"`
+	Poll          *PollWithAnswers `json:"poll,omitempty"`
+	CommentsCount int              `json:"comments_count"`
 }

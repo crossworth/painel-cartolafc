@@ -5,10 +5,11 @@ import (
 )
 
 type Poll struct {
-	ID          int
-	Question    string
-	Multiple    bool
-	EndDate     time.Time
-	Closed      bool
-	TopicID     int
+	ID       int
+	Question string
+	Votes    int
+	Multiple bool
+	EndDate  time.Time
+	Closed   bool
+	TopicID  int
 }

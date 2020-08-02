@@ -384,7 +384,7 @@ func Profiles(provider ProfilesProvider, cache *cache.Cache) func(w http.Respons
 			Current:  fmt.Sprintf("%s/profiles?limit=%d&page=%d&orderBy=%s&orderDir=%s&period=%s", os.Getenv("APP_API_URL"), limit, page, orderBy, orderDir.Stringer(), period.URLString()),
 			Next:     next,
 			Total:    data.Total,
-			CachedAt: data.CreatedAt,
+			CachedAt: &data.CreatedAt,
 		})
 	}
 }

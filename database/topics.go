@@ -15,18 +15,33 @@ func (d *PostgreSQL) Topics(context context.Context, before int, limit int) ([]T
 		var t TopicWithPollAndCommentsCount
 		tx.MustQueryContext(context, `SELECT * FROM topics WHERE created_at <= $1 ORDER BY created_at DESC LIMIT $2`, before, limit).Each(func(rows *sx.Rows) {
 			rows.MustScans(&t.Topic)
-
-			tx.MustQueryRowContext(context, `SELECT * FROM polls WHERE topic_id = $1`, t.Topic.ID).MustScans(&t.Poll)
-			tx.MustQueryRowContext(context, `SELECT COUNT(*) FROM comments WHERE topic_id = $1`, t.Topic.ID).MustScans(&t.CommentsCount)
-
-			tx.MustQueryContext(context, `SELECT * FROM poll_answers WHERE poll_id = $1`, t.Poll.ID).Each(func(rows *sx.Rows) {
-				var pa model.PollAnswer
-				rows.MustScans(&pa)
-				t.PollWithAnswers.Answers = append(t.PollWithAnswers.Answers, pa)
-			})
-
 			topics = append(topics, t)
 		})
+
+		var topidsIds []int
+
+		for i := range topics {
+			topidsIds = append(topidsIds, topics[i].ID)
+			tx.MustQueryRowContext(context, `SELECT COUNT(*) FROM comments WHERE topic_id = $1`, topics[i].ID).MustScan(&topics[i].CommentsCount)
+		}
+
+		// TODO(Pedro): Add poll to the result struct using where in
+		// tx.MustQueryRowContext(context, `SELECT * FROM polls WHERE topic_id = $1`, t.Topic.ID).MustScan(
+		// 	&t.Poll.ID,
+		// 	&t.Poll.Question,
+		// 	&t.Poll.Votes,
+		// 	&t.Poll.Multiple,
+		// 	&t.Poll.EndDate,
+		// 	&t.Poll.Closed,
+		// 	&t.Poll.TopicID,
+		// )
+
+		// //
+		// // tx.MustQueryContext(context, `SELECT * FROM poll_answers WHERE poll_id = $1`, t.Poll.ID).Each(func(rows *sx.Rows) {
+		// // 	var pa model.PollAnswer
+		// // 	rows.MustScans(&pa)
+		// // 	t.PollWithAnswers.Answers = append(t.PollWithAnswers.Answers, pa)
+		// // })
 	})
 
 	return topics, err
