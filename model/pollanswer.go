@@ -1,9 +1,9 @@
 package model
 
 type PollAnswer struct {
-	ID     int
-	Text   string
-	Votes  int
-	Rate   float32
-	PollID int
+	ID     int     `json:"id"`
+	Text   string  `json:"text"`
+	Votes  int     `json:"votes"`
+	Rate   float32 `json:"rate"`
+	PollID int     `json:"poll_id"`
 }

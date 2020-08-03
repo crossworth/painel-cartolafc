@@ -1,6 +1,6 @@
 package model
 
 type Attachment struct {
-	CommentID int
-	Content   string
+	Content   string `json:"content"`
+	CommentID int    `json:"comment_id"`
 }

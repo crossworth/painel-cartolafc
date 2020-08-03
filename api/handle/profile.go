@@ -156,10 +156,10 @@ func TopicsByProfileID(provider ProfileTopicsProvider) func(w http.ResponseWrite
 		prev := ""
 
 		if paginationTimestamps.Next != 0 {
-			next = fmt.Sprintf("%s/topics/%d?limit=%d&before=%d", os.Getenv("APP_API_URL"), id, limit, paginationTimestamps.Next)
+			next = fmt.Sprintf("%s/profiles/%d/topics?limit=%d&before=%d", os.Getenv("APP_API_URL"), id, limit, paginationTimestamps.Next)
 		}
 		if paginationTimestamps.Prev != 0 {
-			prev = fmt.Sprintf("%s/topics/%d?limit=%d&before=%d", os.Getenv("APP_API_URL"), id, limit, paginationTimestamps.Prev)
+			prev = fmt.Sprintf("%s/profiles/%d/topics?limit=%d&before=%d", os.Getenv("APP_API_URL"), id, limit, paginationTimestamps.Prev)
 		}
 
 		if len(topics) != 0 {
@@ -168,7 +168,7 @@ func TopicsByProfileID(provider ProfileTopicsProvider) func(w http.ResponseWrite
 
 		pagination(w, topics, 200, PaginationMeta{
 			Prev:    prev,
-			Current: fmt.Sprintf("%s/topics/%d?limit=%d&before=%d", os.Getenv("APP_API_URL"), id, limit, before),
+			Current: fmt.Sprintf("%s/profiles/%d/topics?limit=%d&before=%d", os.Getenv("APP_API_URL"), id, limit, before),
 			Next:    next,
 			Total:   total,
 		})
@@ -214,10 +214,10 @@ func CommentsByProfileID(provider ProfileCommentsProvider) func(w http.ResponseW
 		prev := ""
 
 		if paginationTimestamps.Next != 0 {
-			next = fmt.Sprintf("%s/comments/%d?limit=%d&before=%d", os.Getenv("APP_API_URL"), id, limit, paginationTimestamps.Next)
+			next = fmt.Sprintf("%s/profiles/%d/comments?limit=%d&before=%d", os.Getenv("APP_API_URL"), id, limit, paginationTimestamps.Next)
 		}
 		if paginationTimestamps.Prev != 0 {
-			prev = fmt.Sprintf("%s/comments/%d?limit=%d&before=%d", os.Getenv("APP_API_URL"), id, limit, paginationTimestamps.Prev)
+			prev = fmt.Sprintf("%s/profiles/%d/comments?limit=%d&before=%d", os.Getenv("APP_API_URL"), id, limit, paginationTimestamps.Prev)
 		}
 
 		if len(comments) != 0 {
@@ -226,7 +226,7 @@ func CommentsByProfileID(provider ProfileCommentsProvider) func(w http.ResponseW
 
 		pagination(w, comments, 200, PaginationMeta{
 			Prev:    prev,
-			Current: fmt.Sprintf("%s/comments/%d?limit=%d&before=%d", os.Getenv("APP_API_URL"), id, limit, before),
+			Current: fmt.Sprintf("%s/profiles/%d/comments?limit=%d&before=%d", os.Getenv("APP_API_URL"), id, limit, before),
 			Next:    next,
 			Total:   total,
 		})

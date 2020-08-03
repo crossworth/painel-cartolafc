@@ -54,18 +54,13 @@ type ProfileWithStats struct {
 
 type CommentWithProfileAndAttachment struct {
 	model.Comment
-	model.Profile
+	Profile     model.Profile      `json:"profile"`
 	Attachments []model.Attachment `json:"attachments"`
 }
 
 type PollWithAnswers struct {
 	model.Poll
 	Answers []model.PollAnswer `json:"answers"`
-}
-
-type TopicWithPoll struct {
-	model.Topic
-	PollWithAnswers
 }
 
 type TopicWithPollAndCommentsCount struct {

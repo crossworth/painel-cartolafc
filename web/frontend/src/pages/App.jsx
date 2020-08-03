@@ -80,10 +80,48 @@ export default () => {
                 - Busca por título de tópico, conteúdo comentário, data, membro, número de comentários<br/>
                 - Reconstituir tópicos apagados (recriar uma visualização de um tópico apagado)<br/>
                 - Opções de exportar dados para Excel, CSV<br/>
-                - Verificações se tópico foi apagado<br/>
+                - <s>Verificações se tópico foi apagado</s> Adicionar tabela de metadados de tópico com
+                se-deletado/número-comentários<br/>
                 - Verificações se membro foi/está banido<br/>
-                - Na lista de membros, adicionar filtros por períodos (membro com mais tópicos na semana, mês e
-                geral)<br/>
+                - <s>Na lista de membros, adicionar filtros por períodos (membro com mais tópicos na semana, mês e
+                geral)</s><br/>
+                - Melhorar performance da rota de status de membros (atualmente leva ~6s) (adicionar tabela de
+                metadados?)<br/>
+                - Melhorar performance da rota de tópicos (contagem de comentários leva muito tempo +1m)<br/>
+                - Adicionar login com VK e remover BasicAuth<br/>
+                - Separar conteúdo membro/administrador<br/>
+                - Melhorar forma de contar conteúdo no banco e dados (atualmente é o que demora mais nas queries)<br/>
+                - Adicionar soft-delete<br/>
+
+
+                <br/><br/><br/><br/><br/>
+                <h3>ChangeLog</h3>
+                <pre>
+                  29 Julho
+                - Melhorado handling de errors de API
+                - Ajustado comportamento do menu selecionado
+                - Ajustado problema que causava resolver membros travar carregando
+                - Ajustado problema em "quotes" com UTF-8
+                - Adicionado função para lembrar a quantidade por páginas selecionado
+                - Adicionar informações de data de cache da página de membros
+                - Ajustado botões de ordenação da página de membros
+                - Adicionado suporte inicial de período na página de membros
+
+                30 Julho
+                - Adicionado suporte completo ao período na página de membros
+
+                1 Agosto
+                - Implementação inicial dos endpoints de tópicos
+                - Melhorado rotas da API
+                - Adicionado suporte a scroll na tabela para dispositivos com telas pequenas
+                - Implementado trava para evitar duas requests criarem o mesmo cache de uma rota de API lenta
+
+                2 Agosto
+                - Iniciado implementação de rotas de tópicos
+
+                3 Agosto
+                - Finalizado implementação de rotas de tópicos (porém performance ainda é baixa)
+                </pre>
               </Route>
 
               <Route path='/resolver/:name?' render={(props) => <ProfileResolve {...props}/>}>
