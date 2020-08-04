@@ -165,10 +165,10 @@ func (d *PostgreSQL) ProfileStatsByProfileID(context context.Context, id int) (P
     COALESCE(l.total, 0)::INTEGER as likes
 FROM profiles p
     LEFT JOIN (
-        SELECT created_by, COUNT(id) as total FROM topics GROUP BY created_by
+        SELECT created_by, COUNT(created_by) as total FROM topics GROUP BY created_by
     ) as t ON t.created_by = p.id
     LEFT JOIN (
-        SELECT from_id, COUNT(id) as total FROM comments GROUP BY from_id
+        SELECT from_id, COUNT(from_id) as total FROM comments GROUP BY from_id
     ) as c ON c.from_id = p.id
     LEFT JOIN (
         SELECT from_id, SUM(likes) as total FROM comments GROUP BY from_id
@@ -213,10 +213,10 @@ func (d *PostgreSQL) ProfileWithStats(context context.Context, orderBy string, o
     COALESCE(l.total, 0)::INTEGER as likes
 FROM profiles p
     LEFT JOIN (
-        SELECT created_by, COUNT(id) as total FROM topics ` + periodTopics + ` GROUP BY created_by
+        SELECT created_by, COUNT(created_by) as total FROM topics ` + periodTopics + ` GROUP BY created_by
     ) as t ON t.created_by = p.id
     LEFT JOIN (
-        SELECT from_id, COUNT(id) as total FROM comments ` + periodComments + ` GROUP BY from_id
+        SELECT from_id, COUNT(from_id) as total FROM comments ` + periodComments + ` GROUP BY from_id
     ) as c ON c.from_id = p.id
     LEFT JOIN (
         SELECT from_id, SUM(likes) as total FROM comments ` + periodComments + ` GROUP BY from_id

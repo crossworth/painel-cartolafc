@@ -92,7 +92,8 @@ export default () => {
                 - Separar conteúdo membro/administrador<br/>
                 - Melhorar forma de contar conteúdo no banco e dados (atualmente é o que demora mais nas queries)<br/>
                 - Adicionar soft-delete<br/>
-
+                - Adicionar página de filtros a tópicos (mais comentários geral, mês, semana)<br/>
+                - Link de tópico aleatório<br/>
 
                 <br/><br/><br/><br/><br/>
                 <h3>ChangeLog</h3>
@@ -121,6 +122,10 @@ export default () => {
 
                 3 Agosto
                 - Finalizado implementação de rotas de tópicos (porém performance ainda é baixa)
+
+                4 Agosto
+                - Melhorado performance rotas de tópicos e membros
+                - Finalizado implementação de rotas de tópicos (enquetes e perfils)
                 </pre>
               </Route>
 

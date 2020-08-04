@@ -20,31 +20,50 @@ func (d *PostgreSQL) Topics(context context.Context, before int, limit int) ([]T
 			topics = append(topics, t)
 		})
 
-		var topidsIds []int
+		var topicIDs []string
 
 		for i := range topics {
-			topidsIds = append(topidsIds, topics[i].ID)
-			// TODO(Pedro): Slow count, fix it
+			topicIDs = append(topicIDs, strconv.Itoa(topics[i].ID))
 			tx.MustQueryRowContext(context, `SELECT COUNT(*) FROM comments WHERE topic_id = $1`, topics[i].ID).MustScan(&topics[i].CommentsCount)
 		}
 
-		// TODO(Pedro): Add poll to the result struct using where in
-		// tx.MustQueryRowContext(context, `SELECT * FROM polls WHERE topic_id = $1`, t.Topic.ID).MustScan(
-		// 	&t.Poll.ID,
-		// 	&t.Poll.Question,
-		// 	&t.Poll.Votes,
-		// 	&t.Poll.Multiple,
-		// 	&t.Poll.EndDate,
-		// 	&t.Poll.Closed,
-		// 	&t.Poll.TopicID,
-		// )
+		if len(topicIDs) == 0 {
+			return
+		}
 
-		// //
-		// // tx.MustQueryContext(context, `SELECT * FROM poll_answers WHERE poll_id = $1`, t.Poll.ID).Each(func(rows *sx.Rows) {
-		// // 	var pa model.PollAnswer
-		// // 	rows.MustScans(&pa)
-		// // 	t.PollWithAnswers.Answers = append(t.PollWithAnswers.Answers, pa)
-		// // })
+		var pollsIDs []string
+
+		pollsQuery := `SELECT * FROM polls WHERE topic_id IN (` + strings.Join(topicIDs, ",") + `)`
+		tx.MustQueryContext(context, pollsQuery).Each(func(rows *sx.Rows) {
+			var p model.Poll
+			rows.MustScans(&p)
+
+			pollsIDs = append(pollsIDs, strconv.Itoa(p.ID))
+
+			for i := range topics {
+				if topics[i].ID == p.TopicID {
+					topics[i].Poll = &PollWithAnswers{
+						Poll: p,
+					}
+				}
+			}
+		})
+
+		if len(pollsIDs) == 0 {
+			return
+		}
+
+		pollAnswersQuery := `SELECT * FROM poll_answers WHERE poll_id IN (` + strings.Join(pollsIDs, ",") + `)`
+		tx.MustQueryContext(context, pollAnswersQuery).Each(func(rows *sx.Rows) {
+			var pa model.PollAnswer
+			rows.MustScans(&pa)
+
+			for i := range topics {
+				if topics[i].Poll != nil && topics[i].Poll.ID == pa.PollID {
+					topics[i].Poll.Answers = append(topics[i].Poll.Answers, pa)
+				}
+			}
+		})
 	})
 
 	return topics, err
@@ -79,21 +98,28 @@ func (d *PostgreSQL) TopicByID(context context.Context, id int) (TopicWithPollAn
 
 	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
 		tx.MustQueryRowContext(context, `SELECT * FROM topics WHERE id = $1`, id).MustScans(&topic.Topic)
-		tx.MustQueryRowContext(context, `SELECT COUNT(*) FROM comments WHERE topic_id = $1`, topic.Topic.ID).MustScan(&topic.CommentsCount)
+		tx.MustQueryRowContext(context, `SELECT COUNT(*) FROM comments WHERE topic_id = $1`, id).MustScan(&topic.CommentsCount)
 
-		// TODO(Pedro): fix this
-		// var p model.Poll
-		// tx.MustQueryRowContext(context, `SELECT * FROM polls WHERE topic_id = $1`, topic.Topic.ID).MustScans(&p)
-		// if p.ID != 0 {
-		// 	topic.Poll = new(PollWithAnswers)
-		// 	topic.Poll.Poll = p
-		// }
-		//
-		// tx.MustQueryContext(context, `SELECT * FROM poll_answers WHERE poll_id = $1`, topic.Poll.ID).Each(func(rows *sx.Rows) {
-		// 	var pa model.PollAnswer
-		// 	rows.MustScans(&pa)
-		// 	topic.Poll.Answers = append(topic.Poll.Answers, pa)
-		// })
+		pollsQuery := `SELECT * FROM polls WHERE topic_id = $1`
+		tx.MustQueryContext(context, pollsQuery, id).Each(func(rows *sx.Rows) {
+			var p model.Poll
+			rows.MustScans(&p)
+
+			topic.Poll = &PollWithAnswers{
+				Poll: p,
+			}
+		})
+
+		if topic.Poll == nil {
+			return
+		}
+
+		pollAnswersQuery := `SELECT * FROM poll_answers WHERE poll_id = $1`
+		tx.MustQueryContext(context, pollAnswersQuery, topic.Poll.ID).Each(func(rows *sx.Rows) {
+			var pa model.PollAnswer
+			rows.MustScans(&pa)
+			topic.Poll.Answers = append(topic.Poll.Answers, pa)
+		})
 	})
 
 	return topic, err
@@ -126,12 +152,12 @@ func (d *PostgreSQL) CommentsByTopicID(context context.Context, id int, after in
 			return
 		}
 
-		var commentsIDs []string
+		var profileIDs []string
 		for i := range comments {
-			commentsIDs = append(commentsIDs, strconv.Itoa(comments[i].Comment.ID))
+			profileIDs = append(profileIDs, strconv.Itoa(comments[i].Comment.FromID))
 		}
 
-		queryProfile := `SELECT * FROM profiles WHERE id IN (` + strings.Join(commentsIDs, ",") + `)`
+		queryProfile := `SELECT * FROM profiles WHERE id IN (` + strings.Join(profileIDs, ",") + `)`
 		tx.MustQueryContext(context, queryProfile).Each(func(rows *sx.Rows) {
 			var p model.Profile
 			rows.MustScans(&p)
@@ -142,6 +168,11 @@ func (d *PostgreSQL) CommentsByTopicID(context context.Context, id int, after in
 				}
 			}
 		})
+
+		var commentsIDs []string
+		for i := range comments {
+			commentsIDs = append(commentsIDs, strconv.Itoa(comments[i].Comment.ID))
+		}
 
 		queryAttachments := `SELECT * FROM attachments WHERE comment_id IN (` + strings.Join(commentsIDs, ",") + `)`
 		tx.MustQueryContext(context, queryAttachments).Each(func(rows *sx.Rows) {
