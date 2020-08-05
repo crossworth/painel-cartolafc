@@ -44,6 +44,17 @@ func (p Period) URLString() string {
 	return "all"
 }
 
+type OrderBy string
+
+const (
+	OrderByCreatedAt = OrderBy("created_at")
+	OrderByUpdatedAt = OrderBy("updated_at")
+)
+
+func (o OrderBy) Stringer() string {
+	return string(o)
+}
+
 type ProfileWithStats struct {
 	model.Profile
 	Topics   int `json:"topics"`

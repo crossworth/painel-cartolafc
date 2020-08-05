@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi"
@@ -14,8 +15,8 @@ import (
 )
 
 type TopicsProvider interface {
-	Topics(context context.Context, before int, limit int) ([]database.TopicWithPollAndCommentsCount, error)
-	TopicsPaginationTimestamp(context context.Context, before int, limit int) (database.PaginationTimestamps, error)
+	Topics(context context.Context, before int, limit int, orderBy database.OrderBy) ([]database.TopicWithPollAndCommentsCount, error)
+	TopicsPaginationTimestamp(context context.Context, before int, limit int, orderBy database.OrderBy) (database.PaginationTimestamps, error)
 	TopicsCount(context context.Context) (int, error)
 }
 
@@ -23,6 +24,7 @@ func Topics(provider TopicsProvider) func(w http.ResponseWriter, r *http.Request
 	return func(w http.ResponseWriter, r *http.Request) {
 		before := util.ToIntWithDefault(r.URL.Query().Get("before"), int(time.Now().Unix()))
 		limit := util.ToIntWithDefaultMin(r.URL.Query().Get("limit"), 10)
+		orderByStr := util.StringWithDefault(r.URL.Query().Get("orderBy"), "updated_at")
 
 		total, err := provider.TopicsCount(r.Context())
 		if err != nil {
@@ -30,13 +32,19 @@ func Topics(provider TopicsProvider) func(w http.ResponseWriter, r *http.Request
 			return
 		}
 
-		topics, err := provider.Topics(r.Context(), before, limit)
+		orderBy := database.OrderByUpdatedAt
+
+		if strings.ToLower(orderByStr) == "created_at" {
+			orderBy = database.OrderByCreatedAt
+		}
+
+		topics, err := provider.Topics(r.Context(), before, limit, orderBy)
 		if err != nil {
 			databaseError(w, err)
 			return
 		}
 
-		paginationTimestamps, err := provider.TopicsPaginationTimestamp(r.Context(), before, limit)
+		paginationTimestamps, err := provider.TopicsPaginationTimestamp(r.Context(), before, limit, orderBy)
 		if err != nil {
 			databaseError(w, err)
 			return
@@ -46,10 +54,10 @@ func Topics(provider TopicsProvider) func(w http.ResponseWriter, r *http.Request
 		prev := ""
 
 		if paginationTimestamps.Next != 0 {
-			next = fmt.Sprintf("%s/topics?limit=%d&before=%d", os.Getenv("APP_API_URL"), limit, paginationTimestamps.Next)
+			next = fmt.Sprintf("%s/topics?limit=%d&before=%d&orderBy=%s", os.Getenv("APP_API_URL"), limit, paginationTimestamps.Next, orderBy.Stringer())
 		}
 		if paginationTimestamps.Prev != 0 {
-			prev = fmt.Sprintf("%s/topics?limit=%d&before=%d", os.Getenv("APP_API_URL"), limit, paginationTimestamps.Prev)
+			prev = fmt.Sprintf("%s/topics?limit=%d&before=%d&orderBy=%s", os.Getenv("APP_API_URL"), limit, paginationTimestamps.Prev, orderBy.Stringer())
 		}
 
 		if len(topics) != 0 {
@@ -58,7 +66,7 @@ func Topics(provider TopicsProvider) func(w http.ResponseWriter, r *http.Request
 
 		pagination(w, topics, 200, PaginationMeta{
 			Prev:    prev,
-			Current: fmt.Sprintf("%s/topics?limit=%d&before=%d", os.Getenv("APP_API_URL"), limit, before),
+			Current: fmt.Sprintf("%s/topics?limit=%d&before=%d&orderBy=%s", os.Getenv("APP_API_URL"), limit, before, orderBy.Stringer()),
 			Next:    next,
 			Total:   total,
 		})

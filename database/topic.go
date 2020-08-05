@@ -10,12 +10,12 @@ import (
 	"github.com/crossworth/cartola-web-admin/model"
 )
 
-func (d *PostgreSQL) Topics(context context.Context, before int, limit int) ([]TopicWithPollAndCommentsCount, error) {
+func (d *PostgreSQL) Topics(context context.Context, before int, limit int, orderBy OrderBy) ([]TopicWithPollAndCommentsCount, error) {
 	var topics []TopicWithPollAndCommentsCount
 
 	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
 		var t TopicWithPollAndCommentsCount
-		tx.MustQueryContext(context, `SELECT * FROM topics WHERE created_at <= $1 ORDER BY created_at DESC LIMIT $2`, before, limit).Each(func(rows *sx.Rows) {
+		tx.MustQueryContext(context, `SELECT * FROM topics WHERE `+orderBy.Stringer()+` <= $1 ORDER BY `+orderBy.Stringer()+` DESC LIMIT $2`, before, limit).Each(func(rows *sx.Rows) {
 			rows.MustScans(&t.Topic)
 			topics = append(topics, t)
 		})
@@ -69,13 +69,13 @@ func (d *PostgreSQL) Topics(context context.Context, before int, limit int) ([]T
 	return topics, err
 }
 
-func (d *PostgreSQL) TopicsPaginationTimestamp(context context.Context, before int, limit int) (PaginationTimestamps, error) {
+func (d *PostgreSQL) TopicsPaginationTimestamp(context context.Context, before int, limit int, orderBy OrderBy) (PaginationTimestamps, error) {
 	var timestamps PaginationTimestamps
 
 	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
 		query := `SELECT 
-					COALESCE((SELECT created_at FROM topics WHERE created_at <= $1 ORDER BY created_at DESC OFFSET $2 LIMIT 1), 0) as next,
-					COALESCE((SELECT created_at FROM topics WHERE created_at >= $1 ORDER BY created_at ASC OFFSET $2 LIMIT 1), 0) as prev
+					COALESCE((SELECT ` + orderBy.Stringer() + ` FROM topics WHERE ` + orderBy.Stringer() + ` <= $1 ORDER BY ` + orderBy.Stringer() + ` DESC OFFSET $2 LIMIT 1), 0) as next,
+					COALESCE((SELECT ` + orderBy.Stringer() + ` FROM topics WHERE ` + orderBy.Stringer() + ` >= $1 ORDER BY ` + orderBy.Stringer() + ` ASC OFFSET $2 LIMIT 1), 0) as prev
 				`
 		tx.MustQueryRowContext(context, query, before, limit).MustScan(&timestamps.Next, &timestamps.Prev)
 	})

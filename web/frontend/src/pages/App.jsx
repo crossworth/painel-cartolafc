@@ -126,6 +126,9 @@ export default () => {
                 4 Agosto
                 - Melhorado performance rotas de tópicos e membros
                 - Finalizado implementação de rotas de tópicos (enquetes e perfils)
+
+                5 Agosto
+                - Adicionado suporte para retornar tópicos por data de atualização
                 </pre>
               </Route>
 
