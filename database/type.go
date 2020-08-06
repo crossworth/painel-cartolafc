@@ -98,4 +98,6 @@ type Search struct {
 	Type            SearchType `json:"type"`
 	Date            int        `json:"date"`
 	FromID          int        `json:"from_id"`
+	TopicID         int        `json:"topic_id"`
+	CommentID       int        `json:"comment_id"`
 }

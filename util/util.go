@@ -2,6 +2,7 @@ package util
 
 import (
 	"strconv"
+	"strings"
 )
 
 func ToInt(n string) int {
@@ -38,6 +39,18 @@ func ToString(n int) string {
 func StringWithDefault(n string, def string) string {
 	if n != "" {
 		return n
+	}
+
+	return def
+}
+
+func BoolWithDefault(n string, def bool) bool {
+	if strings.ToLower(n) == "true" || strings.ToLower(n) == "1" || strings.ToLower(n) == "on" {
+		return true
+	}
+
+	if strings.ToLower(n) == "false" || strings.ToLower(n) == "0" || strings.ToLower(n) == "off" {
+		return false
 	}
 
 	return def
