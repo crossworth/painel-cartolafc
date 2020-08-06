@@ -129,6 +129,9 @@ export default () => {
 
                 5 Agosto
                 - Adicionado suporte para retornar tópicos por data de atualização
+
+                6 Agosto
+                - Implementação de rotas de pesquisa
                 </pre>
               </Route>
 
