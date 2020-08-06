@@ -79,3 +79,23 @@ type TopicWithPollAndCommentsCount struct {
 	Poll          *PollWithAnswers `json:"poll,omitempty"`
 	CommentsCount int              `json:"comments_count"`
 }
+
+type SearchType string
+
+const (
+	SearchTypeTopic   = SearchType("topic")
+	SearchTypeComment = SearchType("comment")
+)
+
+func (s SearchType) Stringer() string {
+	return string(s)
+}
+
+type Search struct {
+	Term            string     `json:"term"`
+	Text            string     `json:"text"`
+	HighlightedPart string     `json:"highlighted_part"`
+	Type            SearchType `json:"type"`
+	Date            int        `json:"date"`
+	FromID          int        `json:"from_id"`
+}
