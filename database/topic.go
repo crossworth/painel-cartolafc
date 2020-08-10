@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	fmt "fmt"
 	"strconv"
 	"strings"
 
@@ -212,4 +213,63 @@ func (d *PostgreSQL) CommentsPaginationTimestampByTopicID(context context.Contex
 	})
 
 	return timestamps, err
+}
+
+func (d *PostgreSQL) TopicWithStats(context context.Context, orderBy string, orderDirection OrderByDirection, period Period, showOlderTopics bool, page int, limit int) ([]TopicsWithStats, error) {
+	var topics []TopicsWithStats
+
+	if orderBy != "comments" && orderBy != "likes" {
+		return topics, ErrInvalidMemberOrderBy
+	}
+
+	periodComments := ""
+
+	if period != PeriodAll {
+		periodComments = fmt.Sprintf("WHERE date >= EXTRACT(epoch FROM date_trunc('%[1]s', current_date - INTERVAL '1 %[1]s')) AND date < EXTRACT(epoch FROM date_trunc('%[1]s', current_date))", period.Stringer())
+	}
+
+	periodTopics := fmt.Sprintf("HAVING t.created_at >= EXTRACT(epoch FROM date_trunc('%[1]s', current_date - INTERVAL '1 %[1]s')) AND t.created_at < EXTRACT(epoch FROM date_trunc('%[1]s', current_date))", period.Stringer())
+
+	if showOlderTopics {
+		periodTopics = ""
+
+	}
+
+	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
+		query := `SELECT
+    t.*,
+    COALESCE(c.total, 0)::INTEGER as comments,
+    COALESCE(l.total, 0)::INTEGER as likes
+FROM topics t
+    LEFT JOIN (
+        SELECT topic_id, COUNT(topic_id) as total FROM comments ` + periodComments + ` GROUP BY topic_id
+    ) as c ON c.topic_id = t.id
+    LEFT JOIN (
+        SELECT topic_id, SUM(likes) as total FROM comments ` + periodComments + ` GROUP BY topic_id
+    ) as l ON l.topic_id = t.id
+GROUP BY t.id, c.total, l.total ` + periodTopics + ` ORDER BY ` + orderBy + ` ` + orderDirection.Stringer() + ` OFFSET $1 LIMIT $2`
+
+		i := 1
+		tx.MustQueryContext(context, query, (page-1)*limit, limit).Each(func(r *sx.Rows) {
+			var t TopicsWithStats
+			r.MustScan(
+				&t.ID,
+				&t.Title,
+				&t.IsClosed,
+				&t.IsFixed,
+				&t.CreatedAt,
+				&t.UpdatedAt,
+				&t.CreatedBy,
+				&t.UpdatedBy,
+				&t.Deleted,
+				&t.Comments,
+				&t.Likes,
+			)
+			t.Position = ((page - 1) * limit) + i
+			topics = append(topics, t)
+			i++
+		})
+	})
+
+	return topics, err
 }

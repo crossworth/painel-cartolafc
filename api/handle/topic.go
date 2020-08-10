@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-chi/chi"
 
+	"github.com/crossworth/cartola-web-admin/cache"
 	"github.com/crossworth/cartola-web-admin/database"
 	"github.com/crossworth/cartola-web-admin/util"
 )
@@ -151,6 +152,98 @@ func CommentFromTopicByID(provider TopicCommentsProvider) func(w http.ResponseWr
 			Current: fmt.Sprintf("%s/topics/%d/comments?limit=%d&after=%d", os.Getenv("APP_API_URL"), id, limit, after),
 			Next:    next,
 			Total:   total,
+		})
+	}
+}
+
+type TopicsWithStatsProvider interface {
+	TopicWithStats(context context.Context, orderBy string, orderDirection database.OrderByDirection, period database.Period, showOlderTopics bool, page int, limit int) ([]database.TopicsWithStats, error)
+	TopicsCount(context context.Context) (int, error)
+}
+
+type TopicsWithStatsCache struct {
+	Topics    []database.TopicsWithStats
+	Total     int
+	CreatedAt time.Time
+}
+
+func TopicsWithStats(provider TopicsWithStatsProvider, cache *cache.Cache) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		orderBy := util.StringWithDefault(r.URL.Query().Get("orderBy"), "comments")
+		orderDirStr := util.StringWithDefault(r.URL.Query().Get("orderDir"), "DESC")
+		periodStr := util.StringWithDefault(r.URL.Query().Get("period"), "DESC")
+		page := util.ToIntWithDefaultMin(r.URL.Query().Get("page"), 1)
+		limit := util.ToIntWithDefaultMin(r.URL.Query().Get("limit"), 10)
+		showOlderTopics := util.BoolWithDefault(r.URL.Query().Get("showOlderTopics"), true)
+
+		orderDir := database.OrderByASC
+
+		if strings.ToLower(orderDirStr) == "desc" {
+			orderDir = database.OrderByDESC
+		}
+
+		period := database.PeriodAll
+
+		if periodStr == "last_month" {
+			period = database.PeriodMonth
+		}
+
+		if periodStr == "last_week" {
+			period = database.PeriodWeek
+		}
+
+		cacheKey := fmt.Sprintf("topics_with_stats_%s_%s_%d_%d_%s_%t", orderBy, orderDir.Stringer(), page, limit, period.Stringer(), showOlderTopics)
+		topicsCache := cache.Get(cacheKey, func() interface{} {
+			topics, err := provider.TopicWithStats(r.Context(), orderBy, orderDir, period, showOlderTopics, page, limit)
+			if err != nil {
+				return err
+			}
+
+			total, err := provider.TopicsCount(r.Context())
+			if err != nil {
+				return err
+			}
+
+			topicsCache := TopicsWithStatsCache{
+				Topics:    topics,
+				Total:     total,
+				CreatedAt: time.Now(),
+			}
+
+			return topicsCache
+		})
+
+		data, castOK := topicsCache.(TopicsWithStatsCache)
+		if !castOK {
+			databaseError(w, topicsCache.(error))
+			return
+		}
+
+		next := ""
+		prev := ""
+
+		if page != 1 {
+			prev = fmt.Sprintf("%s/topics-ranking?limit=%d&page=%d&orderBy=%s&orderDir=%s&period=%s&showOlderTopics=%t", os.Getenv("APP_API_URL"), limit, page-1, orderBy, orderDir.Stringer(), period.URLString(), showOlderTopics)
+		}
+
+		if page*limit < data.Total {
+			next = fmt.Sprintf("%s/topics-ranking?limit=%d&page=%d&orderBy=%s&orderDir=%s&period=%s&showOlderTopics=%t", os.Getenv("APP_API_URL"), limit, page+1, orderBy, orderDir.Stringer(), period.URLString(), showOlderTopics)
+		}
+
+		// NOTE(Pedro): To calculate the correct position for the records
+		// when in asc order
+		if orderDir == database.OrderByASC {
+			for i := range data.Topics {
+				data.Topics[i].Position = (data.Total + 1) - data.Topics[i].Position
+			}
+		}
+
+		pagination(w, data.Topics, 200, PaginationMeta{
+			Prev:     prev,
+			Current:  fmt.Sprintf("%s/topics-ranking?limit=%d&page=%d&orderBy=%s&orderDir=%s&period=%s&showOlderTopics=%t", os.Getenv("APP_API_URL"), limit, page, orderBy, orderDir.Stringer(), period.URLString(), showOlderTopics),
+			Next:     next,
+			Total:    data.Total,
+			CachedAt: &data.CreatedAt,
 		})
 	}
 }

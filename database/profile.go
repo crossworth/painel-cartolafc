@@ -201,8 +201,8 @@ func (d *PostgreSQL) ProfileWithStats(context context.Context, orderBy string, o
 	periodComments := ""
 
 	if period != PeriodAll {
-		periodTopics = fmt.Sprintf("WHERE created_at >= EXTRACT(epoch FROM date_trunc('%s', current_date - INTERVAL '1' month)) AND created_at < EXTRACT(epoch FROM date_trunc('%s', current_date))", period.Stringer(), period.Stringer())
-		periodComments = fmt.Sprintf("WHERE date >= EXTRACT(epoch FROM date_trunc('%s', current_date - INTERVAL '1' month)) AND date < EXTRACT(epoch FROM date_trunc('%s', current_date))", period.Stringer(), period.Stringer())
+		periodTopics = fmt.Sprintf("WHERE created_at >= EXTRACT(epoch FROM date_trunc('%[1]s', current_date - INTERVAL '1 %[1]s')) AND created_at < EXTRACT(epoch FROM date_trunc('%[1]s', current_date))", period.Stringer())
+		periodComments = fmt.Sprintf("WHERE date >= EXTRACT(epoch FROM date_trunc('%[1]s', current_date - INTERVAL '1 %[1]s')) AND date < EXTRACT(epoch FROM date_trunc('%[1]s', current_date))", period.Stringer())
 	}
 
 	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {

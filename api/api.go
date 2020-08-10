@@ -71,6 +71,7 @@ func NewServer(vk *vk.VKClient, db *database.PostgreSQL) *Server {
 		r.Get("/profiles/{profile}/comments", handle.CommentsByProfileID(s.db))
 
 		r.Get("/topics", handle.Topics(s.db))
+		r.Get("/topics-ranking", handle.TopicsWithStats(s.db, s.cache))
 		r.Get("/topics/{topic}", handle.TopicByID(s.db))
 		r.Get("/topics/{topic}/comments", handle.CommentFromTopicByID(s.db))
 

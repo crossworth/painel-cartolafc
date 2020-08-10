@@ -101,3 +101,10 @@ type Search struct {
 	TopicID         int        `json:"topic_id"`
 	CommentID       int        `json:"comment_id"`
 }
+
+type TopicsWithStats struct {
+	model.Topic
+	Comments int `json:"comments"`
+	Likes    int `json:"likes"`
+	Position int `json:"position,omitempty"`
+}

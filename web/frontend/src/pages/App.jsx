@@ -132,6 +132,10 @@ export default () => {
 
                 6 Agosto
                 - Implementação de rotas de pesquisa
+
+                10 Agosto
+                - Implementação de rotas de ranking de tópicos
+                - Corrigido bug onde data de filtro não era aplicado de forma correta para 'última semana'.
                 </pre>
               </Route>
 
