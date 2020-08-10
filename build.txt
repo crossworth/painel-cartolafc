@@ -1,0 +1,2 @@
+go get -u github.com/gobuffalo/packr/v2/packr2
+cd web && packr2 && cd ..

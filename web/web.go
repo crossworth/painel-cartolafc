@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/go-chi/chi"
+	"github.com/gobuffalo/packr/v2"
 )
 
 type Server struct {
@@ -14,15 +15,23 @@ type Server struct {
 func New() *Server {
 	server := Server{}
 
-	dir := http.Dir("web/frontend/build")
-	fs := http.FileServer(dir)
+	var localFs http.FileSystem
+
+	if os.Getenv("dev") != "" {
+		localFs = http.Dir("web/frontend/build")
+
+	} else {
+		localFs = packr.New("frontend", "./frontend/build")
+	}
+
+	fs := http.FileServer(localFs)
 
 	server.Handler = chi.NewRouter()
 
 	server.Handler.HandleFunc("/*", func(writer http.ResponseWriter, request *http.Request) {
 		path := chi.URLParam(request, "*")
 
-		if _, err := dir.Open(path); os.IsNotExist(err) {
+		if _, err := localFs.Open(path); os.IsNotExist(err) {
 			request.URL.Path = "/"
 		}
 
