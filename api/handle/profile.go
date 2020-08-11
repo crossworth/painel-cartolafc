@@ -323,15 +323,7 @@ func Profiles(provider ProfilesProvider, cache *cache.Cache) func(w http.Respons
 			orderDir = database.OrderByDESC
 		}
 
-		period := database.PeriodAll
-
-		if periodStr == "last_month" {
-			period = database.PeriodMonth
-		}
-
-		if periodStr == "last_week" {
-			period = database.PeriodWeek
-		}
+		period := database.PeriodFromString(periodStr)
 
 		cacheKey := fmt.Sprintf("profiles_%s_%s_%d_%d_%s", orderBy, orderDir.Stringer(), page, limit, period.Stringer())
 		profilesCache := cache.Get(cacheKey, func() interface{} {

@@ -7,7 +7,7 @@ require (
 	github.com/go-chi/cors v1.1.1
 	github.com/gobuffalo/envy v1.9.0 // indirect
 	github.com/gobuffalo/packr v1.30.1
-	github.com/gobuffalo/packr/v2 v2.8.0 // indirect
+	github.com/gobuffalo/packr/v2 v2.8.0
 	github.com/helloeave/json v1.13.0
 	github.com/himidori/golang-vk-api v0.0.0-20200702133956-0d6cb9682ce6
 	github.com/joho/godotenv v1.3.0

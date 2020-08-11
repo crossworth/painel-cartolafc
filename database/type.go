@@ -1,6 +1,8 @@
 package database
 
 import (
+	"strings"
+
 	"github.com/crossworth/cartola-web-admin/model"
 )
 
@@ -24,12 +26,31 @@ type Period string
 
 const (
 	PeriodAll   = Period("")
-	PeriodMonth = Period("month")
+	PeriodDay   = Period("day")
 	PeriodWeek  = Period("week")
+	PeriodMonth = Period("month")
 )
 
 func (p Period) Stringer() string {
 	return string(p)
+}
+
+func PeriodFromString(periodStr string) Period {
+	period := PeriodAll
+
+	if strings.ToLower(periodStr) == "last_day" {
+		period = PeriodDay
+	}
+
+	if strings.ToLower(periodStr) == "last_week" {
+		period = PeriodWeek
+	}
+
+	if strings.ToLower(periodStr) == "last_month" {
+		period = PeriodMonth
+	}
+
+	return period
 }
 
 func (p Period) URLString() string {

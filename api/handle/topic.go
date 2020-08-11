@@ -182,15 +182,7 @@ func TopicsWithStats(provider TopicsWithStatsProvider, cache *cache.Cache) func(
 			orderDir = database.OrderByDESC
 		}
 
-		period := database.PeriodAll
-
-		if periodStr == "last_month" {
-			period = database.PeriodMonth
-		}
-
-		if periodStr == "last_week" {
-			period = database.PeriodWeek
-		}
+		period := database.PeriodFromString(periodStr)
 
 		cacheKey := fmt.Sprintf("topics_with_stats_%s_%s_%d_%d_%s_%t", orderBy, orderDir.Stringer(), page, limit, period.Stringer(), showOlderTopics)
 		topicsCache := cache.Get(cacheKey, func() interface{} {

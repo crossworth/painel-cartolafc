@@ -136,6 +136,9 @@ export default () => {
                 10 Agosto
                 - Implementação de rotas de ranking de tópicos
                 - Corrigido bug onde data de filtro não era aplicado de forma correta para 'última semana'.
+
+                11 Agosto
+                - Adicionado suporte para 'último dia' como período.
                 </pre>
               </Route>
 
