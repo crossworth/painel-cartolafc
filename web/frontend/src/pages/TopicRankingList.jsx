@@ -1,14 +1,9 @@
 import React, { useEffect, useState } from 'react'
-import { Button, Col, Radio, Row, Space, Spin, Table, Typography } from 'antd'
-import { getProfiles } from '../api'
-import {
-  getGlobalPageSize,
-  normalizeScreenName,
-  parseIntWithDefault,
-  setGlobalPageSize,
-  stringWithDefault
-} from '../util'
+import { Button, Radio, Space, Spin, Switch, Table, Typography } from 'antd'
+import { getTopicsRanking } from '../api'
+import { getGlobalPageSize, parseIntWithDefault, setGlobalPageSize, stringWithDefault } from '../util'
 import { withRouter } from 'react-router-dom'
+import { VK_GROUP_ID } from '../config'
 
 const { Title, Text } = Typography
 
@@ -19,23 +14,9 @@ const columns = [
     key: 'position',
   },
   {
-    title: 'Nome',
-    dataIndex: 'name',
-    render: (text, data) => <div>
-      <Row>
-        <Col flex="60px">
-          <img width="50" height="50" src={data.photo} alt=''/>
-        </Col>
-        <Col flex="auto">
-          {`${data.first_name} ${data.last_name} (@${normalizeScreenName(data.screen_name, data.id)})`}
-        </Col>
-      </Row>
-    </div>
-  },
-  {
-    title: 'Tópicos',
-    dataIndex: 'topics',
-    key: 'topics',
+    title: 'Título',
+    dataIndex: 'title',
+    key: 'title',
   },
   {
     title: 'Comentários',
@@ -53,12 +34,8 @@ const columns = [
     key: 'id',
     render: (text, data) => <div>
       <Button type="primary" block target="_blank" rel="noopener noreferrer"
-              href={`https://vk.com/id${data.id}`}>
-        VK
-      </Button>
-      <Button style={{ marginTop: 5 }} block target="_blank" rel="noopener noreferrer"
-              href={`/perfil/${data.id}`}>
-        Perfil
+              href={`https://vk.com/topic-${VK_GROUP_ID}_${data.id}`}>
+        Link
       </Button>
     </div>
 
@@ -67,8 +44,6 @@ const columns = [
 
 const orderByToPTBR = orderBy => {
   switch (orderBy) {
-    case 'topics':
-      return 'tópicos'
     case 'comments':
       return 'comentários'
     default:
@@ -87,9 +62,10 @@ const ProfileList = (props) => {
     pageSize: parseIntWithDefault(searchParams.get('limit'), getGlobalPageSize(10)),
     position: ['topLeft'],
     showSizeChanger: true,
-    orderBy: stringWithDefault(searchParams.get('orderBy'), 'topics'),
+    orderBy: stringWithDefault(searchParams.get('orderBy'), 'comments'),
     orderDir: stringWithDefault(searchParams.get('orderDir'), 'desc'),
     period: stringWithDefault(searchParams.get('period'), 'all'),
+    showOlderTopics: stringWithDefault(searchParams.get('showOlderTopics'), 'true'),
   })
 
   const [loading, setLoading] = useState(true)
@@ -125,6 +101,11 @@ const ProfileList = (props) => {
       searchParams.set('period', pagination.period)
     }
 
+    if (!searchParams.has('showOlderTopics') || pagination.showOlderTopics !== searchParams.get('showOlderTopics')) {
+      shouldUpdate = true
+      searchParams.set('showOlderTopics', pagination.showOlderTopics)
+    }
+
     if (shouldUpdate) {
       history.push({
         pathname: location.pathname,
@@ -133,7 +114,7 @@ const ProfileList = (props) => {
     }
   }, [history, location, pagination])
 
-  const { current, pageSize, orderBy, orderDir, period } = pagination
+  const { current, pageSize, orderBy, orderDir, period, showOlderTopics } = pagination
 
   const setPaginationTotal = (total, page = null, orderBy = null, orderDir = null, pageSize = null) => {
     let pag = Object.assign({}, pagination, {
@@ -155,6 +136,13 @@ const ProfileList = (props) => {
     setPagination(pag)
   }
 
+  const toggleShowOlderTopics = () => {
+    let pag = Object.assign({}, pagination, {
+      showOlderTopics: pagination.showOlderTopics === 'true' ? 'false' : 'true',
+    })
+    setPagination(pag)
+  }
+
   const setPeriod = period => {
     let pag = Object.assign({}, pagination, {
       period: period ? period : pagination.period,
@@ -165,7 +153,7 @@ const ProfileList = (props) => {
   const handleTableChange = pag => {
     setLoading(true)
 
-    getProfiles(pag.current, pag.pageSize, pag.orderBy, pag.orderDir, pag.period).then(data => {
+    getTopicsRanking(pag.current, pag.pageSize, pag.orderBy, pag.orderDir, pag.period, pag.showOlderTopics).then(data => {
       setTableData(data.data)
       setTableMeta(data.meta)
       setPaginationTotal(data.meta.total, pag.current, pag.orderBy, pag.orderDir, pag.pageSize)
@@ -178,7 +166,7 @@ const ProfileList = (props) => {
 
   useEffect(() => {
     setLoading(true)
-    getProfiles(current, pageSize, orderBy, orderDir, period).then(data => {
+    getTopicsRanking(current, pageSize, orderBy, orderDir, period, showOlderTopics).then(data => {
       setTableData(data.data)
       setTableMeta(data.meta)
       setPaginationTotal(data.meta.total)
@@ -189,14 +177,14 @@ const ProfileList = (props) => {
     })
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [current, pageSize, orderBy, orderDir, period])
+  }, [current, pageSize, orderBy, orderDir, period, showOlderTopics])
 
   return (
     <Spin tip="Carregando..." spinning={loading}>
       <Title level={4}>
         {
           !loading ?
-            <div>Lista de membros por {orderByToPTBR(pagination.orderBy)} - {tableMeta.total} membros </div>
+            <div>Ranking de tópicos por número de {orderByToPTBR(pagination.orderBy)} - {tableMeta.total} tópicos </div>
             : <div>Carregando dados</div>
         }
       </Title>
@@ -212,10 +200,16 @@ const ProfileList = (props) => {
             </Radio.Group>
 
             <Radio.Group value={pagination.orderBy} onChange={event => setOrderBy(event.target.value)}>
-              <Radio.Button value="topics">Por tópicos</Radio.Button>
               <Radio.Button value="comments">Por comentários</Radio.Button>
               <Radio.Button value="likes">Por likes</Radio.Button>
             </Radio.Group>
+
+            {
+              pagination.period !== 'all' && <Switch
+                checkedChildren="Exibir tópicos antigos" unCheckedChildren="Exibir tópicos antigos"
+                checked={pagination.showOlderTopics === 'true'}
+                onChange={toggleShowOlderTopics}/>
+            }
           </Space>
         </div>
         }

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Button, Col, Radio, Row, Space, Spin, Table, Typography } from 'antd'
-import { getProfiles } from '../api'
+import { getTopics } from '../api'
 import {
   getGlobalPageSize,
   normalizeScreenName,
@@ -165,7 +165,7 @@ const ProfileList = (props) => {
   const handleTableChange = pag => {
     setLoading(true)
 
-    getProfiles(pag.current, pag.pageSize, pag.orderBy, pag.orderDir, pag.period).then(data => {
+    getTopics(pag.current, pag.pageSize, pag.orderBy, pag.orderDir, pag.period).then(data => {
       setTableData(data.data)
       setTableMeta(data.meta)
       setPaginationTotal(data.meta.total, pag.current, pag.orderBy, pag.orderDir, pag.pageSize)
@@ -178,7 +178,7 @@ const ProfileList = (props) => {
 
   useEffect(() => {
     setLoading(true)
-    getProfiles(current, pageSize, orderBy, orderDir, period).then(data => {
+    getTopics(current, pageSize, orderBy, orderDir, period).then(data => {
       setTableData(data.data)
       setTableMeta(data.meta)
       setPaginationTotal(data.meta.total)
@@ -196,7 +196,7 @@ const ProfileList = (props) => {
       <Title level={4}>
         {
           !loading ?
-            <div>Lista de membros por {orderByToPTBR(pagination.orderBy)} - {tableMeta.total} membros </div>
+            <div>Lista de tópicos {orderByToPTBR(pagination.orderBy)} - {tableMeta.total} tópicos </div>
             : <div>Carregando dados</div>
         }
       </Title>

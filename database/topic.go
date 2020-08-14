@@ -230,7 +230,7 @@ func (d *PostgreSQL) TopicWithStats(context context.Context, orderBy string, ord
 		periodComments = fmt.Sprintf("WHERE date >= EXTRACT(epoch FROM date_trunc('%[1]s', current_date - INTERVAL '1 %[1]s')) AND date < EXTRACT(epoch FROM date_trunc('%[1]s', current_date))", period.Stringer())
 	}
 
-	if !showOlderTopics {
+	if !showOlderTopics && period != PeriodAll {
 		periodTopics = fmt.Sprintf("HAVING t.created_at >= EXTRACT(epoch FROM date_trunc('%[1]s', current_date - INTERVAL '1 %[1]s')) AND t.created_at < EXTRACT(epoch FROM date_trunc('%[1]s', current_date))", period.Stringer())
 	}
 

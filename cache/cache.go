@@ -20,7 +20,7 @@ type Cache struct {
 
 func NewCache() *Cache {
 	return &Cache{
-		cache:    gocache.New(5*time.Hour, 1*time.Hour),
+		cache:    gocache.New(1*time.Hour, 30*time.Minute),
 		building: make(map[string]bool),
 	}
 }

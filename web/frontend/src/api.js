@@ -1,11 +1,10 @@
 import axios from 'axios'
 import { message } from 'antd'
 import { getErrorMessage } from './util'
-
-const baseURL = process.env.REACT_APP_API_URL
+import { API_BASE_URL } from './config'
 
 const api = axios.create({
-  baseURL: baseURL,
+  baseURL: API_BASE_URL,
 })
 
 api.interceptors.response.use(response => {
@@ -60,6 +59,14 @@ const getProfiles = (page, limit, orderBy = 'topics', orderDir = 'desc', period 
   return api.get(`/profiles?orderBy=${orderBy}&orderDir=${orderDir}&page=${page}&limit=${limit}&period=${period}`)
 }
 
+const getTopics = (before, limit, orderBy = 'updated_at') => {
+  return api.get(`/topics?orderBy=${orderBy}&before=${before}&limit=${limit}`)
+}
+
+const getTopicsRanking = (page, limit, orderBy = 'comments', orderDir = 'desc', period = 'all', showOlderTopics = 'true') => {
+  return api.get(`/topics-ranking?orderBy=${orderBy}&orderDir=${orderDir}&page=${page}&limit=${limit}&period=${period}&showOlderTopics=${showOlderTopics}`)
+}
+
 export {
   unixNow,
   resolveProfile,
@@ -69,5 +76,7 @@ export {
   getProfileHistory,
   getTopicsFromProfile,
   getCommentsFromProfile,
-  getProfiles
+  getProfiles,
+  getTopics,
+  getTopicsRanking
 }

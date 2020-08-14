@@ -4,6 +4,7 @@ import { Alert, Avatar, Button, Col, Divider, List, Row, Spin, Statistic, Typogr
 import { getProfileHistory, getProfileInfo, getProfileStats } from '../api'
 import { normalizeScreenName, timeStampToDate } from '../util'
 import { Link } from 'react-router-dom'
+import { VK_GROUP_ID } from '../config'
 
 const { Title } = Typography
 
@@ -73,7 +74,8 @@ const Profile = (props) => {
             message="Perfil de comunidade"
             description={<div>
               Este é um perfil de comunidade, porém exibe somente os tópicos feitos pelo perfil,
-              o VK separa os comentários criados pela comunidade no perfil com nome da comunidade.
+              o VK separa os comentários criados pela comunidade no perfil <Link to={`/perfil/-${VK_GROUP_ID}`}>com nome
+              da comunidade</Link>
             </div>}
             type="info"
             showIcon

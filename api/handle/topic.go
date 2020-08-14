@@ -171,7 +171,7 @@ func TopicsWithStats(provider TopicsWithStatsProvider, cache *cache.Cache) func(
 	return func(w http.ResponseWriter, r *http.Request) {
 		orderBy := util.StringWithDefault(r.URL.Query().Get("orderBy"), "comments")
 		orderDirStr := util.StringWithDefault(r.URL.Query().Get("orderDir"), "DESC")
-		periodStr := util.StringWithDefault(r.URL.Query().Get("period"), "DESC")
+		periodStr := util.StringWithDefault(r.URL.Query().Get("period"), "all")
 		page := util.ToIntWithDefaultMin(r.URL.Query().Get("page"), 1)
 		limit := util.ToIntWithDefaultMin(r.URL.Query().Get("limit"), 10)
 		showOlderTopics := util.BoolWithDefault(r.URL.Query().Get("showOlderTopics"), true)
