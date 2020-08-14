@@ -49,6 +49,7 @@ const changeLog = `
 - Adicionado listagem de ranking de tópicos
 - Adicionado listagem de tópicos
 - Adicionado suporte a 'short cache', para pesquisa
+- Adicionado suporte inicial a pesquisa de tópicos
 `
 
 export {
