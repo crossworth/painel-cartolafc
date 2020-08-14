@@ -37,6 +37,12 @@ func (c *Cache) Get(key string, populateFunc func() interface{}) interface{} {
 		data := populateFunc()
 		c.cache.SetDefault(key, data)
 		profilesCache = data
+
+		_, isError := profilesCache.(error)
+		if isError {
+			c.cache.Delete(key)
+		}
+
 		c.markAsDoneBuilding(key)
 	}
 
