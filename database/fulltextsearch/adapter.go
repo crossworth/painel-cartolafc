@@ -1,16 +1,33 @@
-package database
+package fulltextsearch
 
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"strconv"
 	"strings"
 
 	"github.com/travelaudience/go-sx"
+
+	"github.com/crossworth/cartola-web-admin/database"
 )
 
-func (d *PostgreSQL) Search(context context.Context, text string, matchPartial bool, page int, limit int, fromID int, createdAfter int, createdBefore int) ([]Search, error) {
-	var result []Search
+// https://www.infoq.com/br/articles/postgresql-fts/
+// https://pt.slideshare.net/spjuliano/fts-26392077 pg 28
+// https://medium.com/@gabrielfgularte/caracteres-especiais-e-full-text-search-no-postgre-c345b1da5b7b
+
+type Adapter struct {
+	db *sql.DB
+}
+
+func NewAdapter(db *sql.DB) *Adapter {
+	return &Adapter{
+		db: db,
+	}
+}
+
+func (d *Adapter) Search(context context.Context, text string, matchPartial bool, page int, limit int, fromID int, createdAfter int, createdBefore int) ([]database.Search, error) {
+	var result []database.Search
 
 	searchTerm := `'% ` + text +` %'`
 
@@ -56,15 +73,15 @@ func (d *PostgreSQL) Search(context context.Context, text string, matchPartial b
 		// NOTE(Pedro): to get the correct number of results we have to divide by two
 		// since its two queries
 		tx.MustQueryContext(context, query.String(), (page-1)*limit/2, limit/2).Each(func(r *sx.Rows) {
-			var search Search
+			var search database.Search
 			var typeString string
 			search.Term = text
 			r.MustScan(&search.Text, &search.Date, &search.FromID, &typeString, &search.TopicID, &search.CommentID)
 
-			search.Type = SearchTypeTopic
+			search.Type = database.SearchTypeTopic
 
 			if typeString == "comment" {
-				search.Type = SearchTypeComment
+				search.Type = database.SearchTypeComment
 			}
 
 			search.HighlightedPart = strings.ReplaceAll(search.Text, text, "<strong>"+text+"</strong>")
@@ -75,7 +92,7 @@ func (d *PostgreSQL) Search(context context.Context, text string, matchPartial b
 	return result, err
 }
 
-func (d *PostgreSQL) SearchCount(context context.Context, text string, matchPartial bool, page int, limit int, fromID int, createdAfter int, createdBefore int) (int, error) {
+func (d *Adapter) SearchCount(context context.Context, text string, matchPartial bool, page int, limit int, fromID int, createdAfter int, createdBefore int) (int, error) {
 	var total int
 
 	searchTerm := `'% ` + text +` %'`
