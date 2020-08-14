@@ -75,7 +75,7 @@ func NewServer(vk *vk.VKClient, db *database.PostgreSQL) *Server {
 		r.Get("/topics/{topic}", handle.TopicByID(s.db))
 		r.Get("/topics/{topic}/comments", handle.CommentFromTopicByID(s.db))
 
-		r.Get("/search", handle.Search(s.db))
+		r.Get("/search", handle.Search(s.db, s.cache))
 	})
 
 	return s

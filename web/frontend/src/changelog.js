@@ -45,6 +45,10 @@ const changeLog = `
 - Iniciados testes com FullTextSearch
 - Ajustado problema onde cache podia armazenar erro em vez de dados
 - Reduzido tempo de cache de 5horas para 1hora
+- Ajustado referências ao ID da comunidade
+- Adicionado listagem de ranking de tópicos
+- Adicionado listagem de tópicos
+- Adicionado suporte a 'short cache', para pesquisa
 `
 
 export {

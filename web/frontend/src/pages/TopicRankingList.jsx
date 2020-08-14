@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { Button, Radio, Space, Spin, Switch, Table, Typography } from 'antd'
 import { getTopicsRanking } from '../api'
-import { getGlobalPageSize, parseIntWithDefault, setGlobalPageSize, stringWithDefault } from '../util'
+import { getGlobalPageSize, parseIntWithDefault, setGlobalPageSize, stringWithDefault, timeStampToDate } from '../util'
 import { withRouter } from 'react-router-dom'
 import { VK_GROUP_ID } from '../config'
 
@@ -17,6 +17,18 @@ const columns = [
     title: 'Título',
     dataIndex: 'title',
     key: 'title',
+  },
+  {
+    title: 'Data criação',
+    dataIndex: 'created_at',
+    key: 'created_at',
+    render: (text, data) => timeStampToDate(text)
+  },
+  {
+    title: 'Última atualização',
+    dataIndex: 'updated_at',
+    key: 'updated_at',
+    render: (text, data) => timeStampToDate(text)
   },
   {
     title: 'Comentários',
@@ -35,7 +47,7 @@ const columns = [
     render: (text, data) => <div>
       <Button type="primary" block target="_blank" rel="noopener noreferrer"
               href={`https://vk.com/topic-${VK_GROUP_ID}_${data.id}`}>
-        Link
+        Link original
       </Button>
     </div>
 
@@ -51,7 +63,7 @@ const orderByToPTBR = orderBy => {
   }
 }
 
-const ProfileList = (props) => {
+const TopicRankingList = (props) => {
 
   const { history, location } = props
 
@@ -232,4 +244,4 @@ const ProfileList = (props) => {
   )
 }
 
-export default withRouter(ProfileList)
+export default withRouter(TopicRankingList)

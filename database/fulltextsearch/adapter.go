@@ -26,14 +26,10 @@ func NewAdapter(db *sql.DB) *Adapter {
 	}
 }
 
-func (d *Adapter) Search(context context.Context, text string, matchPartial bool, page int, limit int, fromID int, createdAfter int, createdBefore int) ([]database.Search, error) {
+func (d *Adapter) Search(context context.Context, text string, page int, limit int, fromID int, createdAfter int, createdBefore int) ([]database.Search, error) {
 	var result []database.Search
 
 	searchTerm := `'% ` + text +` %'`
-
-	if matchPartial {
-		searchTerm = `'%` + text + `%'`
-	}
 
 	query := bytes.Buffer{}
 
@@ -92,14 +88,10 @@ func (d *Adapter) Search(context context.Context, text string, matchPartial bool
 	return result, err
 }
 
-func (d *Adapter) SearchCount(context context.Context, text string, matchPartial bool, page int, limit int, fromID int, createdAfter int, createdBefore int) (int, error) {
+func (d *Adapter) SearchCount(context context.Context, text string, page int, limit int, fromID int, createdAfter int, createdBefore int) (int, error) {
 	var total int
 
 	searchTerm := `'% ` + text +` %'`
-
-	if matchPartial {
-		searchTerm = `'%` + text + `%'`
-	}
 
 	query := bytes.Buffer{}
 

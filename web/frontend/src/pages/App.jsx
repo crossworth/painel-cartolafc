@@ -7,6 +7,7 @@ import ptBR from 'antd/es/locale/pt_BR'
 import HomeOutlined from '@ant-design/icons/lib/icons/HomeOutlined'
 import TeamOutlined from '@ant-design/icons/lib/icons/TeamOutlined'
 import LinkOutlined from '@ant-design/icons/lib/icons/LinkOutlined'
+import SearchOutlined from '@ant-design/icons/lib/icons/SearchOutlined'
 import UnorderedListOutlined from '@ant-design/icons/lib/icons/UnorderedListOutlined'
 
 import Profile from './Profile'
@@ -19,6 +20,7 @@ import ProfileNotFound from './ProfileNotFound'
 import TopicList from './TopicList'
 import TopicRankingList from './TopicRankingList'
 import { changeLog } from '../changelog'
+import TopicSearch from './TopicSearch'
 
 const { Sider, Content } = Layout
 
@@ -67,6 +69,13 @@ export default () => {
                 </Link>
               </Menu.Item>
 
+              <Menu.Item key="/topicos/pesquisa">
+                <Link to="/topicos/pesquisa">
+                  <SearchOutlined />
+                  <span>Pesquisa Tópicos</span>
+                </Link>
+              </Menu.Item>
+
               <Menu.Item key="perfil/todos">
                 <Link to="/perfil/todos">
                   <TeamOutlined/>
@@ -88,7 +97,7 @@ export default () => {
               <Route path='/' exact>
                 <h3>WIP: Preview!</h3>
                 Faltando: <br/>
-                - Lista de tópicos<br/>
+                - <s>Lista de tópicos</s><br/>
                 - Busca por título de tópico, conteúdo comentário, data, membro, número de comentários<br/>
                 - Reconstituir tópicos apagados (recriar uma visualização de um tópico apagado)<br/>
                 - Opções de exportar dados para Excel, CSV<br/>
@@ -99,7 +108,7 @@ export default () => {
                 geral)</s><br/>
                 - Melhorar performance da rota de status de membros (atualmente leva ~6s) (adicionar tabela de
                 metadados?)<br/>
-                - Melhorar performance da rota de tópicos (contagem de comentários leva muito tempo +1m)<br/>
+                - <s>Melhorar performance da rota de tópicos (contagem de comentários leva muito tempo +1m)</s><br/>
                 - Adicionar login com VK e remover BasicAuth<br/>
                 - Separar conteúdo membro/administrador<br/>
                 - Melhorar forma de contar conteúdo no banco e dados (atualmente é o que demora mais nas queries)<br/>
@@ -109,10 +118,14 @@ export default () => {
 
                 <br/><br/><br/><br/><br/>
                 <h3>ChangeLog</h3>
-                <div style={{ whiteSpace: 'pre' }} dangerouslySetInnerHTML={{__html: changeLog}}/>
+                <div style={{ whiteSpace: 'pre' }} dangerouslySetInnerHTML={{ __html: changeLog }}/>
               </Route>
 
               <Route path='/resolver/:name?' render={(props) => <ProfileResolve {...props}/>}>
+              </Route>
+
+              <Route path='/topicos/pesquisa' exact>
+                <TopicSearch/>
               </Route>
 
               <Route path='/topicos/todos' exact>

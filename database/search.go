@@ -9,14 +9,10 @@ import (
 	"github.com/travelaudience/go-sx"
 )
 
-func (d *PostgreSQL) Search(context context.Context, text string, matchPartial bool, page int, limit int, fromID int, createdAfter int, createdBefore int) ([]Search, error) {
+func (d *PostgreSQL) Search(context context.Context, text string, page int, limit int, fromID int, createdAfter int, createdBefore int) ([]Search, error) {
 	var result []Search
 
 	searchTerm := `'% ` + text +` %'`
-
-	if matchPartial {
-		searchTerm = `'%` + text + `%'`
-	}
 
 	query := bytes.Buffer{}
 
@@ -75,14 +71,10 @@ func (d *PostgreSQL) Search(context context.Context, text string, matchPartial b
 	return result, err
 }
 
-func (d *PostgreSQL) SearchCount(context context.Context, text string, matchPartial bool, page int, limit int, fromID int, createdAfter int, createdBefore int) (int, error) {
+func (d *PostgreSQL) SearchCount(context context.Context, text string, page int, limit int, fromID int, createdAfter int, createdBefore int) (int, error) {
 	var total int
 
 	searchTerm := `'% ` + text +` %'`
-
-	if matchPartial {
-		searchTerm = `'%` + text + `%'`
-	}
 
 	query := bytes.Buffer{}
 

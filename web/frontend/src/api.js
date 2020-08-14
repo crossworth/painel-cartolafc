@@ -67,6 +67,10 @@ const getTopicsRanking = (page, limit, orderBy = 'comments', orderDir = 'desc', 
   return api.get(`/topics-ranking?orderBy=${orderBy}&orderDir=${orderDir}&page=${page}&limit=${limit}&period=${period}&showOlderTopics=${showOlderTopics}`)
 }
 
+const getTopicSearch = (term, page, limit, fromID = 0, createdAfter = 0, createdBefore = 0) => {
+  return api.get(`/search?term=${term}&page=${page}&limit=${limit}&fromID=${fromID}&createdAfter=${createdAfter}&createdBefore=${createdBefore}`)
+}
+
 export {
   unixNow,
   resolveProfile,
@@ -78,5 +82,6 @@ export {
   getCommentsFromProfile,
   getProfiles,
   getTopics,
-  getTopicsRanking
+  getTopicsRanking,
+  getTopicSearch
 }

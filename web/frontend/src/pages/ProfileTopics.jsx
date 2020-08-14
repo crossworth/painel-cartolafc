@@ -5,6 +5,7 @@ import { Button } from 'antd'
 import { getTopicsFromProfile } from '../api'
 import { timeStampToDate } from '../util'
 import ProfileTabularData from '../components/ProfileTabularData'
+import { VK_GROUP_ID } from '../config'
 
 const columns = [
   {
@@ -29,7 +30,7 @@ const columns = [
     key: 'id',
     render: (text, data) => <div>
       <Button type="primary" block target="_blank" rel="noopener noreferrer"
-              href={`https://vk.com/topic-73721457_${data.id}`}>
+              href={`https://vk.com/topic-${VK_GROUP_ID}_${data.id}`}>
         Link original
       </Button>
       {/*<Button style={{ marginTop: 5 }} block target="_blank" rel="noopener noreferrer"*/}

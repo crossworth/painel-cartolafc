@@ -11,7 +11,7 @@ require (
 	github.com/helloeave/json v1.13.0
 	github.com/himidori/golang-vk-api v0.0.0-20200702133956-0d6cb9682ce6
 	github.com/joho/godotenv v1.3.0
-	github.com/karrick/godirwalk v1.16.0 // indirect
+	github.com/karrick/godirwalk v1.16.1 // indirect
 	github.com/lib/pq v1.7.0
 	github.com/mattn/go-colorable v0.1.7
 	github.com/patrickmn/go-cache v2.1.0+incompatible
@@ -24,5 +24,5 @@ require (
 	golang.org/x/net v0.0.0-20200707034311-ab3426394381 // indirect
 	golang.org/x/sync v0.0.0-20200625203802-6e8e738ad208
 	golang.org/x/sys v0.0.0-20200812155832-6a926be9bd1d // indirect
-	golang.org/x/tools v0.0.0-20200813231717-0a73ddcff9b8 // indirect
+	golang.org/x/tools v0.0.0-20200814172026-c4923e618c08 // indirect
 )

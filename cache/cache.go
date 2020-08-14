@@ -13,19 +13,30 @@ var (
 )
 
 type Cache struct {
-	cache        *gocache.Cache
-	buildingLock sync.Mutex
-	building     map[string]bool
+	cache                 *gocache.Cache
+	buildingLock          sync.Mutex
+	building              map[string]bool
+	defaultExpirationTime time.Duration
 }
 
 func NewCache() *Cache {
-	return &Cache{
-		cache:    gocache.New(1*time.Hour, 30*time.Minute),
-		building: make(map[string]bool),
+	c := &Cache{
+		defaultExpirationTime: 1 * time.Hour,
+		building:              make(map[string]bool),
 	}
+	c.cache = gocache.New(c.defaultExpirationTime, 10*time.Minute)
+	return c
 }
 
 func (c *Cache) Get(key string, populateFunc func() interface{}) interface{} {
+	return c.GetWithExpirationTime(key, populateFunc, c.defaultExpirationTime)
+}
+
+func (c *Cache) GetShortCache(key string, populateFunc func() interface{}) interface{} {
+	return c.GetWithExpirationTime(key, populateFunc, 10*time.Minute)
+}
+
+func (c *Cache) GetWithExpirationTime(key string, populateFunc func() interface{}, time time.Duration) interface{} {
 	profilesCache, found := c.cache.Get(key)
 
 	if !found && c.isBuildingCacheFor(key) {

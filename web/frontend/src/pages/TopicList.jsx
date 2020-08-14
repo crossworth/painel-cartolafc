@@ -1,51 +1,39 @@
-import React, { useEffect, useState } from 'react'
-import { Button, Col, Radio, Row, Space, Spin, Table, Typography } from 'antd'
-import { getTopics } from '../api'
-import {
-  getGlobalPageSize,
-  normalizeScreenName,
-  parseIntWithDefault,
-  setGlobalPageSize,
-  stringWithDefault
-} from '../util'
+import React from 'react'
 import { withRouter } from 'react-router-dom'
 
-const { Title, Text } = Typography
+import { Button } from 'antd'
+import { timeStampToDate } from '../util'
+import { getTopics } from '../api'
+import TopicTabularData from '../components/TopicTabularData'
+import { VK_GROUP_ID } from '../config'
 
 const columns = [
   {
-    title: 'Rank',
-    dataIndex: 'position',
-    key: 'position',
+    title: 'ID',
+    dataIndex: 'id',
+    key: 'id',
   },
   {
-    title: 'Nome',
-    dataIndex: 'name',
-    render: (text, data) => <div>
-      <Row>
-        <Col flex="60px">
-          <img width="50" height="50" src={data.photo} alt=''/>
-        </Col>
-        <Col flex="auto">
-          {`${data.first_name} ${data.last_name} (@${normalizeScreenName(data.screen_name, data.id)})`}
-        </Col>
-      </Row>
-    </div>
+    title: 'Título',
+    dataIndex: 'title',
+    key: 'title',
   },
   {
-    title: 'Tópicos',
-    dataIndex: 'topics',
-    key: 'topics',
+    title: 'Data criação',
+    dataIndex: 'created_at',
+    key: 'created_at',
+    render: (text, data) => timeStampToDate(text)
+  },
+  {
+    title: 'Última atualização',
+    dataIndex: 'updated_at',
+    key: 'updated_at',
+    render: (text, data) => timeStampToDate(text)
   },
   {
     title: 'Comentários',
-    dataIndex: 'comments',
-    key: 'comments',
-  },
-  {
-    title: 'Likes',
-    dataIndex: 'likes',
-    key: 'likes',
+    dataIndex: 'comments_count',
+    key: 'comments_count',
   },
   {
     title: '',
@@ -53,189 +41,27 @@ const columns = [
     key: 'id',
     render: (text, data) => <div>
       <Button type="primary" block target="_blank" rel="noopener noreferrer"
-              href={`https://vk.com/id${data.id}`}>
-        VK
+              href={`https://vk.com/topic-${VK_GROUP_ID}_${data.id}`}>
+        Link original
       </Button>
-      <Button style={{ marginTop: 5 }} block target="_blank" rel="noopener noreferrer"
-              href={`/perfil/${data.id}`}>
-        Perfil
-      </Button>
+      {/*<Button style={{ marginTop: 5 }} block target="_blank" rel="noopener noreferrer"*/}
+      {/*        href={`/topico/${data.topic_id}?post=${data.id}`}>*/}
+      {/*  Reconstituído*/}
+      {/*</Button>*/}
     </div>
 
   },
 ]
 
-const orderByToPTBR = orderBy => {
-  switch (orderBy) {
-    case 'topics':
-      return 'tópicos'
-    case 'comments':
-      return 'comentários'
-    default:
-      return 'likes'
-  }
-}
-
-const ProfileList = (props) => {
-
-  const { history, location } = props
-
-  const searchParams = new URLSearchParams(location.search)
-
-  const [pagination, setPagination] = useState({
-    current: parseIntWithDefault(searchParams.get('page'), 1),
-    pageSize: parseIntWithDefault(searchParams.get('limit'), getGlobalPageSize(10)),
-    position: ['topLeft'],
-    showSizeChanger: true,
-    orderBy: stringWithDefault(searchParams.get('orderBy'), 'topics'),
-    orderDir: stringWithDefault(searchParams.get('orderDir'), 'desc'),
-    period: stringWithDefault(searchParams.get('period'), 'all'),
+const TopicList = (props) => {
+  let newProps = Object.assign({}, props, {
+    columns: columns,
+    dataFunc: getTopics
   })
 
-  const [loading, setLoading] = useState(true)
-  const [tableData, setTableData] = useState([])
-  const [tableMeta, setTableMeta] = useState({})
-
-  useEffect(() => {
-    const searchParams = new URLSearchParams(location.search)
-    let shouldUpdate = false
-
-    if (!searchParams.has('limit') || pagination.pageSize !== parseInt(searchParams.get('limit'))) {
-      shouldUpdate = true
-      searchParams.set('limit', pagination.pageSize)
-    }
-
-    if (!searchParams.has('page') || pagination.current !== parseInt(searchParams.get('page'))) {
-      shouldUpdate = true
-      searchParams.set('page', pagination.current)
-    }
-
-    if (!searchParams.has('orderBy') || pagination.orderBy !== searchParams.get('orderBy')) {
-      shouldUpdate = true
-      searchParams.set('orderBy', pagination.orderBy)
-    }
-
-    if (!searchParams.has('orderDir') || pagination.orderDir !== searchParams.get('orderDir')) {
-      shouldUpdate = true
-      searchParams.set('orderDir', pagination.orderDir)
-    }
-
-    if (!searchParams.has('period') || pagination.period !== searchParams.get('period')) {
-      shouldUpdate = true
-      searchParams.set('period', pagination.period)
-    }
-
-    if (shouldUpdate) {
-      history.push({
-        pathname: location.pathname,
-        search: searchParams.toString()
-      })
-    }
-  }, [history, location, pagination])
-
-  const { current, pageSize, orderBy, orderDir, period } = pagination
-
-  const setPaginationTotal = (total, page = null, orderBy = null, orderDir = null, pageSize = null) => {
-    let pag = Object.assign({}, pagination, {
-      total: total,
-      current: page ? page : pagination.current,
-      orderBy: orderBy ? orderBy : pagination.orderBy,
-      orderDir: orderDir ? orderDir : pagination.orderDir,
-      pageSize: pageSize ? pageSize : pagination.pageSize,
-    })
-
-    setGlobalPageSize(pag.pageSize)
-    setPagination(pag)
-  }
-
-  const setOrderBy = orderBy => {
-    let pag = Object.assign({}, pagination, {
-      orderBy: orderBy ? orderBy : pagination.orderBy,
-    })
-    setPagination(pag)
-  }
-
-  const setPeriod = period => {
-    let pag = Object.assign({}, pagination, {
-      period: period ? period : pagination.period,
-    })
-    setPagination(pag)
-  }
-
-  const handleTableChange = pag => {
-    setLoading(true)
-
-    getTopics(pag.current, pag.pageSize, pag.orderBy, pag.orderDir, pag.period).then(data => {
-      setTableData(data.data)
-      setTableMeta(data.meta)
-      setPaginationTotal(data.meta.total, pag.current, pag.orderBy, pag.orderDir, pag.pageSize)
-    }).catch(err => {
-
-    }).finally(() => {
-      setLoading(false)
-    })
-  }
-
-  useEffect(() => {
-    setLoading(true)
-    getTopics(current, pageSize, orderBy, orderDir, period).then(data => {
-      setTableData(data.data)
-      setTableMeta(data.meta)
-      setPaginationTotal(data.meta.total)
-    }).catch(err => {
-
-    }).finally(() => {
-      setLoading(false)
-    })
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [current, pageSize, orderBy, orderDir, period])
-
-  return (
-    <Spin tip="Carregando..." spinning={loading}>
-      <Title level={4}>
-        {
-          !loading ?
-            <div>Lista de tópicos {orderByToPTBR(pagination.orderBy)} - {tableMeta.total} tópicos </div>
-            : <div>Carregando dados</div>
-        }
-      </Title>
-      <div>
-        {!loading &&
-        <div>
-          <Space direction="vertical">
-            <Radio.Group value={pagination.period} onChange={event => setPeriod(event.target.value)}>
-              <Radio.Button value="all">Sempre</Radio.Button>
-              <Radio.Button value="last_month">Último mês</Radio.Button>
-              <Radio.Button value="last_week">Última semana</Radio.Button>
-              <Radio.Button value="last_day">Último dia</Radio.Button>
-            </Radio.Group>
-
-            <Radio.Group value={pagination.orderBy} onChange={event => setOrderBy(event.target.value)}>
-              <Radio.Button value="topics">Por tópicos</Radio.Button>
-              <Radio.Button value="comments">Por comentários</Radio.Button>
-              <Radio.Button value="likes">Por likes</Radio.Button>
-            </Radio.Group>
-          </Space>
-        </div>
-        }
-        {
-          !loading && tableMeta.cached_at && <div>
-            <Text type="secondary">Atualizado em: {(new Date(tableMeta.cached_at)).toLocaleString()}</Text>
-          </div>
-        }
-      </div>
-      <Table
-        bordered={true}
-        dataSource={tableData}
-        columns={columns}
-        rowKey='id'
-        scroll={{ x: true }}
-        pagination={pagination}
-        onChange={handleTableChange}
-      />
-    </Spin>
-  )
+  return (<div>
+    <TopicTabularData {...newProps} />
+  </div>)
 }
 
-export default withRouter(ProfileList)
+export default withRouter(TopicList)
