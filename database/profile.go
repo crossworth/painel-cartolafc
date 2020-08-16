@@ -16,6 +16,18 @@ var (
 	ErrInvalidMemberOrderBy = errors.New("order by de membros inválido")
 )
 
+func (d *PostgreSQL) ProfilesAll(context context.Context) ([]model.Profile, error) {
+	var profiles []model.Profile
+	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
+		tx.MustQueryContext(context, `SELECT * FROM profiles`).Each(func(rows *sx.Rows) {
+			var p model.Profile
+			rows.MustScans(&p)
+			profiles = append(profiles, p)
+		})
+	})
+	return profiles, err
+}
+
 func (d *PostgreSQL) ProfileByID(context context.Context, id int) (model.Profile, error) {
 	var profile model.Profile
 

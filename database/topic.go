@@ -11,6 +11,18 @@ import (
 	"github.com/crossworth/cartola-web-admin/model"
 )
 
+func (d *PostgreSQL) TopicsAll(context context.Context) ([]model.Topic, error) {
+	var topics []model.Topic
+	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
+		tx.MustQueryContext(context, `SELECT * FROM topics`).Each(func(rows *sx.Rows) {
+			var t model.Topic
+			rows.MustScans(&t)
+			topics = append(topics, t)
+		})
+	})
+	return topics, err
+}
+
 func (d *PostgreSQL) Topics(context context.Context, before int, limit int, orderBy OrderBy) ([]TopicWithPollAndCommentsCount, error) {
 	var topics []TopicWithPollAndCommentsCount
 
@@ -135,6 +147,18 @@ func (d *PostgreSQL) CreatedAtByTopic(context context.Context, id int) (int, err
 	return date, err
 }
 
+func (d *PostgreSQL) CommentsAll(context context.Context) ([]model.Comment, error) {
+	var comments []model.Comment
+	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
+		tx.MustQueryContext(context, `SELECT * FROM comments`).Each(func(rows *sx.Rows) {
+			var c model.Comment
+			rows.MustScans(&c)
+			comments = append(comments, c)
+		})
+	})
+	return comments, err
+}
+
 func (d *PostgreSQL) CommentsByTopicID(context context.Context, id int, after int, limit int) ([]CommentWithProfileAndAttachment, error) {
 	var comments []CommentWithProfileAndAttachment
 
@@ -224,7 +248,6 @@ func (d *PostgreSQL) TopicWithStats(context context.Context, orderBy string, ord
 
 	periodTopics := ""
 	periodComments := ""
-
 
 	if period != PeriodAll {
 		periodComments = fmt.Sprintf("WHERE date >= EXTRACT(epoch FROM date_trunc('%[1]s', current_date - INTERVAL '1 %[1]s')) AND date < EXTRACT(epoch FROM date_trunc('%[1]s', current_date))", period.Stringer())
