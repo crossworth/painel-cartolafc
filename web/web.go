@@ -17,9 +17,8 @@ func New() *Server {
 
 	var localFs http.FileSystem
 
-	if os.Getenv("dev") != "" {
+	if _, err := os.Stat("web/frontend/build"); !os.IsNotExist(err) {
 		localFs = http.Dir("web/frontend/build")
-
 	} else {
 		localFs = packr.New("frontend", "./frontend/build")
 	}

@@ -3,7 +3,7 @@ module github.com/crossworth/cartola-web-admin
 go 1.13
 
 require (
-	github.com/GianOrtiz/typesense-go v0.2.0
+	github.com/crossworth/multiwriter v0.0.0-20200607193327-ddded5c6e949
 	github.com/go-chi/chi v4.1.2+incompatible
 	github.com/go-chi/cors v1.1.1
 	github.com/gobuffalo/packr/v2 v2.8.0
@@ -15,6 +15,7 @@ require (
 	github.com/mattn/go-colorable v0.1.7
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/rogpeppe/go-internal v1.6.1 // indirect
+	github.com/rs/zerolog v1.19.0
 	github.com/sirupsen/logrus v1.6.0 // indirect
 	github.com/travelaudience/go-sx v1.1.0
 	golang.org/x/crypto v0.0.0-20200728195943-123391ffb6de // indirect

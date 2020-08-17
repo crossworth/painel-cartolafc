@@ -2,31 +2,21 @@ package api
 
 import (
 	"compress/flate"
-	"io"
-	"log"
 	"net/http"
-	"os"
-	"runtime"
+	"strconv"
+	"time"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
-	"github.com/go-chi/cors"
-	"github.com/mattn/go-colorable"
+	"github.com/rs/zerolog/hlog"
 
 	"github.com/crossworth/cartola-web-admin/api/handle"
 	"github.com/crossworth/cartola-web-admin/cache"
 	"github.com/crossworth/cartola-web-admin/database"
+	"github.com/crossworth/cartola-web-admin/logger"
+	"github.com/crossworth/cartola-web-admin/model"
 	"github.com/crossworth/cartola-web-admin/vk"
 )
-
-var corsOpts = cors.Options{
-	AllowedOrigins:   []string{"*"},
-	AllowedMethods:   []string{"GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"},
-	AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
-	ExposedHeaders:   []string{"Link"},
-	AllowCredentials: true,
-	MaxAge:           300,
-}
 
 type Server struct {
 	router chi.Router
@@ -43,15 +33,13 @@ func NewServer(vk *vk.VKClient, db *database.PostgreSQL) *Server {
 		cache:  cache.NewCache(),
 	}
 
+	s.setupLogger()
+
 	s.router.Use(middleware.RequestID)
 	s.router.Use(middleware.RealIP)
 	s.router.Use(middleware.Recoverer)
 	s.router.Use(middleware.NoCache)
 	s.router.Use(middleware.Compress(flate.DefaultCompression))
-	s.router.Use(cors.New(corsOpts).Handler)
-	s.router.Use(middleware.RequestLogger(getLogger()))
-
-	// TODO(Pedro): add timeout to routes?
 
 	s.router.NotFound(handle.NotFoundHandler)
 	s.router.MethodNotAllowed(handle.MethodNotAllowedHandler)
@@ -85,13 +73,26 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.router.ServeHTTP(w, r)
 }
 
-func getLogger() middleware.LogFormatter {
-	var logOutput io.Writer
-	logOutput = os.Stdout
+func (s *Server) setupLogger() {
+	s.router.Use(hlog.NewHandler(logger.Log))
 
-	if runtime.GOOS == "windows" {
-		logOutput = colorable.NewColorableStdout()
-	}
+	s.router.Use(hlog.AccessHandler(func(r *http.Request, status, size int, duration time.Duration) {
+		l := hlog.FromRequest(r).Info().
+			Str("method", r.Method).
+			Str("url", r.URL.String()).
+			Int("status", status).
+			Int("size", size).
+			Dur("duration", duration)
 
-	return &middleware.DefaultLogFormatter{Logger: log.New(logOutput, "", log.LstdFlags), NoColor: false}
+		if vkID, ok := model.VKIDFromRequest(r); ok {
+			l.Str("vk_id", strconv.Itoa(vkID))
+		}
+
+		l.Msg("")
+	}))
+
+	s.router.Use(hlog.RemoteAddrHandler("ip"))
+	s.router.Use(hlog.UserAgentHandler("user_agent"))
+	s.router.Use(hlog.RefererHandler("referer"))
+	s.router.Use(hlog.RequestIDHandler("req_id", "request-id"))
 }
