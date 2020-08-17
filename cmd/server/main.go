@@ -2,7 +2,6 @@ package main
 
 import (
 	"compress/flate"
-	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -14,7 +13,6 @@ import (
 
 	"github.com/crossworth/cartola-web-admin/api"
 	"github.com/crossworth/cartola-web-admin/database"
-	"github.com/crossworth/cartola-web-admin/typesense"
 	"github.com/crossworth/cartola-web-admin/vk"
 	"github.com/crossworth/cartola-web-admin/web"
 )
@@ -52,77 +50,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("erro ao conectar ao banco de dados, %v", err)
 	}
-
-	go func() {
-		return
-		ts, err := typesense.NewSearch("192.168.0.62", "8108", "teste")
-		if err != nil {
-			log.Fatalln(err)
-		}
-
-		err = ts.CreateCollections()
-		if err != nil {
-			log.Fatalln(err)
-		}
-
-		profiles, err := db.ProfilesAll(context.TODO())
-		if err != nil {
-			log.Fatalln(err)
-		}
-
-		lenProfiles := len(profiles)
-
-		for i, profile := range profiles {
-			if i%100 == 0 {
-				log.Printf("inserindo perfil %d/%d\n", i, lenProfiles)
-			}
-			err = ts.InsertProfile(typesense.ToTypeSenseProfile(profile))
-			if err != nil {
-				log.Printf("erro ao inserir perfil %v\n", err)
-			}
-		}
-
-		log.Printf("inserido %d perfils\n", lenProfiles)
-
-		topics, err := db.TopicsAll(context.TODO())
-		if err != nil {
-			log.Fatalln(err)
-		}
-
-		lenTopics := len(topics)
-
-		for i, topic := range topics {
-			if i%100 == 0 {
-				log.Printf("inserindo tópico %d/%d\n", i, lenTopics)
-			}
-			err = ts.InsertTopic(typesense.ToTypeSenseTopic(topic))
-			if err != nil {
-				log.Printf("erro ao inserir tópico %v\n", err)
-			}
-		}
-
-		log.Printf("inserido %d tópicos\n", lenTopics)
-
-		comments, err := db.CommentsAll(context.TODO())
-		if err != nil {
-			log.Fatalln(err)
-		}
-
-		lenComments := len(comments)
-
-		for i, comment := range comments {
-			if i%100 == 0 {
-				log.Printf("inserindo comentário %d/%d\n", i, lenComments)
-			}
-			err = ts.InsertComment(typesense.ToTypeSenseComment(comment))
-			if err != nil {
-				log.Printf("erro ao inserir comentário %v\n", err)
-			}
-		}
-
-		log.Printf("inserido %d comentários\n", lenComments)
-
-	}()
 
 	router.Mount("/api", api.NewServer(vkClient, db))
 	router.Mount("/", web.New())
