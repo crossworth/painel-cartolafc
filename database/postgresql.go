@@ -26,3 +26,7 @@ func NewPostgreSQL(dsn string) (*PostgreSQL, error) {
 
 	return psql, nil
 }
+
+func (p *PostgreSQL) GetDB() *sql.DB {
+	return p.db
+}

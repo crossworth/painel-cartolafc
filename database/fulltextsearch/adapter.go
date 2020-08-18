@@ -29,11 +29,11 @@ func NewAdapter(db *sql.DB) *Adapter {
 func (d *Adapter) Search(context context.Context, text string, page int, limit int, fromID int, createdAfter int, createdBefore int) ([]database.Search, error) {
 	var result []database.Search
 
-	searchTerm := `'% ` + text +` %'`
+	searchTerm := text
 
 	query := bytes.Buffer{}
 
-	query.WriteString(`(SELECT title AS text, created_at AS date, created_by AS from_id, 'topic' AS type, id, 0 FROM topics WHERE title LIKE ` + searchTerm + ``)
+	query.WriteString(`(SELECT title AS text, created_at AS date, created_by AS from_id, 'topic' AS type, id, 0 FROM topics WHERE to_tsvector(title) @@ to_tsquery('` + searchTerm + `')`)
 
 	if fromID != 0 {
 		query.WriteString(` AND created_by = ` + strconv.Itoa(fromID))
@@ -49,7 +49,7 @@ func (d *Adapter) Search(context context.Context, text string, page int, limit i
 
 	query.WriteString(`ORDER BY title OFFSET $1 LIMIT $2)`)
 	query.WriteString(`UNION`)
-	query.WriteString(`(SELECT text AS text, date AS date, from_id AS from_id, 'comment' AS type, topic_id, id FROM comments WHERE text LIKE ` + searchTerm + ``)
+	query.WriteString(`(SELECT text AS text, date AS date, from_id AS from_id, 'comment' AS type, topic_id, id FROM comments WHERE to_tsvector(text) @@ to_tsquery('` + searchTerm + `')`)
 
 	if fromID != 0 {
 		query.WriteString(` AND from_id = ` + strconv.Itoa(fromID))
@@ -91,11 +91,11 @@ func (d *Adapter) Search(context context.Context, text string, page int, limit i
 func (d *Adapter) SearchCount(context context.Context, text string, page int, limit int, fromID int, createdAfter int, createdBefore int) (int, error) {
 	var total int
 
-	searchTerm := `'% ` + text +` %'`
+	searchTerm := text
 
 	query := bytes.Buffer{}
 
-	query.WriteString(`SELECT COUNT(*) FROM ((SELECT title AS text, created_at AS date, created_by AS from_id, 'topic' AS type, id, 0 FROM topics WHERE title LIKE ` + searchTerm + ``)
+	query.WriteString(`SELECT COUNT(*) FROM ((SELECT title AS text, created_at AS date, created_by AS from_id, 'topic' AS type, id, 0 FROM topics WHERE to_tsvector(title) @@ to_tsquery('` + searchTerm + `')`)
 
 	if fromID != 0 {
 		query.WriteString(` AND created_by = ` + strconv.Itoa(fromID))
@@ -111,7 +111,7 @@ func (d *Adapter) SearchCount(context context.Context, text string, page int, li
 
 	query.WriteString(`ORDER BY title)`)
 	query.WriteString(`UNION`)
-	query.WriteString(`(SELECT text AS text, date AS date, from_id AS from_id, 'comment' AS type, topic_id, id FROM comments WHERE text LIKE ` + searchTerm + ``)
+	query.WriteString(`(SELECT text AS text, date AS date, from_id AS from_id, 'comment' AS type, topic_id, id FROM comments WHERE to_tsvector(text) @@ to_tsquery('` + searchTerm + `')`)
 
 	if fromID != 0 {
 		query.WriteString(` AND from_id = ` + strconv.Itoa(fromID))
