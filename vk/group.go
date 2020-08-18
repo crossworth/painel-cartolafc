@@ -3,8 +3,8 @@ package vk
 import (
 	"context"
 	"encoding/json"
-	"log"
 	"net/url"
+	"strconv"
 	"strings"
 )
 
@@ -37,8 +37,6 @@ func (v *VKClient) GroupScreenNameToProfileID(context context.Context, screenNam
 	values.Add("group_ids", "")
 	values.Add("group_id", screenNameOrID)
 
-	log.Println("haa")
-
 	resp, err := v.client.MakeRequest("groups.getById", values)
 	if err != nil {
 		return 0, "", err
@@ -55,4 +53,35 @@ func (v *VKClient) GroupScreenNameToProfileID(context context.Context, screenNam
 	}
 
 	return -groupInfo[0].ID, groupInfo[0].ScreenName, nil
+}
+
+type isMemberResponse struct {
+	Member    bool `json:"member"`
+	CanInvite bool `json:"can_invite"`
+}
+
+func (v *VKClient) IsUserIDOnGroup(context context.Context, userID string, communityID int) (bool, error) {
+
+	values := url.Values{}
+	values.Add("group_id", strconv.Itoa(communityID))
+	values.Add("user_id", userID)
+
+	resp, err := v.client.MakeRequest("groups.isMember", values)
+	if err != nil {
+		return false, err
+	}
+
+	var member isMemberResponse
+	err = json.Unmarshal(resp.Response, &member)
+	if err != nil {
+		var memberNumber int
+		err2 := json.Unmarshal(resp.Response, &memberNumber)
+		if err2 == nil {
+			return memberNumber == 1, nil
+		}
+
+		return false, err
+	}
+
+	return member.Member, nil
 }

@@ -5,6 +5,8 @@ import (
 	"net/http"
 )
 
+const UserSession = "userSession"
+
 type vkIDKey struct{}
 
 func VKIDFromContext(ctx context.Context) (int, bool) {

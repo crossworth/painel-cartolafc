@@ -17,6 +17,16 @@ github.com/gobuffalo/packr/v2/file/resolver
 github.com/gobuffalo/packr/v2/file/resolver/encoding/hex
 github.com/gobuffalo/packr/v2/jam/parser
 github.com/gobuffalo/packr/v2/plog
+# github.com/golang/protobuf v1.3.1
+github.com/golang/protobuf/proto
+# github.com/gorilla/context v1.1.1
+github.com/gorilla/context
+# github.com/gorilla/mux v1.6.2
+github.com/gorilla/mux
+# github.com/gorilla/securecookie v1.1.1
+github.com/gorilla/securecookie
+# github.com/gorilla/sessions v1.1.1
+github.com/gorilla/sessions
 # github.com/helloeave/json v1.13.0
 github.com/helloeave/json
 # github.com/himidori/golang-vk-api v0.0.0-20200702133956-0d6cb9682ce6
@@ -33,6 +43,9 @@ github.com/lib/pq/oid
 github.com/lib/pq/scram
 # github.com/markbates/errx v1.1.0
 github.com/markbates/errx
+# github.com/markbates/goth v1.64.2
+github.com/markbates/goth
+github.com/markbates/goth/gothic
 # github.com/markbates/oncer v1.0.0
 github.com/markbates/oncer
 # github.com/markbates/safe v1.0.1
@@ -60,9 +73,23 @@ github.com/sirupsen/logrus
 github.com/travelaudience/go-sx
 # golang.org/x/crypto v0.0.0-20200728195943-123391ffb6de
 golang.org/x/crypto/ssh/terminal
+# golang.org/x/net v0.0.0-20200707034311-ab3426394381
+golang.org/x/net/context
+golang.org/x/net/context/ctxhttp
+# golang.org/x/oauth2 v0.0.0-20180821212333-d2e6202438be
+golang.org/x/oauth2
+golang.org/x/oauth2/internal
 # golang.org/x/sync v0.0.0-20200625203802-6e8e738ad208
 golang.org/x/sync/errgroup
 # golang.org/x/sys v0.0.0-20200812155832-6a926be9bd1d
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
 golang.org/x/sys/windows
+# google.golang.org/appengine v1.1.0
+google.golang.org/appengine/internal
+google.golang.org/appengine/internal/base
+google.golang.org/appengine/internal/datastore
+google.golang.org/appengine/internal/log
+google.golang.org/appengine/internal/remote_api
+google.golang.org/appengine/internal/urlfetch
+google.golang.org/appengine/urlfetch
