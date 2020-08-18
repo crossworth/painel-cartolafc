@@ -50,6 +50,10 @@ const changeLog = `
 - Adicionado listagem de tópicos
 - Adicionado suporte a 'short cache', para pesquisa
 - Adicionado suporte inicial a pesquisa de tópicos
+
+18 Agosto
+- Adicionado Login com VK e verificação se a pessoa faz parte da comunidade
+- Adicionado filtro de tópicos+comentários
 `
 
 export {

@@ -205,7 +205,7 @@ GROUP BY p.id, t.total, c.total, l.total HAVING p.id = $1`
 func (d *PostgreSQL) ProfileWithStats(context context.Context, orderBy string, orderDirection OrderByDirection, period Period, page int, limit int) ([]ProfileWithStats, error) {
 	var profiles []ProfileWithStats
 
-	if orderBy != "topics" && orderBy != "comments" && orderBy != "likes" {
+	if orderBy != "topics" && orderBy != "comments" && orderBy != "likes" && orderBy != "topics_comments" {
 		return profiles, ErrInvalidMemberOrderBy
 	}
 
@@ -222,7 +222,8 @@ func (d *PostgreSQL) ProfileWithStats(context context.Context, orderBy string, o
     p.*,
     COALESCE(t.total, 0)::INTEGER as topics,
     COALESCE(c.total, 0)::INTEGER as comments,
-    COALESCE(l.total, 0)::INTEGER as likes
+    COALESCE(l.total, 0)::INTEGER as likes,
+	(COALESCE(t.total, 0)::INTEGER + COALESCE(c.total, 0)::INTEGER) as topics_comments
 FROM profiles p
     LEFT JOIN (
         SELECT created_by, COUNT(created_by) as total FROM topics ` + periodTopics + ` GROUP BY created_by
@@ -247,6 +248,7 @@ GROUP BY p.id, t.total, c.total, l.total ORDER BY ` + orderBy + ` ` + orderDirec
 				&p.Topics,
 				&p.Comments,
 				&p.Likes,
+				&p.TopicsPlusComments,
 			)
 			p.Position = ((page - 1) * limit) + i
 			profiles = append(profiles, p)

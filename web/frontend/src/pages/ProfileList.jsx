@@ -48,6 +48,11 @@ const columns = [
     key: 'likes',
   },
   {
+    title: 'Tópicos+Comentários',
+    dataIndex: 'topics_plus_comments',
+    key: 'topics_plus_comments',
+  },
+  {
     title: '',
     dataIndex: 'id',
     key: 'id',
@@ -71,6 +76,8 @@ const orderByToPTBR = orderBy => {
       return 'tópicos'
     case 'comments':
       return 'comentários'
+    case 'topics_comments':
+      return 'tópicos+comentários'
     default:
       return 'likes'
   }
@@ -215,6 +222,7 @@ const ProfileList = (props) => {
               <Radio.Button value="topics">Por tópicos</Radio.Button>
               <Radio.Button value="comments">Por comentários</Radio.Button>
               <Radio.Button value="likes">Por likes</Radio.Button>
+              <Radio.Button value="topics_comments">Por tópicos+comentários</Radio.Button>
             </Radio.Group>
           </Space>
         </div>

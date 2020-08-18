@@ -78,10 +78,11 @@ func (o OrderBy) Stringer() string {
 
 type ProfileWithStats struct {
 	model.Profile
-	Topics   int `json:"topics"`
-	Comments int `json:"comments"`
-	Likes    int `json:"likes"`
-	Position int `json:"position,omitempty"`
+	Topics             int `json:"topics"`
+	Comments           int `json:"comments"`
+	Likes              int `json:"likes"`
+	Position           int `json:"position,omitempty"`
+	TopicsPlusComments int `json:"topics_plus_comments"`
 }
 
 type CommentWithProfileAndAttachment struct {
