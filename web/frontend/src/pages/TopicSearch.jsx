@@ -69,6 +69,7 @@ const TopicSearch = (props) => {
     position: ['topLeft'],
     showSizeChanger: true,
     term: stringWithDefault(searchParams.get('term'), ''),
+    pageSizeOptions: [10, 20, 50, 100, 1000]
   })
 
   const [loading, setLoading] = useState(true)

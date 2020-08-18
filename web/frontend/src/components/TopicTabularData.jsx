@@ -16,7 +16,8 @@ const TopicTabularData = (props) => {
     pageSize: parseIntWithDefault(searchParams.get('limit'), getGlobalPageSize(10)),
     currentTimestamp: parseIntWithDefault(searchParams.get('current'), unixNow()),
     position: ['topLeft'],
-    showSizeChanger: true
+    showSizeChanger: true,
+    pageSizeOptions: [10, 20, 50, 100, 1000]
   })
 
   const [loading, setLoading] = useState(true)

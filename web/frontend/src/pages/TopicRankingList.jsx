@@ -78,6 +78,7 @@ const TopicRankingList = (props) => {
     orderDir: stringWithDefault(searchParams.get('orderDir'), 'desc'),
     period: stringWithDefault(searchParams.get('period'), 'all'),
     showOlderTopics: stringWithDefault(searchParams.get('showOlderTopics'), 'true'),
+    pageSizeOptions: [10, 20, 50, 100, 1000]
   })
 
   const [loading, setLoading] = useState(true)

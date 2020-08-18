@@ -97,6 +97,7 @@ const ProfileList = (props) => {
     orderBy: stringWithDefault(searchParams.get('orderBy'), 'topics'),
     orderDir: stringWithDefault(searchParams.get('orderDir'), 'desc'),
     period: stringWithDefault(searchParams.get('period'), 'all'),
+    pageSizeOptions: [10, 20, 50, 100, 1000]
   })
 
   const [loading, setLoading] = useState(true)
