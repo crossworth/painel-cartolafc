@@ -11,25 +11,24 @@ import (
 	"github.com/crossworth/cartola-web-admin/model"
 )
 
-func (d *PostgreSQL) TopicsAll(context context.Context) ([]model.Topic, error) {
-	var topics []model.Topic
-	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
-		tx.MustQueryContext(context, `SELECT * FROM topics`).Each(func(rows *sx.Rows) {
-			var t model.Topic
-			rows.MustScans(&t)
-			topics = append(topics, t)
-		})
-	})
-	return topics, err
-}
-
-func (d *PostgreSQL) Topics(context context.Context, before int, limit int, orderBy OrderBy) ([]TopicWithPollAndCommentsCount, error) {
+func (p *PostgreSQL) Topics(context context.Context, before int, limit int, orderBy OrderBy) ([]TopicWithPollAndCommentsCount, error) {
 	var topics []TopicWithPollAndCommentsCount
 
-	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
+	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {
 		var t TopicWithPollAndCommentsCount
-		tx.MustQueryContext(context, `SELECT * FROM topics WHERE `+orderBy.Stringer()+` <= $1 ORDER BY `+orderBy.Stringer()+` DESC LIMIT $2`, before, limit).Each(func(rows *sx.Rows) {
-			rows.MustScans(&t.Topic)
+		tx.MustQueryContext(context, `SELECT t.*, (SELECT COUNT(*) FROM comments c WHERE c.topic_id = t.id) as comment_count FROM topics t WHERE t.`+orderBy.Stringer()+` <= $1 ORDER BY t.`+orderBy.Stringer()+` DESC LIMIT $2`, before, limit).Each(func(rows *sx.Rows) {
+			rows.MustScan(
+				&t.Topic.ID,
+				&t.Topic.Title,
+				&t.Topic.IsClosed,
+				&t.Topic.IsFixed,
+				&t.Topic.CreatedAt,
+				&t.Topic.UpdatedAt,
+				&t.Topic.CreatedBy,
+				&t.Topic.UpdatedBy,
+				&t.Topic.Deleted,
+				&t.CommentsCount,
+			)
 			topics = append(topics, t)
 		})
 
@@ -37,7 +36,6 @@ func (d *PostgreSQL) Topics(context context.Context, before int, limit int, orde
 
 		for i := range topics {
 			topicIDs = append(topicIDs, strconv.Itoa(topics[i].ID))
-			tx.MustQueryRowContext(context, `SELECT COUNT(*) FROM comments WHERE topic_id = $1`, topics[i].ID).MustScan(&topics[i].CommentsCount)
 		}
 
 		if len(topicIDs) == 0 {
@@ -82,10 +80,10 @@ func (d *PostgreSQL) Topics(context context.Context, before int, limit int, orde
 	return topics, err
 }
 
-func (d *PostgreSQL) TopicsPaginationTimestamp(context context.Context, before int, limit int, orderBy OrderBy) (PaginationTimestamps, error) {
+func (p *PostgreSQL) TopicsPaginationTimestamp(context context.Context, before int, limit int, orderBy OrderBy) (PaginationTimestamps, error) {
 	var timestamps PaginationTimestamps
 
-	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
+	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {
 		query := `SELECT 
 					COALESCE((SELECT ` + orderBy.Stringer() + ` FROM topics WHERE ` + orderBy.Stringer() + ` <= $1 ORDER BY ` + orderBy.Stringer() + ` DESC OFFSET $2 LIMIT 1), 0) as next,
 					COALESCE((SELECT ` + orderBy.Stringer() + ` FROM topics WHERE ` + orderBy.Stringer() + ` >= $1 ORDER BY ` + orderBy.Stringer() + ` ASC OFFSET $2 LIMIT 1), 0) as prev
@@ -96,20 +94,20 @@ func (d *PostgreSQL) TopicsPaginationTimestamp(context context.Context, before i
 	return timestamps, err
 }
 
-func (d *PostgreSQL) TopicsCount(context context.Context) (int, error) {
+func (p *PostgreSQL) TopicsCount(context context.Context) (int, error) {
 	var total int
 
-	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
-		tx.MustQueryRowContext(context, `SELECT COUNT(*) FROM topics`).MustScan(&total)
+	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {
+		tx.MustQueryRowContext(context, `SELECT reltuples::INTEGER FROM pg_class WHERE oid = 'topics'::regclass`).MustScan(&total)
 	})
 
 	return total, err
 }
 
-func (d *PostgreSQL) TopicByID(context context.Context, id int) (TopicWithPollAndCommentsCount, error) {
+func (p *PostgreSQL) TopicByID(context context.Context, id int) (TopicWithPollAndCommentsCount, error) {
 	var topic TopicWithPollAndCommentsCount
 
-	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
+	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {
 		tx.MustQueryRowContext(context, `SELECT * FROM topics WHERE id = $1`, id).MustScans(&topic.Topic)
 		tx.MustQueryRowContext(context, `SELECT COUNT(*) FROM comments WHERE topic_id = $1`, id).MustScan(&topic.CommentsCount)
 
@@ -138,18 +136,18 @@ func (d *PostgreSQL) TopicByID(context context.Context, id int) (TopicWithPollAn
 	return topic, err
 }
 
-func (d *PostgreSQL) CreatedAtByTopic(context context.Context, id int) (int, error) {
+func (p *PostgreSQL) CreatedAtByTopic(context context.Context, id int) (int, error) {
 	var date int
-	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
+	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {
 		tx.MustQueryRowContext(context, `SELECT created_at FROM topics WHERE id = $1`, id).MustScan(&date)
 	})
 
 	return date, err
 }
 
-func (d *PostgreSQL) CommentsAll(context context.Context) ([]model.Comment, error) {
+func (p *PostgreSQL) CommentsAll(context context.Context) ([]model.Comment, error) {
 	var comments []model.Comment
-	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
+	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {
 		tx.MustQueryContext(context, `SELECT * FROM comments`).Each(func(rows *sx.Rows) {
 			var c model.Comment
 			rows.MustScans(&c)
@@ -159,10 +157,10 @@ func (d *PostgreSQL) CommentsAll(context context.Context) ([]model.Comment, erro
 	return comments, err
 }
 
-func (d *PostgreSQL) CommentsByTopicID(context context.Context, id int, after int, limit int) ([]CommentWithProfileAndAttachment, error) {
+func (p *PostgreSQL) CommentsByTopicID(context context.Context, id int, after int, limit int) ([]CommentWithProfileAndAttachment, error) {
 	var comments []CommentWithProfileAndAttachment
 
-	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
+	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {
 		queryComment := `SELECT * FROM comments WHERE topic_id = $1 AND date >= $2 ORDER BY date ASC LIMIT $3`
 		tx.MustQueryContext(context, queryComment, id, after, limit).Each(func(r *sx.Rows) {
 			var c model.Comment
@@ -215,20 +213,20 @@ func (d *PostgreSQL) CommentsByTopicID(context context.Context, id int, after in
 	return comments, err
 }
 
-func (d *PostgreSQL) CommentsCountByTopicID(context context.Context, id int) (int, error) {
+func (p *PostgreSQL) CommentsCountByTopicID(context context.Context, id int) (int, error) {
 	var total int
 
-	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
+	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {
 		tx.MustQueryRowContext(context, `SELECT COUNT(*) FROM comments WHERE topic_id = $1`, id).MustScan(&total)
 	})
 
 	return total, err
 }
 
-func (d *PostgreSQL) CommentsPaginationTimestampByTopicID(context context.Context, id int, after int, limit int) (PaginationTimestamps, error) {
+func (p *PostgreSQL) CommentsPaginationTimestampByTopicID(context context.Context, id int, after int, limit int) (PaginationTimestamps, error) {
 	var timestamps PaginationTimestamps
 
-	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
+	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {
 		query := `SELECT 
 					COALESCE((SELECT date FROM comments WHERE topic_id = $1 AND date >= $2 ORDER BY date ASC OFFSET $3 LIMIT 1), 0) as next,
 					COALESCE((SELECT date FROM comments WHERE topic_id = $1 AND date <= $2 ORDER BY date DESC OFFSET $3 LIMIT 1), 0) as prev
@@ -239,7 +237,7 @@ func (d *PostgreSQL) CommentsPaginationTimestampByTopicID(context context.Contex
 	return timestamps, err
 }
 
-func (d *PostgreSQL) TopicWithStats(context context.Context, orderBy string, orderDirection OrderByDirection, period Period, showOlderTopics bool, page int, limit int) ([]TopicsWithStats, error) {
+func (p *PostgreSQL) TopicWithStats(context context.Context, orderBy string, orderDirection OrderByDirection, period Period, showOlderTopics bool, page int, limit int) ([]TopicsWithStats, error) {
 	var topics []TopicsWithStats
 
 	if orderBy != "comments" && orderBy != "likes" {
@@ -257,7 +255,7 @@ func (d *PostgreSQL) TopicWithStats(context context.Context, orderBy string, ord
 		periodTopics = fmt.Sprintf("HAVING t.created_at >= EXTRACT(epoch FROM date_trunc('%[1]s', current_date - INTERVAL '1 %[1]s')) AND t.created_at < EXTRACT(epoch FROM date_trunc('%[1]s', current_date))", period.Stringer())
 	}
 
-	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
+	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {
 		query := `SELECT
     t.*,
     COALESCE(c.total, 0)::INTEGER as comments,

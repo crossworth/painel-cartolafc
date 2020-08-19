@@ -54,6 +54,9 @@ const changeLog = `
 18 Agosto
 - Adicionado Login com VK e verificação se a pessoa faz parte da comunidade
 - Adicionado filtro de tópicos+comentários
+
+19 Agosto
+- Otimizado query de tópicos
 `
 
 export {

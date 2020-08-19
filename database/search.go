@@ -9,7 +9,7 @@ import (
 	"github.com/travelaudience/go-sx"
 )
 
-func (d *PostgreSQL) Search(context context.Context, text string, page int, limit int, fromID int, createdAfter int, createdBefore int) ([]Search, error) {
+func (p *PostgreSQL) Search(context context.Context, text string, page int, limit int, fromID int, createdAfter int, createdBefore int) ([]Search, error) {
 	var result []Search
 
 	searchTerm := `'% ` + text +` %'`
@@ -48,7 +48,7 @@ func (d *PostgreSQL) Search(context context.Context, text string, page int, limi
 
 	query.WriteString(`ORDER BY text OFFSET $1 LIMIT $2)`)
 
-	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
+	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {
 		// NOTE(Pedro): to get the correct number of results we have to divide by two
 		// since its two queries
 		tx.MustQueryContext(context, query.String(), (page-1)*limit/2, limit/2).Each(func(r *sx.Rows) {
@@ -71,7 +71,7 @@ func (d *PostgreSQL) Search(context context.Context, text string, page int, limi
 	return result, err
 }
 
-func (d *PostgreSQL) SearchCount(context context.Context, text string, page int, limit int, fromID int, createdAfter int, createdBefore int) (int, error) {
+func (p *PostgreSQL) SearchCount(context context.Context, text string, page int, limit int, fromID int, createdAfter int, createdBefore int) (int, error) {
 	var total int
 
 	searchTerm := `'% ` + text +` %'`
@@ -110,7 +110,7 @@ func (d *PostgreSQL) SearchCount(context context.Context, text string, page int,
 
 	query.WriteString(`ORDER BY text)) q`)
 
-	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
+	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {
 		tx.MustQueryRowContext(context, query.String()).MustScan(&total)
 	})
 

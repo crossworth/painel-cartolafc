@@ -16,9 +16,9 @@ var (
 	ErrInvalidMemberOrderBy = errors.New("order by de membros inválido")
 )
 
-func (d *PostgreSQL) ProfilesAll(context context.Context) ([]model.Profile, error) {
+func (p *PostgreSQL) ProfilesAll(context context.Context) ([]model.Profile, error) {
 	var profiles []model.Profile
-	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
+	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {
 		tx.MustQueryContext(context, `SELECT * FROM profiles`).Each(func(rows *sx.Rows) {
 			var p model.Profile
 			rows.MustScans(&p)
@@ -28,20 +28,20 @@ func (d *PostgreSQL) ProfilesAll(context context.Context) ([]model.Profile, erro
 	return profiles, err
 }
 
-func (d *PostgreSQL) ProfileByID(context context.Context, id int) (model.Profile, error) {
+func (p *PostgreSQL) ProfileByID(context context.Context, id int) (model.Profile, error) {
 	var profile model.Profile
 
-	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
+	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {
 		tx.MustQueryRowContext(context, `SELECT * FROM profiles WHERE id = $1`, id).MustScans(&profile)
 	})
 
 	return profile, err
 }
 
-func (d *PostgreSQL) TopicsByProfileID(context context.Context, id int, before int, limit int) ([]model.Topic, error) {
+func (p *PostgreSQL) TopicsByProfileID(context context.Context, id int, before int, limit int) ([]model.Topic, error) {
 	var topics []model.Topic
 
-	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
+	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {
 		query := `SELECT * FROM topics WHERE created_by = $1 AND created_at <= $2 ORDER BY created_at DESC LIMIT $3`
 
 		tx.MustQueryContext(context, query, id, before, limit).Each(func(r *sx.Rows) {
@@ -54,10 +54,10 @@ func (d *PostgreSQL) TopicsByProfileID(context context.Context, id int, before i
 	return topics, err
 }
 
-func (d *PostgreSQL) TopicsPaginationTimestampByProfileID(context context.Context, id int, before int, limit int) (PaginationTimestamps, error) {
+func (p *PostgreSQL) TopicsPaginationTimestampByProfileID(context context.Context, id int, before int, limit int) (PaginationTimestamps, error) {
 	var timestamps PaginationTimestamps
 
-	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
+	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {
 		query := `SELECT 
 					COALESCE((SELECT created_at FROM topics WHERE created_by = $1 AND created_at <= $2 ORDER BY created_at DESC OFFSET $3 LIMIT 1), 0) as next,
 					COALESCE((SELECT created_at FROM topics WHERE created_by = $1 AND created_at >= $2 ORDER BY created_at ASC OFFSET $3 LIMIT 1), 0) as prev
@@ -68,20 +68,20 @@ func (d *PostgreSQL) TopicsPaginationTimestampByProfileID(context context.Contex
 	return timestamps, err
 }
 
-func (d *PostgreSQL) TopicsCountByProfileID(context context.Context, id int) (int, error) {
+func (p *PostgreSQL) TopicsCountByProfileID(context context.Context, id int) (int, error) {
 	var total int
 
-	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
+	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {
 		tx.MustQueryRowContext(context, `SELECT COUNT(*) FROM topics WHERE created_by = $1`, id).MustScan(&total)
 	})
 
 	return total, err
 }
 
-func (d *PostgreSQL) CommentsByProfileID(context context.Context, id int, before int, limit int) ([]model.Comment, error) {
+func (p *PostgreSQL) CommentsByProfileID(context context.Context, id int, before int, limit int) ([]model.Comment, error) {
 	var comments []model.Comment
 
-	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
+	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {
 		query := `SELECT * FROM comments WHERE from_id = $1 AND date <= $2 ORDER BY date DESC LIMIT $3`
 
 		tx.MustQueryContext(context, query, id, before, limit).Each(func(r *sx.Rows) {
@@ -94,30 +94,30 @@ func (d *PostgreSQL) CommentsByProfileID(context context.Context, id int, before
 	return comments, err
 }
 
-func (d *PostgreSQL) CommentsCountByProfileID(context context.Context, id int) (int, error) {
+func (p *PostgreSQL) CommentsCountByProfileID(context context.Context, id int) (int, error) {
 	var total int
 
-	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
+	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {
 		tx.MustQueryRowContext(context, `SELECT COUNT(*) FROM comments WHERE from_id = $1`, id).MustScan(&total)
 	})
 
 	return total, err
 }
 
-func (d *PostgreSQL) LikesCountByProfileID(context context.Context, id int) (int, error) {
+func (p *PostgreSQL) LikesCountByProfileID(context context.Context, id int) (int, error) {
 	var total int
 
-	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
+	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {
 		tx.MustQueryRowContext(context, `SELECT SUM(likes) FROM comments WHERE from_id = $1`, id).MustScan(&total)
 	})
 
 	return total, err
 }
 
-func (d *PostgreSQL) CommentsPaginationTimestampByProfileID(context context.Context, id int, before int, limit int) (PaginationTimestamps, error) {
+func (p *PostgreSQL) CommentsPaginationTimestampByProfileID(context context.Context, id int, before int, limit int) (PaginationTimestamps, error) {
 	var timestamps PaginationTimestamps
 
-	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
+	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {
 		query := `SELECT 
 					COALESCE((SELECT date FROM comments WHERE from_id = $1 AND date <= $2 ORDER BY date DESC OFFSET $3 LIMIT 1), 0) as next,
 					COALESCE((SELECT date FROM comments WHERE from_id = $1 AND date >= $2 ORDER BY date ASC OFFSET $3 LIMIT 1), 0) as prev
@@ -128,10 +128,10 @@ func (d *PostgreSQL) CommentsPaginationTimestampByProfileID(context context.Cont
 	return timestamps, err
 }
 
-func (d *PostgreSQL) ProfileHistoryByProfileID(context context.Context, id int) ([]model.ProfileNames, error) {
+func (p *PostgreSQL) ProfileHistoryByProfileID(context context.Context, id int) ([]model.ProfileNames, error) {
 	var profileHistory []model.ProfileNames
 
-	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
+	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {
 		query := `SELECT * FROM profile_names WHERE profile_id = $1 ORDER BY date DESC`
 
 		tx.MustQueryContext(context, query, id).Each(func(r *sx.Rows) {
@@ -144,10 +144,10 @@ func (d *PostgreSQL) ProfileHistoryByProfileID(context context.Context, id int) 
 	return profileHistory, err
 }
 
-func (d *PostgreSQL) SearchProfileName(context context.Context, text string) ([]model.Profile, error) {
+func (p *PostgreSQL) SearchProfileName(context context.Context, text string) ([]model.Profile, error) {
 	var profiles []model.Profile
 
-	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
+	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {
 		query := `SELECT * FROM profiles WHERE LOWER(first_name) LIKE '%' || $1 || '%' OR LOWER(last_name) LIKE '%' || $1 || '%' OR LOWER(screen_name) LIKE '%' || $1 || '%' OR LOWER(CONCAT(first_name, ' ', last_name)) LIKE '%' || $1 || '%'`
 
 		tx.MustQueryContext(context, query, strings.ToLower(text)).Each(func(r *sx.Rows) {
@@ -166,10 +166,10 @@ func (d *PostgreSQL) SearchProfileName(context context.Context, text string) ([]
 	return profiles, err
 }
 
-func (d *PostgreSQL) ProfileStatsByProfileID(context context.Context, id int) (ProfileWithStats, error) {
+func (p *PostgreSQL) ProfileStatsByProfileID(context context.Context, id int) (ProfileWithStats, error) {
 	var profile ProfileWithStats
 
-	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
+	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {
 		query := `SELECT
     p.*,
     COALESCE(t.total, 0)::INTEGER as topics,
@@ -202,7 +202,7 @@ GROUP BY p.id, t.total, c.total, l.total HAVING p.id = $1`
 	return profile, err
 }
 
-func (d *PostgreSQL) ProfileWithStats(context context.Context, orderBy string, orderDirection OrderByDirection, period Period, page int, limit int) ([]ProfileWithStats, error) {
+func (p *PostgreSQL) ProfileWithStats(context context.Context, orderBy string, orderDirection OrderByDirection, period Period, page int, limit int) ([]ProfileWithStats, error) {
 	var profiles []ProfileWithStats
 
 	if orderBy != "topics" && orderBy != "comments" && orderBy != "likes" && orderBy != "topics_comments" {
@@ -217,7 +217,7 @@ func (d *PostgreSQL) ProfileWithStats(context context.Context, orderBy string, o
 		periodComments = fmt.Sprintf("WHERE date >= EXTRACT(epoch FROM date_trunc('%[1]s', current_date - INTERVAL '1 %[1]s')) AND date < EXTRACT(epoch FROM date_trunc('%[1]s', current_date))", period.Stringer())
 	}
 
-	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
+	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {
 		query := `SELECT
     p.*,
     COALESCE(t.total, 0)::INTEGER as topics,
@@ -259,10 +259,10 @@ GROUP BY p.id, t.total, c.total, l.total ORDER BY ` + orderBy + ` ` + orderDirec
 	return profiles, err
 }
 
-func (d *PostgreSQL) ProfileCount(context context.Context) (int, error) {
+func (p *PostgreSQL) ProfileCount(context context.Context) (int, error) {
 	var total int
 
-	err := sx.DoContext(context, d.db, func(tx *sx.Tx) {
+	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {
 		tx.MustQueryRowContext(context, `SELECT COUNT(*) FROM profiles`).MustScan(&total)
 	})
 
