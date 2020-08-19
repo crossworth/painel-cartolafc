@@ -193,20 +193,17 @@ func (p *PostgreSQL) ProfileWithStats(context context.Context, orderBy string, o
 		query := `SELECT
     p.*,
     COALESCE(t.total, 0)::INTEGER as topics,
-    COALESCE(c.total, 0)::INTEGER as comments,
-    COALESCE(l.total, 0)::INTEGER as likes,
-	(COALESCE(t.total, 0)::INTEGER + COALESCE(c.total, 0)::INTEGER) as topics_comments
+    COALESCE(c.comments, 0)::INTEGER as comments,
+    COALESCE(c.likes, 0)::INTEGER as likes,
+	(COALESCE(t.total, 0)::INTEGER + COALESCE(c.comments, 0)::INTEGER) as topics_comments
 FROM profiles p
     LEFT JOIN (
         SELECT created_by, COUNT(created_by) as total FROM topics ` + periodTopics + ` GROUP BY created_by
     ) as t ON t.created_by = p.id
-    LEFT JOIN (
-        SELECT from_id, COUNT(from_id) as total FROM comments ` + periodComments + ` GROUP BY from_id
+     LEFT JOIN (
+        SELECT from_id, COUNT(from_id) as comments, SUM(likes) as likes FROM comments ` + periodComments + ` GROUP BY from_id
     ) as c ON c.from_id = p.id
-    LEFT JOIN (
-        SELECT from_id, SUM(likes) as total FROM comments ` + periodComments + ` GROUP BY from_id
-    ) as l ON l.from_id = p.id
-GROUP BY p.id, t.total, c.total, l.total ORDER BY ` + orderBy + ` ` + orderDirection.Stringer() + ` OFFSET $1 LIMIT $2`
+GROUP BY p.id, t.total, c.comments, c.likes ORDER BY ` + orderBy + ` ` + orderDirection.Stringer() + ` OFFSET $1 LIMIT $2`
 
 		i := 1
 		tx.MustQueryContext(context, query, (page-1)*limit, limit).Each(func(r *sx.Rows) {

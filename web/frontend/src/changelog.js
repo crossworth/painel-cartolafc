@@ -60,7 +60,7 @@ const changeLog = `
 - Ajustado problema como os tópicos eram ordenados por Mês/Semana/Dia eram considerados somente do dia 1 do mês
 - Otimizado query para estatística de membro
 - Ajustado problema com membros, onde estatísticas por Mês/Semana/Dia apenas consideram o primeiro dia do mês
-
+- Otimizado query de membros
 `
 
 export {
