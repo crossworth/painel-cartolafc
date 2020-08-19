@@ -108,8 +108,19 @@ func (p *PostgreSQL) TopicByID(context context.Context, id int) (TopicWithPollAn
 	var topic TopicWithPollAndCommentsCount
 
 	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {
-		tx.MustQueryRowContext(context, `SELECT * FROM topics WHERE id = $1`, id).MustScans(&topic.Topic)
-		tx.MustQueryRowContext(context, `SELECT COUNT(*) FROM comments WHERE topic_id = $1`, id).MustScan(&topic.CommentsCount)
+		tx.MustQueryRowContext(context, `SELECT t.*, (SELECT COUNT(*) FROM comments c WHERE c.topic_id = t.id) as comment_count FROM topics t WHERE t.id = $1`, id).
+			MustScan(
+				&topic.ID,
+				&topic.Title,
+				&topic.IsClosed,
+				&topic.IsFixed,
+				&topic.CreatedAt,
+				&topic.UpdatedAt,
+				&topic.CreatedBy,
+				&topic.UpdatedBy,
+				&topic.Deleted,
+				&topic.CommentsCount,
+			)
 
 		pollsQuery := `SELECT * FROM polls WHERE topic_id = $1`
 		tx.MustQueryContext(context, pollsQuery, id).Each(func(rows *sx.Rows) {
@@ -143,18 +154,6 @@ func (p *PostgreSQL) CreatedAtByTopic(context context.Context, id int) (int, err
 	})
 
 	return date, err
-}
-
-func (p *PostgreSQL) CommentsAll(context context.Context) ([]model.Comment, error) {
-	var comments []model.Comment
-	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {
-		tx.MustQueryContext(context, `SELECT * FROM comments`).Each(func(rows *sx.Rows) {
-			var c model.Comment
-			rows.MustScans(&c)
-			comments = append(comments, c)
-		})
-	})
-	return comments, err
 }
 
 func (p *PostgreSQL) CommentsByTopicID(context context.Context, id int, after int, limit int) ([]CommentWithProfileAndAttachment, error) {
@@ -248,11 +247,11 @@ func (p *PostgreSQL) TopicWithStats(context context.Context, orderBy string, ord
 	periodComments := ""
 
 	if period != PeriodAll {
-		periodComments = fmt.Sprintf("WHERE date >= EXTRACT(epoch FROM date_trunc('%[1]s', current_date - INTERVAL '1 %[1]s')) AND date < EXTRACT(epoch FROM date_trunc('%[1]s', current_date))", period.Stringer())
+		periodComments = fmt.Sprintf("WHERE date >= EXTRACT(epoch FROM current_date - INTERVAL '1 %s') AND date < EXTRACT(epoch FROM current_date)", period.Stringer())
 	}
 
 	if !showOlderTopics && period != PeriodAll {
-		periodTopics = fmt.Sprintf("HAVING t.created_at >= EXTRACT(epoch FROM date_trunc('%[1]s', current_date - INTERVAL '1 %[1]s')) AND t.created_at < EXTRACT(epoch FROM date_trunc('%[1]s', current_date))", period.Stringer())
+		periodTopics = fmt.Sprintf("HAVING t.created_at >= EXTRACT(epoch FROM current_date - INTERVAL '1 %s') AND t.created_at < EXTRACT(epoch FROM current_date)", period.Stringer())
 	}
 
 	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {

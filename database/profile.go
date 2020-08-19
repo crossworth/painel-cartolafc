@@ -16,18 +16,6 @@ var (
 	ErrInvalidMemberOrderBy = errors.New("order by de membros inválido")
 )
 
-func (p *PostgreSQL) ProfilesAll(context context.Context) ([]model.Profile, error) {
-	var profiles []model.Profile
-	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {
-		tx.MustQueryContext(context, `SELECT * FROM profiles`).Each(func(rows *sx.Rows) {
-			var p model.Profile
-			rows.MustScans(&p)
-			profiles = append(profiles, p)
-		})
-	})
-	return profiles, err
-}
-
 func (p *PostgreSQL) ProfileByID(context context.Context, id int) (model.Profile, error) {
 	var profile model.Profile
 
@@ -104,16 +92,6 @@ func (p *PostgreSQL) CommentsCountByProfileID(context context.Context, id int) (
 	return total, err
 }
 
-func (p *PostgreSQL) LikesCountByProfileID(context context.Context, id int) (int, error) {
-	var total int
-
-	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {
-		tx.MustQueryRowContext(context, `SELECT SUM(likes) FROM comments WHERE from_id = $1`, id).MustScan(&total)
-	})
-
-	return total, err
-}
-
 func (p *PostgreSQL) CommentsPaginationTimestampByProfileID(context context.Context, id int, before int, limit int) (PaginationTimestamps, error) {
 	var timestamps PaginationTimestamps
 
@@ -172,20 +150,14 @@ func (p *PostgreSQL) ProfileStatsByProfileID(context context.Context, id int) (P
 	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {
 		query := `SELECT
     p.*,
-    COALESCE(t.total, 0)::INTEGER as topics,
-    COALESCE(c.total, 0)::INTEGER as comments,
-    COALESCE(l.total, 0)::INTEGER as likes
+    (SELECT COUNT(t.*) FROM topics t WHERE t.created_by = p.id) as topics,
+	COALESCE(c.comments, 0)::INTEGER as comments,
+    COALESCE(c.likes, 0)::INTEGER as likes
 FROM profiles p
-    LEFT JOIN (
-        SELECT created_by, COUNT(created_by) as total FROM topics GROUP BY created_by
-    ) as t ON t.created_by = p.id
-    LEFT JOIN (
-        SELECT from_id, COUNT(from_id) as total FROM comments GROUP BY from_id
+LEFT JOIN (
+        SELECT from_id, COUNT(from_id) as comments, SUM(likes) as likes FROM comments GROUP BY from_id
     ) as c ON c.from_id = p.id
-    LEFT JOIN (
-        SELECT from_id, SUM(likes) as total FROM comments GROUP BY from_id
-    ) as l ON l.from_id = p.id
-GROUP BY p.id, t.total, c.total, l.total HAVING p.id = $1`
+WHERE p.id = $1`
 
 		tx.MustQueryRowContext(context, query, id).MustScan(
 			&profile.ID,
@@ -213,8 +185,8 @@ func (p *PostgreSQL) ProfileWithStats(context context.Context, orderBy string, o
 	periodComments := ""
 
 	if period != PeriodAll {
-		periodTopics = fmt.Sprintf("WHERE created_at >= EXTRACT(epoch FROM date_trunc('%[1]s', current_date - INTERVAL '1 %[1]s')) AND created_at < EXTRACT(epoch FROM date_trunc('%[1]s', current_date))", period.Stringer())
-		periodComments = fmt.Sprintf("WHERE date >= EXTRACT(epoch FROM date_trunc('%[1]s', current_date - INTERVAL '1 %[1]s')) AND date < EXTRACT(epoch FROM date_trunc('%[1]s', current_date))", period.Stringer())
+		periodTopics = fmt.Sprintf("WHERE created_at >= EXTRACT(epoch FROM current_date - INTERVAL '1 %s') AND created_at < EXTRACT(epoch FROM current_date)", period.Stringer())
+		periodComments = fmt.Sprintf("WHERE date >= EXTRACT(epoch FROM current_date - INTERVAL '1 %s') AND date < EXTRACT(epoch FROM current_date)", period.Stringer())
 	}
 
 	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {

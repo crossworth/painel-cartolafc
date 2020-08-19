@@ -184,6 +184,11 @@ func TopicsWithStats(provider TopicsWithStatsProvider, cache *cache.Cache) func(
 
 		period := database.PeriodFromString(periodStr)
 
+		// this avoids creating a duplicated cache record
+		if period == database.PeriodAll {
+			showOlderTopics = true
+		}
+
 		cacheKey := fmt.Sprintf("topics_with_stats_%s_%s_%d_%d_%s_%t", orderBy, orderDir.Stringer(), page, limit, period.Stringer(), showOlderTopics)
 		topicsCache := cache.Get(cacheKey, func() interface{} {
 			topics, err := provider.TopicWithStats(r.Context(), orderBy, orderDir, period, showOlderTopics, page, limit)
