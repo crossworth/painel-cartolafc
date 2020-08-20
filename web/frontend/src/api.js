@@ -8,6 +8,9 @@ const api = axios.create({
 })
 
 api.interceptors.response.use(response => {
+  if (response.request.responseURL.indexOf('/fazer-login') !== -1) {
+    return window.location.reload()
+  }
   return response.data
 }, error => {
   message.error(getErrorMessage(error).toString())

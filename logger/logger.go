@@ -2,13 +2,20 @@ package logger
 
 import (
 	stdLog "log"
+	"net/http"
 	"os"
+	"strconv"
+	"time"
 
 	"github.com/crossworth/multiwriter"
+	"github.com/go-chi/chi"
 	"github.com/mattn/go-colorable"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/diode"
+	"github.com/rs/zerolog/hlog"
 	"github.com/rs/zerolog/log"
+
+	"github.com/crossworth/cartola-web-admin/model"
 )
 
 type LogLevel int
@@ -65,4 +72,28 @@ func Setup(logLevel LogLevel, fileName string) {
 			Log = log.Output(&mw)
 		}
 	}
+}
+
+func SetupLoggerOnRouter(router chi.Router) {
+	router.Use(hlog.NewHandler(Log))
+
+	router.Use(hlog.AccessHandler(func(r *http.Request, status, size int, duration time.Duration) {
+		l := hlog.FromRequest(r).Info().
+			Str("method", r.Method).
+			Str("url", r.URL.String()).
+			Int("status", status).
+			Int("size", size).
+			Dur("duration", duration)
+
+		if vkID, ok := model.VKIDFromRequest(r); ok {
+			l.Str("vk_id", strconv.Itoa(vkID))
+		}
+
+		l.Msg("")
+	}))
+
+	router.Use(hlog.RemoteAddrHandler("ip"))
+	router.Use(hlog.UserAgentHandler("user_agent"))
+	router.Use(hlog.RefererHandler("referer"))
+	router.Use(hlog.RequestIDHandler("req_id", "request-id"))
 }

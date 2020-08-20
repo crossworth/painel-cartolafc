@@ -11,18 +11,15 @@ require (
 	github.com/helloeave/json v1.13.0
 	github.com/himidori/golang-vk-api v0.0.0-20200702133956-0d6cb9682ce6
 	github.com/joho/godotenv v1.3.0
-	github.com/karrick/godirwalk v1.16.1 // indirect
 	github.com/lib/pq v1.7.0
 	github.com/markbates/goth v1.64.2
 	github.com/mattn/go-colorable v0.1.7
 	github.com/patrickmn/go-cache v2.1.0+incompatible
-	github.com/rogpeppe/go-internal v1.6.1 // indirect
 	github.com/rs/zerolog v1.19.0
-	github.com/sirupsen/logrus v1.6.0 // indirect
 	github.com/travelaudience/go-sx v1.1.0
-	golang.org/x/crypto v0.0.0-20200728195943-123391ffb6de // indirect
 	golang.org/x/net v0.0.0-20200707034311-ab3426394381 // indirect
 	golang.org/x/oauth2 v0.0.0-20180821212333-d2e6202438be
 	golang.org/x/sync v0.0.0-20200625203802-6e8e738ad208
 	golang.org/x/sys v0.0.0-20200812155832-6a926be9bd1d // indirect
+	gopkg.in/yaml.v2 v2.2.7 // indirect
 )

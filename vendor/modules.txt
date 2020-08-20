@@ -33,9 +33,9 @@ github.com/helloeave/json
 github.com/himidori/golang-vk-api
 # github.com/joho/godotenv v1.3.0
 github.com/joho/godotenv
-# github.com/karrick/godirwalk v1.16.1
+# github.com/karrick/godirwalk v1.15.3
 github.com/karrick/godirwalk
-# github.com/konsorten/go-windows-terminal-sequences v1.0.3
+# github.com/konsorten/go-windows-terminal-sequences v1.0.2
 github.com/konsorten/go-windows-terminal-sequences
 # github.com/lib/pq v1.7.0
 github.com/lib/pq
@@ -67,11 +67,11 @@ github.com/rs/zerolog/hlog/internal/mutil
 github.com/rs/zerolog/internal/cbor
 github.com/rs/zerolog/internal/json
 github.com/rs/zerolog/log
-# github.com/sirupsen/logrus v1.6.0
+# github.com/sirupsen/logrus v1.4.2
 github.com/sirupsen/logrus
 # github.com/travelaudience/go-sx v1.1.0
 github.com/travelaudience/go-sx
-# golang.org/x/crypto v0.0.0-20200728195943-123391ffb6de
+# golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 golang.org/x/crypto/ssh/terminal
 # golang.org/x/net v0.0.0-20200707034311-ab3426394381
 golang.org/x/net/context

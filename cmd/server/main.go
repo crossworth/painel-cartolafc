@@ -2,9 +2,7 @@ package main
 
 import (
 	"compress/flate"
-	"context"
 	"fmt"
-	"html/template"
 	"log"
 	"net/http"
 	"os"
@@ -20,9 +18,10 @@ import (
 	"github.com/markbates/goth/gothic"
 
 	"github.com/crossworth/cartola-web-admin/api"
+	"github.com/crossworth/cartola-web-admin/auth"
+	"github.com/crossworth/cartola-web-admin/cache"
 	"github.com/crossworth/cartola-web-admin/database"
 	"github.com/crossworth/cartola-web-admin/logger"
-	"github.com/crossworth/cartola-web-admin/model"
 	"github.com/crossworth/cartola-web-admin/util"
 	"github.com/crossworth/cartola-web-admin/vk"
 	"github.com/crossworth/cartola-web-admin/vk/openid"
@@ -52,13 +51,17 @@ func main() {
 	vkClient := setupVKClient()
 	db := setupDatabase()
 	session := setupSessionStorage()
+	globalCache := cache.NewCache()
+
+	router.Mount("/public/api", api.NewPublicAPI(db, globalCache))
+
 	setupRoutes(vkClient, session, router, func(router chi.Router) {
 		logger.Log.Info().Msg("montando endpoints")
-		router.Mount("/api", api.NewServer(vkClient, db))
+		router.Mount("/api", api.NewServer(vkClient, db, globalCache))
 		router.Mount("/", web.New())
 	})
 
-	logger.Log.Info().Msgf("iniciando o servidor na porta %s\n", os.Getenv("APP_PORT"))
+	logger.Log.Info().Msgf("iniciando o servidor na porta %s", os.Getenv("APP_PORT"))
 
 	err = http.ListenAndServe(fmt.Sprintf(":%s", os.Getenv("APP_PORT")), router)
 	if err != nil {
@@ -79,133 +82,14 @@ func setupRoutes(vkAPI *vk.VKClient, sessionStorage sessions.Store, router *chi.
 
 	gothic.Store = sessionStorage
 
-	loginPageTemplate, err := template.New("loginPage").Parse(loginPage)
-	if err != nil {
-		logger.Log.Fatal().Err(err).Msg("erro ao criar template de login")
-	}
+	router.Get("/fazer-login", auth.LoginPage(appName))
 
-	hahahaPage, err := template.New("hahahaPage").Parse(hahahaPage)
-	if err != nil {
-		logger.Log.Fatal().Err(err).Msg("erro ao criar template de hahahaPage")
-	}
-
-	hahahaHandler := func(message string) func(writer http.ResponseWriter, request *http.Request) {
-		return func(writer http.ResponseWriter, request *http.Request) {
-			hahahaPage.Execute(writer, struct {
-				Message string
-			}{
-				Message: message,
-			})
-		}
-	}
-
-	router.Get("/hahaha", hahahaHandler(""))
-
-	router.Get("/fazer-login", func(writer http.ResponseWriter, request *http.Request) {
-		request = request.WithContext(context.WithValue(request.Context(), "provider", "vk"))
-		_, err := gothic.CompleteUserAuth(writer, request)
-		if err == nil {
-			http.Redirect(writer, request, "/", http.StatusTemporaryRedirect)
-			return
-		}
-
-		loginPageTemplate.Execute(writer, struct {
-			Title string
-		}{
-			Title: appName,
-		})
-	})
-
-	router.Get("/login", func(writer http.ResponseWriter, request *http.Request) {
-		request = request.WithContext(context.WithValue(request.Context(), "provider", "vk"))
-		gothic.BeginAuthHandler(writer, request)
-	})
-
-	router.Get("/login/callback", func(writer http.ResponseWriter, request *http.Request) {
-		request = request.WithContext(context.WithValue(request.Context(), "provider", "vk"))
-		user, err := gothic.CompleteUserAuth(writer, request)
-		if err != nil {
-			logger.Log.Error().Err(err).Msg("erro ao fazer segunda parte do login")
-			http.Redirect(writer, request, "/fazer-login", http.StatusTemporaryRedirect)
-			return
-		}
-
-		session, err := sessionStorage.Get(request, model.UserSession)
-		if err != nil {
-			logger.Log.Error().Err(err).Msg("erro ao conseguir a session de usuário")
-			http.Redirect(writer, request, "/fazer-login", http.StatusTemporaryRedirect)
-			return
-		}
-
-		session.Values["user_id"] = user.UserID
-		// todo: check user is on group
-		isOnCommunity, err := vkAPI.IsUserIDOnGroup(request.Context(), user.UserID,
-			util.GetIntFromEnvOrFatalError("APP_VK_GROUP_ID"))
-		if err != nil {
-			logger.Log.Error().Err(err).Msg("erro ao salvar a session de usuário")
-			http.Redirect(writer, request, "/fazer-login", http.StatusTemporaryRedirect)
-			return
-		}
-
-		if !isOnCommunity {
-			_ = gothic.Logout(writer, request)
-			hahahaHandler("Você não é um membro da comunidade")(writer, request)
-			return
-		}
-
-		err = session.Save(request, writer)
-		if err != nil {
-			logger.Log.Error().Err(err).Msg("erro ao salvar a session de usuário")
-			http.Redirect(writer, request, "/fazer-login", http.StatusTemporaryRedirect)
-			return
-		}
-
-		http.Redirect(writer, request, "/", http.StatusTemporaryRedirect)
-	})
-
-	router.Get("/logout", func(writer http.ResponseWriter, request *http.Request) {
-		request = request.WithContext(context.WithValue(request.Context(), "provider", "vk"))
-
-		session, _ := sessionStorage.Get(request, model.UserSession)
-		delete(session.Values, "user_id")
-		_ = session.Save(request, writer)
-
-		_ = gothic.Logout(writer, request)
-		http.Redirect(writer, request, "/fazer-login", http.StatusTemporaryRedirect)
-	})
+	router.Get("/login", auth.Login())
+	router.Get("/login/callback", auth.LoginCallback(vkAPI, sessionStorage))
+	router.Get("/logout", auth.Logout(sessionStorage))
 
 	router.Group(func(r chi.Router) {
-		r.Use(func(next http.Handler) http.Handler {
-			return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-				if request.URL.String() == "/hahaha.gif" || request.URL.String() == "/favicon.ico" ||
-					request.URL.String() == "/magicword.mp3" {
-					next.ServeHTTP(writer, request)
-					return
-				}
-
-				session, err := sessionStorage.Get(request, model.UserSession)
-				if err != nil {
-					logger.Log.Error().Err(err).Msg("erro ao conseguir a session de usuário no middleware")
-					hahahaHandler("Ocorreu um problema")(writer, request)
-					return
-				}
-
-				userID, ok := session.Values["user_id"].(string)
-				if !ok {
-					hahahaHandler("Usuário não logado")(writer, request)
-					return
-				}
-
-				// todo(pedro): check time?
-				if userID != "" {
-					next.ServeHTTP(writer, request)
-					return
-				}
-
-				hahahaHandler("")(writer, request)
-			})
-		})
-
+		r.Use(auth.OnlyAuthenticatedUsers(sessionStorage))
 		authRoutes(r)
 	})
 }
@@ -214,7 +98,7 @@ func setupSessionStorage() sessions.Store {
 	appURL := util.GetStringFromEnvOrFatalError("APP_VK_URL")
 	sessionSecret := util.GetStringFromEnvOrFatalError("SESSION_SECRET")
 
-	maxAge := 86400 * 30
+	maxAge := 86400 * 1 // 1 day
 	isHttps := strings.HasPrefix(appURL, "https://")
 
 	cookieStore := sessions.NewCookieStore([]byte(sessionSecret))

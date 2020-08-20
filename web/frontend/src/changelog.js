@@ -61,6 +61,7 @@ const changeLog = `
 - Otimizado query para estatística de membro
 - Ajustado problema com membros, onde estatísticas por Mês/Semana/Dia apenas consideram o primeiro dia do mês
 - Otimizado query de membros
+- Adicionado API publica para conseguir estatísticas de membro para ser usada pelo Jônathas Raskólnikov
 `
 
 export {

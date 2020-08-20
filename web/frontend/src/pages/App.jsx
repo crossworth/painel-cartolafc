@@ -8,6 +8,7 @@ import HomeOutlined from '@ant-design/icons/lib/icons/HomeOutlined'
 import TeamOutlined from '@ant-design/icons/lib/icons/TeamOutlined'
 import LinkOutlined from '@ant-design/icons/lib/icons/LinkOutlined'
 import SearchOutlined from '@ant-design/icons/lib/icons/SearchOutlined'
+import LogoutOutlined from '@ant-design/icons/lib/icons/LogoutOutlined'
 import UnorderedListOutlined from '@ant-design/icons/lib/icons/UnorderedListOutlined'
 
 import Profile from './Profile'
@@ -71,7 +72,7 @@ export default () => {
 
               <Menu.Item key="/topicos/pesquisa">
                 <Link to="/topicos/pesquisa">
-                  <SearchOutlined />
+                  <SearchOutlined/>
                   <span>Pesquisa Tópicos</span>
                 </Link>
               </Menu.Item>
@@ -88,6 +89,13 @@ export default () => {
                   <LinkOutlined/>
                   <span>Resolver nome/link</span>
                 </Link>
+              </Menu.Item>
+
+              <Menu.Item key="logout">
+                <a href="/logout">
+                  <LogoutOutlined/>
+                  <span>Sair</span>
+                </a>
               </Menu.Item>
             </Menu>
           </Sider>

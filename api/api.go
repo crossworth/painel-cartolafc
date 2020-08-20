@@ -3,18 +3,14 @@ package api
 import (
 	"compress/flate"
 	"net/http"
-	"strconv"
-	"time"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
-	"github.com/rs/zerolog/hlog"
 
 	"github.com/crossworth/cartola-web-admin/api/handle"
 	"github.com/crossworth/cartola-web-admin/cache"
 	"github.com/crossworth/cartola-web-admin/database"
 	"github.com/crossworth/cartola-web-admin/logger"
-	"github.com/crossworth/cartola-web-admin/model"
 	"github.com/crossworth/cartola-web-admin/vk"
 )
 
@@ -25,15 +21,15 @@ type Server struct {
 	cache  *cache.Cache
 }
 
-func NewServer(vk *vk.VKClient, db *database.PostgreSQL) *Server {
+func NewServer(vk *vk.VKClient, db *database.PostgreSQL, cache *cache.Cache) *Server {
 	s := &Server{
 		router: chi.NewRouter(),
 		vk:     vk,
 		db:     db,
-		cache:  cache.NewCache(),
+		cache:  cache,
 	}
 
-	s.setupLogger()
+	logger.SetupLoggerOnRouter(s.router)
 
 	s.router.Use(middleware.RequestID)
 	s.router.Use(middleware.RealIP)
@@ -71,28 +67,4 @@ func NewServer(vk *vk.VKClient, db *database.PostgreSQL) *Server {
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.router.ServeHTTP(w, r)
-}
-
-func (s *Server) setupLogger() {
-	s.router.Use(hlog.NewHandler(logger.Log))
-
-	s.router.Use(hlog.AccessHandler(func(r *http.Request, status, size int, duration time.Duration) {
-		l := hlog.FromRequest(r).Info().
-			Str("method", r.Method).
-			Str("url", r.URL.String()).
-			Int("status", status).
-			Int("size", size).
-			Dur("duration", duration)
-
-		if vkID, ok := model.VKIDFromRequest(r); ok {
-			l.Str("vk_id", strconv.Itoa(vkID))
-		}
-
-		l.Msg("")
-	}))
-
-	s.router.Use(hlog.RemoteAddrHandler("ip"))
-	s.router.Use(hlog.UserAgentHandler("user_agent"))
-	s.router.Use(hlog.RefererHandler("referer"))
-	s.router.Use(hlog.RequestIDHandler("req_id", "request-id"))
 }

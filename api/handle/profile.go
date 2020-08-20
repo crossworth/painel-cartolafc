@@ -380,3 +380,40 @@ func Profiles(provider ProfilesProvider, cache *cache.Cache) func(w http.Respons
 		})
 	}
 }
+
+type PublicProfileStatCache struct {
+	Profile   database.ProfileWithStats
+	CreatedAt time.Time
+}
+
+func PublicProfileStatsByID(provider ProfileStatsAndHistoryProvider, cache *cache.Cache) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := util.ToInt(chi.URLParam(r, "profile"))
+
+		if id == 0 {
+			json(w, NewError("id de perfil inválido"), 400)
+			return
+		}
+
+		cacheKey := fmt.Sprintf("profile_stat_%d", id)
+		profileStatCache := cache.GetShortCache(cacheKey, func() interface{} {
+			stats, err := provider.ProfileStatsByProfileID(r.Context(), id)
+			if err != nil {
+				return err
+			}
+
+			return PublicProfileStatCache{
+				Profile:   stats,
+				CreatedAt: time.Now(),
+			}
+		})
+
+		data, castOK := profileStatCache.(PublicProfileStatCache)
+		if !castOK {
+			databaseError(w, profileStatCache.(error))
+			return
+		}
+
+		json(w, data, 200)
+	}
+}

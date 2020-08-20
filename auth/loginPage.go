@@ -1,4 +1,4 @@
-package main
+package auth
 
 const loginPage = `<!doctype html>
 <html lang="pt-BR">
