@@ -9,6 +9,7 @@ import TeamOutlined from '@ant-design/icons/lib/icons/TeamOutlined'
 import LinkOutlined from '@ant-design/icons/lib/icons/LinkOutlined'
 import SearchOutlined from '@ant-design/icons/lib/icons/SearchOutlined'
 import LogoutOutlined from '@ant-design/icons/lib/icons/LogoutOutlined'
+import SettingOutlined from '@ant-design/icons/lib/icons/SettingOutlined'
 import UnorderedListOutlined from '@ant-design/icons/lib/icons/UnorderedListOutlined'
 
 import Profile from './Profile'
@@ -22,6 +23,7 @@ import TopicList from './TopicList'
 import TopicRankingList from './TopicRankingList'
 import { changeLog } from '../changelog'
 import TopicSearch from './TopicSearch'
+import Settings from './Settings'
 
 const { Sider, Content } = Layout
 
@@ -91,9 +93,16 @@ export default () => {
                 </Link>
               </Menu.Item>
 
+              <Menu.Item key="configuracoes">
+                <Link to="/configuracoes">
+                  <LogoutOutlined/>
+                  <span>Configurações</span>
+                </Link>
+              </Menu.Item>
+
               <Menu.Item key="logout">
                 <a href="/logout">
-                  <LogoutOutlined/>
+                  <SettingOutlined/>
                   <span>Sair</span>
                 </a>
               </Menu.Item>
@@ -130,6 +139,10 @@ export default () => {
               </Route>
 
               <Route path='/resolver/:name?' render={(props) => <ProfileResolve {...props}/>}>
+              </Route>
+
+              <Route path='/configuracoes' exact>
+                <Settings/>
               </Route>
 
               <Route path='/topicos/pesquisa' exact>

@@ -26,6 +26,20 @@ func (p *PostgreSQL) ProfileByID(context context.Context, id int) (model.Profile
 	return profile, err
 }
 
+func (p *PostgreSQL) ProfileIDs(context context.Context) ([]int, error) {
+	var ids []int
+
+	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {
+		tx.MustQueryContext(context, `SELECT id FROM profiles`).Each(func(rows *sx.Rows) {
+			var id int
+			rows.MustScan(&id)
+			ids = append(ids, id)
+		})
+	})
+
+	return ids, err
+}
+
 func (p *PostgreSQL) TopicsByProfileID(context context.Context, id int, before int, limit int) ([]model.Topic, error) {
 	var topics []model.Topic
 

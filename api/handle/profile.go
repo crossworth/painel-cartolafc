@@ -381,6 +381,22 @@ func Profiles(provider ProfilesProvider, cache *cache.Cache) func(w http.Respons
 	}
 }
 
+type ProfileIDsProvider interface {
+	ProfileIDs(context context.Context) ([]int, error)
+}
+
+func ProfilesIDS(provider ProfileIDsProvider) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ids, err := provider.ProfileIDs(r.Context())
+		if err != nil {
+			databaseError(w, err)
+			return
+		}
+
+		json(w, ids, 200)
+	}
+}
+
 type PublicProfileStatCache struct {
 	Profile   database.ProfileWithStats
 	CreatedAt time.Time

@@ -46,6 +46,7 @@ func NewServer(vk *vk.VKClient, db *database.PostgreSQL, cache *cache.Cache) *Se
 	// authenticated routes
 	s.router.Group(func(r chi.Router) {
 		r.Get("/auto-complete/profile/{profile}", handle.AutoCompleteProfileName(s.db))
+		r.Get("/profiles/ids", handle.ProfilesIDS(s.db))
 
 		r.Get("/profiles", handle.Profiles(s.db, s.cache))
 		r.Get("/profiles/{profile}", handle.ProfileByID(s.db))
