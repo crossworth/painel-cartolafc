@@ -3,6 +3,7 @@ package web
 import (
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/go-chi/chi"
 	"github.com/gobuffalo/packr/v2"
@@ -29,7 +30,8 @@ func New() *Server {
 	server.Handler.HandleFunc("/*", func(writer http.ResponseWriter, request *http.Request) {
 		path := chi.URLParam(request, "*")
 
-		if _, err := localFs.Open(path); os.IsNotExist(err) {
+		// fixme: check if this make sense
+		if _, err := localFs.Open(path); os.IsNotExist(err) || strings.HasSuffix(request.URL.Path, "/") {
 			request.URL.Path = "/"
 		}
 
