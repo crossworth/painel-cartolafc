@@ -22,6 +22,7 @@ import (
 	"github.com/crossworth/cartola-web-admin/cache"
 	"github.com/crossworth/cartola-web-admin/database"
 	"github.com/crossworth/cartola-web-admin/logger"
+	"github.com/crossworth/cartola-web-admin/updater"
 	"github.com/crossworth/cartola-web-admin/util"
 	"github.com/crossworth/cartola-web-admin/vk"
 	"github.com/crossworth/cartola-web-admin/vk/openid"
@@ -53,9 +54,17 @@ func main() {
 	session := setupSessionStorage()
 	globalCache := cache.NewCache()
 
+	topicUpdater := updater.NewTopicUpdater(db.GetDB())
+	topicUpdater.RegisterWorker(func(job updater.TopicUpdateJob) error {
+		logger.Log.Info().Msgf("Handling1 job: %d", job.ID)
+		time.Sleep(10 * time.Millisecond)
+		return fmt.Errorf("aaa isso é um erro")
+	}, true)
+	topicUpdater.StartProcessing()
+
 	router.Mount("/public/api", api.NewPublicAPI(db, globalCache))
 
-	setupRoutes(vkClient, session, router, func(router chi.Router) {
+	setupRoutes(topicUpdater, vkClient, session, router, func(router chi.Router) {
 		logger.Log.Info().Msg("montando endpoints")
 		router.Mount("/api", api.NewServer(vkClient, db, globalCache))
 		router.Mount("/", web.New())
@@ -69,7 +78,7 @@ func main() {
 	}
 }
 
-func setupRoutes(vkAPI *vk.VKClient, sessionStorage sessions.Store, router *chi.Mux, authRoutes func(r chi.Router)) {
+func setupRoutes(topicUpdater *updater.TopicUpdater, vkAPI *vk.VKClient, sessionStorage sessions.Store, router *chi.Mux, authRoutes func(r chi.Router)) {
 	appName := util.GetStringFromEnvOrFatalError("APP_NAME")
 
 	vkAppID := util.GetStringFromEnvOrFatalError("VK_APP_ID")
@@ -83,7 +92,6 @@ func setupRoutes(vkAPI *vk.VKClient, sessionStorage sessions.Store, router *chi.
 	gothic.Store = sessionStorage
 
 	router.Get("/fazer-login", auth.LoginPage(appName))
-
 	router.Get("/login", auth.Login())
 	router.Get("/login/callback", auth.LoginCallback(vkAPI, sessionStorage))
 	router.Get("/logout", auth.Logout(sessionStorage))
