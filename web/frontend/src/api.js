@@ -13,6 +13,13 @@ api.interceptors.response.use(response => {
   }
   return response.data
 }, error => {
+  if (error.response.status === 300) {
+    const url = new URL(`${window.location.protocol}${window.location.host}${error.response.data.to}`)
+    const reason = url.searchParams.get('motivo-redirect')
+    message.error(reason ? reason : error.response.data.to)
+    return Promise.reject(error)
+  }
+
   message.error(getErrorMessage(error).toString())
   return Promise.reject(error)
 })
@@ -70,8 +77,8 @@ const getTopicsRanking = (page, limit, orderBy = 'comments', orderDir = 'desc', 
   return api.get(`/topics-ranking?orderBy=${orderBy}&orderDir=${orderDir}&page=${page}&limit=${limit}&period=${period}&showOlderTopics=${showOlderTopics}`)
 }
 
-const getTopicSearch = (term, page, limit, fromID = 0, createdAfter = 0, createdBefore = 0) => {
-  return api.get(`/search?term=${term}&page=${page}&limit=${limit}&fromID=${fromID}&createdAfter=${createdAfter}&createdBefore=${createdBefore}`)
+const getSearch = (term, page, limit, searchType) => {
+  return api.get(`/search?term=${term}&page=${page}&limit=${limit}&searchType=${searchType}`)
 }
 
 const getAdministratorsProfiles = () => {
@@ -80,6 +87,38 @@ const getAdministratorsProfiles = () => {
 
 const setAdministratorsProfiles = profilesIDs => {
   return api.post(`/set-administrators-profiles`, profilesIDs)
+}
+
+const getMyProfileStats = () => {
+  return api.get(`/my-profile`)
+}
+
+const getMembersRules = () => {
+  return api.get(`/members-rule`)
+}
+
+const setMembersRules = rules => {
+  return api.post(`/set-members-rule`, {
+    value: rules
+  })
+}
+
+const getHomePage = () => {
+  return api.get(`/home-page`)
+}
+
+const setHomePage = content => {
+  return api.post(`/set-home-page`, {
+    value: content
+  })
+}
+
+const isAdmin = () => {
+  return window.User.type === 'admin' || window.User.type === 'super_admin'
+}
+
+const isSuperAdmin = () => {
+  return window.User.type === 'super_admin'
 }
 
 export {
@@ -94,7 +133,14 @@ export {
   getProfiles,
   getTopics,
   getTopicsRanking,
-  getTopicSearch,
+  getSearch,
   getAdministratorsProfiles,
-  setAdministratorsProfiles
+  setAdministratorsProfiles,
+  getMyProfileStats,
+  getMembersRules,
+  setMembersRules,
+  getHomePage,
+  setHomePage,
+  isAdmin,
+  isSuperAdmin
 }

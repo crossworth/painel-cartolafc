@@ -69,6 +69,15 @@ const changeLog = `
 - Iniciado implementação de de diferentes tipos de membros
 - Adicionado opção de definir administradores
 - Adicionado quantidade de likes em tópicos de usuário
+
+21 Agosto
+- Adicionar página de meu perfil
+- Adicionado mensagens de erros melhores ao tentar acessar uma rota bloqueada
+- Escondido menus condicionalmente
+- Adicionado suporte full text search
+- Melhorado velocidade de pesquisa
+- Adicionado suporte a blacklist/whitelist de membros
+- Adicionado suporte a edição da home facilmente
 `
 
 export {

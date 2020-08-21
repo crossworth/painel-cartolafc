@@ -1,32 +1,25 @@
 import React, { useEffect, useState } from 'react'
-import { Button, Form, Input, Space, Spin, Switch, Table, Typography } from 'antd'
-import { getTopicSearch } from '../api'
-import { getGlobalPageSize, parseIntWithDefault, setGlobalPageSize, stringWithDefault, timeStampToDate } from '../util'
+import { Button, Form, Input, Radio, Space, Spin, Table, Typography } from 'antd'
+import { getSearch } from '../api'
+import {
+  getGlobalPageSize,
+  normalizeQuote,
+  parseIntWithDefault,
+  setGlobalPageSize,
+  stringWithDefault,
+  timeStampToDate
+} from '../util'
 import { withRouter } from 'react-router-dom'
 import { VK_GROUP_ID } from '../config'
 
-const { Title, Text } = Typography
-
-const typeToPTBR = type => {
-  if (type === 'topic') {
-    return 'tópico'
-  }
-
-  return 'comentário'
-}
+const { Title } = Typography
 
 const columns = [
   {
-    title: 'Tipo',
-    dataIndex: 'type',
-    key: 'type',
-    render: (text, data) => <div>{typeToPTBR(text)}</div>
-  },
-  {
     title: 'Texto',
-    dataIndex: 'highlighted_part',
-    key: 'highlighted_part',
-    render: (text, data) => <div dangerouslySetInnerHTML={{ __html: text }}/>
+    dataIndex: 'headline',
+    key: 'headline',
+    render: (text, data) => <div dangerouslySetInnerHTML={{ __html: normalizeQuote(text) }}/>
   },
   {
     title: 'Data',
@@ -58,7 +51,7 @@ const columns = [
   },
 ]
 
-const TopicSearch = (props) => {
+const Search = (props) => {
   const { history, location } = props
 
   const searchParams = new URLSearchParams(location.search)
@@ -69,6 +62,7 @@ const TopicSearch = (props) => {
     position: ['topLeft'],
     showSizeChanger: true,
     term: stringWithDefault(searchParams.get('term'), ''),
+    searchType: stringWithDefault(searchParams.get('searchType'), 'title'),
     pageSizeOptions: [10, 20, 50, 100, 1000]
   })
 
@@ -96,6 +90,11 @@ const TopicSearch = (props) => {
       searchParams.set('term', pagination.term)
     }
 
+    if (!searchParams.has('searchType') || pagination.searchType !== searchParams.get('searchType')) {
+      shouldUpdate = true
+      searchParams.set('searchType', pagination.searchType)
+    }
+
     if (shouldUpdate) {
       history.push({
         pathname: location.pathname,
@@ -104,7 +103,7 @@ const TopicSearch = (props) => {
     }
   }, [history, location, pagination])
 
-  const { current, pageSize, term } = pagination
+  const { current, pageSize, term, searchType } = pagination
 
   const setPaginationTotal = (total, page = null, pageSize = null) => {
     let pag = Object.assign({}, pagination, {
@@ -117,9 +116,16 @@ const TopicSearch = (props) => {
     setPagination(pag)
   }
 
-  const setSearch = (term) => {
+  const setSearch = term => {
     let pag = Object.assign({}, pagination, {
       term: term,
+    })
+    setPagination(pag)
+  }
+
+  const setSearchType = searchType => {
+    let pag = Object.assign({}, pagination, {
+      searchType: searchType,
     })
     setPagination(pag)
   }
@@ -127,7 +133,7 @@ const TopicSearch = (props) => {
   const handleTableChange = pag => {
     setLoading(true)
 
-    getTopicSearch(pag.term, pag.current, pag.pageSize).then(data => {
+    getSearch(pag.term, pag.current, pag.pageSize, pag.searchType).then(data => {
       setTableData(data.data)
       setTableMeta(data.meta)
       setPaginationTotal(data.meta.total, pag.current, pag.pageSize)
@@ -144,6 +150,11 @@ const TopicSearch = (props) => {
     }
   }
 
+  const changeSearchType = event => {
+    const type = event.target.value
+    setSearchType(type)
+  }
+
   useEffect(() => {
     if (term === '' || term.length === 0) {
       setLoading(false)
@@ -151,7 +162,7 @@ const TopicSearch = (props) => {
     }
 
     setLoading(true)
-    getTopicSearch(term, current, pageSize).then(data => {
+    getSearch(term, current, pageSize, searchType).then(data => {
       setTableData(data.data)
       setTableMeta(data.meta)
       setPaginationTotal(data.meta.total)
@@ -160,7 +171,12 @@ const TopicSearch = (props) => {
     }).finally(() => {
       setLoading(false)
     })
-  }, [term, current, pageSize])
+  }, [term, current, pageSize, searchType])
+
+  const searchTypeOptions = [
+    { label: 'Título tópico', value: 'title' },
+    { label: 'Conteúdo tópico', value: 'text' },
+  ]
 
   return (
     <Spin tip="Carregando..." spinning={loading}>
@@ -180,7 +196,18 @@ const TopicSearch = (props) => {
           <Space direction="vertical" style={{ width: '100%', textAlign: 'left' }}>
             <Form onFinish={onSearch}>
               <Form.Item label="Termo" rules={[{ required: true }]}>
-                <Input name="term" placeholder="Messi" defaultValue={term} onChange={event => setTermInput(event.target.value)} />
+                <Input name="term" placeholder="Messi" defaultValue={term}
+                       onChange={event => setTermInput(event.target.value)}/>
+              </Form.Item>
+
+              <Form.Item>
+                <Radio.Group
+                  options={searchTypeOptions}
+                  onChange={changeSearchType}
+                  value={pagination.searchType}
+                  optionType="button"
+                  buttonStyle="solid"
+                />
               </Form.Item>
 
               <Form.Item>
@@ -207,4 +234,4 @@ const TopicSearch = (props) => {
   )
 }
 
-export default withRouter(TopicSearch)
+export default withRouter(Search)

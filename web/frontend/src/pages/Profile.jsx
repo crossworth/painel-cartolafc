@@ -95,8 +95,8 @@ const Profile = (props) => {
             <Statistic title="Likes" value={userStats.total_likes ? userStats.total_likes : 0}/>
           </Col>
           <Col md={6}>
-            <Statistic title="Alterações do perfil"
-                       value={userStats.total_profile_changes ? userStats.total_profile_changes : 0}/>
+            <Statistic title="Tópicos + Comentários"
+                       value={userStats.total_topics_plus_comments ? userStats.total_topics_plus_comments : 0}/>
           </Col>
         </Row>
 

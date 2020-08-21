@@ -6,10 +6,12 @@ import ptBR from 'antd/es/locale/pt_BR'
 
 import HomeOutlined from '@ant-design/icons/lib/icons/HomeOutlined'
 import TeamOutlined from '@ant-design/icons/lib/icons/TeamOutlined'
+import UserOutlined from '@ant-design/icons/lib/icons/UserOutlined'
 import LinkOutlined from '@ant-design/icons/lib/icons/LinkOutlined'
 import SearchOutlined from '@ant-design/icons/lib/icons/SearchOutlined'
 import LogoutOutlined from '@ant-design/icons/lib/icons/LogoutOutlined'
 import SettingOutlined from '@ant-design/icons/lib/icons/SettingOutlined'
+import ContainerOutlined from '@ant-design/icons/lib/icons/ContainerOutlined'
 import OrderedListOutlined from '@ant-design/icons/lib/icons/OrderedListOutlined'
 import UnorderedListOutlined from '@ant-design/icons/lib/icons/UnorderedListOutlined'
 
@@ -22,9 +24,13 @@ import ProfileComments from './ProfileComments'
 import ProfileNotFound from './ProfileNotFound'
 import TopicList from './TopicList'
 import TopicRankingList from './TopicRankingList'
-import { changeLog } from '../changelog'
-import TopicSearch from './TopicSearch'
+import Search from './Search'
 import Settings from './Settings'
+import { superAdminOnly } from '../components/SuperAdminOnly'
+import { adminOnly } from '../components/AdminOnly'
+import ChangeLog from './ChangeLog'
+import MyProfile from './MyProfile'
+import HomePage from './HomePage'
 
 const { Sider, Content } = Layout
 
@@ -59,51 +65,63 @@ export default () => {
                 </Link>
               </Menu.Item>
 
-              <Menu.Item key="/topicos/todos">
+              <Menu.Item key="/meu-perfil">
+                <Link to="/meu-perfil">
+                  <UserOutlined/>
+                  <span>Meu Perfil</span>
+                </Link>
+              </Menu.Item>
+
+              {adminOnly(<Menu.Item key="/topicos/todos">
                 <Link to="/topicos/todos">
                   <UnorderedListOutlined/>
                   <span>Tópicos</span>
                 </Link>
-              </Menu.Item>
+              </Menu.Item>)}
 
-              <Menu.Item key="/topicos/ranking">
+              {adminOnly(<Menu.Item key="/topicos/ranking">
                 <Link to="/topicos/ranking">
                   <OrderedListOutlined/>
                   <span>Ranking Tópicos</span>
                 </Link>
-              </Menu.Item>
+              </Menu.Item>)}
 
-              <Menu.Item key="/topicos/pesquisa">
-                <Link to="/topicos/pesquisa">
+              <Menu.Item key="/pesquisa">
+                <Link to="/pesquisa">
                   <SearchOutlined/>
                   <span>Pesquisa Tópicos</span>
                 </Link>
               </Menu.Item>
 
-              <Menu.Item key="perfil/todos">
+              {adminOnly(<Menu.Item key="/perfil/todos">
                 <Link to="/perfil/todos">
                   <TeamOutlined/>
                   <span>Membros</span>
                 </Link>
-              </Menu.Item>
+              </Menu.Item>)}
 
-              <Menu.Item key="resolver">
+              {adminOnly(<Menu.Item key="/resolver">
                 <Link to="/resolver">
                   <LinkOutlined/>
                   <span>Resolver nome/link</span>
                 </Link>
-              </Menu.Item>
+              </Menu.Item>)}
 
-              {
-                window.User.type === 'super_admin' && <Menu.Item key="configuracoes">
-                  <Link to="/configuracoes">
-                    <LogoutOutlined/>
-                    <span>Configurações</span>
-                  </Link>
-                </Menu.Item>
-              }
+              {superAdminOnly(<Menu.Item key="/configuracoes">
+                <Link to="/configuracoes">
+                  <LogoutOutlined/>
+                  <span>Configurações</span>
+                </Link>
+              </Menu.Item>)}
 
-              <Menu.Item key="logout">
+              {adminOnly(<Menu.Item key="/changelog">
+                <Link to="/changelog">
+                  <ContainerOutlined/>
+                  <span>ChangeLog</span>
+                </Link>
+              </Menu.Item>)}
+
+              <Menu.Item key="/logout">
                 <a href="/logout">
                   <SettingOutlined/>
                   <span>Sair</span>
@@ -115,69 +133,52 @@ export default () => {
           <Content className="main-content">
             <Switch>
               <Route path='/' exact>
-                <h3>WIP: Preview!</h3>
-                Faltando: <br/>
-                - <s>Lista de tópicos</s><br/>
-                - Busca por título de tópico, conteúdo comentário, data, membro, número de comentários<br/>
-                - Reconstituir tópicos apagados (recriar uma visualização de um tópico apagado)<br/>
-                - Opções de exportar dados para Excel, CSV<br/>
-                - <s>Verificações se tópico foi apagado</s> Adicionar tabela de metadados de tópico com
-                se-deletado/número-comentários<br/>
-                - Verificações se membro foi/está banido<br/>
-                - <s>Na lista de membros, adicionar filtros por períodos (membro com mais tópicos na semana, mês e
-                geral)</s><br/>
-                - Melhorar performance da rota de status de membros (atualmente leva ~6s) (adicionar tabela de
-                metadados?)<br/>
-                - <s>Melhorar performance da rota de tópicos (contagem de comentários leva muito tempo +1m)</s><br/>
-                - Adicionar login com VK e remover BasicAuth<br/>
-                - Separar conteúdo membro/administrador<br/>
-                - Melhorar forma de contar conteúdo no banco e dados (atualmente é o que demora mais nas queries)<br/>
-                - Adicionar soft-delete<br/>
-                - <s>Adicionar página de filtros a tópicos (mais comentários geral, mês, semana)</s><br/>
-                - Link de tópico aleatório<br/>
-
-                <br/><br/><br/><br/><br/>
-                <h3>ChangeLog</h3>
-                <div style={{ whiteSpace: 'pre' }} dangerouslySetInnerHTML={{ __html: changeLog }}/>
+                <HomePage/>
               </Route>
 
-              <Route path='/resolver/:name?' render={(props) => <ProfileResolve {...props}/>}>
+              <Route path='/meu-perfil' exact>
+                <MyProfile/>
               </Route>
 
-              {
-                window.User.type === 'super_admin' && <Route path='/configuracoes' exact>
-                  <Settings/>
-                </Route>
-              }
+              {adminOnly(<Route path='/resolver/:name?' render={(props) => <ProfileResolve {...props}/>}>
+              </Route>)}
 
-              <Route path='/topicos/pesquisa' exact>
-                <TopicSearch/>
+              {superAdminOnly(<Route path='/configuracoes' exact>
+                <Settings/>
+              </Route>)}
+
+              <Route path='/pesquisa' exact>
+                <Search/>
               </Route>
 
-              <Route path='/topicos/todos' exact>
+              {adminOnly(<Route path='/topicos/todos' exact>
                 <TopicList/>
-              </Route>
+              </Route>)}
 
-              <Route path='/topicos/ranking' exact>
+              {adminOnly(<Route path='/topicos/ranking' exact>
                 <TopicRankingList/>
-              </Route>
+              </Route>)}
 
-              <Route path='/perfil/nao-encontrado' exact>
+              {adminOnly(<Route path='/perfil/nao-encontrado' exact>
                 <ProfileNotFound/>
-              </Route>
+              </Route>)}
 
-              <Route path='/perfil/todos' exact>
+              {adminOnly(<Route path='/perfil/todos' exact>
                 <ProfileList/>
-              </Route>
+              </Route>)}
 
-              <Route path='/perfil/:id' exact render={(props) => <Profile {...props}/>}>
-              </Route>
+              {adminOnly(<Route path='/perfil/:id' exact render={(props) => <Profile {...props}/>}>
+              </Route>)}
 
-              <Route path='/perfil/:id/topicos' exact render={(props) => <ProfileTopics {...props}/>}>
-              </Route>
+              {adminOnly(<Route path='/perfil/:id/topicos' exact render={(props) => <ProfileTopics {...props}/>}>
+              </Route>)}
 
-              <Route path='/perfil/:id/comentarios' exact render={(props) => <ProfileComments {...props}/>}>
-              </Route>
+              {adminOnly(<Route path='/perfil/:id/comentarios' exact render={(props) => <ProfileComments {...props}/>}>
+              </Route>)}
+
+              {adminOnly(<Route path='/changelog' exact>
+                <ChangeLog/>
+              </Route>)}
 
               <Route component={PageNotFound}/>
             </Switch>
