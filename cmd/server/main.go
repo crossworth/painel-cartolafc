@@ -1,42 +1,25 @@
 package main
 
 import (
-	"compress/flate"
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"strings"
-	"time"
 
-	"github.com/go-chi/chi"
-	"github.com/go-chi/chi/middleware"
-	"github.com/go-chi/cors"
 	"github.com/gorilla/sessions"
 	"github.com/joho/godotenv"
 	"github.com/markbates/goth"
 	"github.com/markbates/goth/gothic"
 
-	"github.com/crossworth/cartola-web-admin/api"
-	"github.com/crossworth/cartola-web-admin/auth"
 	"github.com/crossworth/cartola-web-admin/cache"
+	"github.com/crossworth/cartola-web-admin/cartola"
 	"github.com/crossworth/cartola-web-admin/database"
 	"github.com/crossworth/cartola-web-admin/logger"
 	"github.com/crossworth/cartola-web-admin/updater"
 	"github.com/crossworth/cartola-web-admin/util"
 	"github.com/crossworth/cartola-web-admin/vk"
 	"github.com/crossworth/cartola-web-admin/vk/openid"
-	"github.com/crossworth/cartola-web-admin/web"
 )
-
-var corsOpts = cors.Options{
-	AllowedOrigins:   []string{"*"},
-	AllowedMethods:   []string{"GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"},
-	AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
-	ExposedHeaders:   []string{"Link"},
-	AllowCredentials: true,
-	MaxAge:           300,
-}
 
 func main() {
 	err := godotenv.Load()
@@ -47,38 +30,12 @@ func main() {
 	logger.Setup(logger.LogInfo, "cartola_web_admin.log")
 
 	logger.Log.Info().Msg("iniciando servidor")
-
-	router := setupRouter()
 	vkClient := setupVKClient()
 	db := setupDatabase()
 	session := setupSessionStorage()
-	globalCache := cache.NewCache()
-
+	appCache := cache.NewCache()
 	topicUpdater := updater.NewTopicUpdater(db.GetDB())
-	topicUpdater.RegisterWorker(func(job updater.TopicUpdateJob) error {
-		logger.Log.Info().Msgf("Handling1 job: %d", job.ID)
-		time.Sleep(10 * time.Millisecond)
-		return fmt.Errorf("aaa isso é um erro")
-	}, true)
-	topicUpdater.StartProcessing()
 
-	router.Mount("/public/api", api.NewPublicAPI(db, globalCache))
-
-	setupRoutes(topicUpdater, vkClient, session, router, func(router chi.Router) {
-		logger.Log.Info().Msg("montando endpoints")
-		router.Mount("/api", api.NewServer(vkClient, db, globalCache))
-		router.Mount("/", web.New())
-	})
-
-	logger.Log.Info().Msgf("iniciando o servidor na porta %s", os.Getenv("APP_PORT"))
-
-	err = http.ListenAndServe(fmt.Sprintf(":%s", os.Getenv("APP_PORT")), router)
-	if err != nil {
-		logger.Log.Fatal().Msgf("erro ao iniciar o servidor http, %v", err)
-	}
-}
-
-func setupRoutes(topicUpdater *updater.TopicUpdater, vkAPI *vk.VKClient, sessionStorage sessions.Store, router *chi.Mux, authRoutes func(r chi.Router)) {
 	appName := util.GetStringFromEnvOrFatalError("APP_NAME")
 
 	vkAppID := util.GetStringFromEnvOrFatalError("VK_APP_ID")
@@ -89,17 +46,33 @@ func setupRoutes(topicUpdater *updater.TopicUpdater, vkAPI *vk.VKClient, session
 		openid.New(vkAppID, vkSecureKey, vkCallBackURL, "groups"),
 	)
 
-	gothic.Store = sessionStorage
+	gothic.Store = session
 
-	router.Get("/fazer-login", auth.LoginPage(appName))
-	router.Get("/login", auth.Login())
-	router.Get("/login/callback", auth.LoginCallback(vkAPI, sessionStorage))
-	router.Get("/logout", auth.Logout(sessionStorage))
+	superAdminsStr := util.GetStringFromEnvOrFatalError("SUPER_ADMIN_VK_IDS")
+	superAdmins := util.StringToIntSlice(superAdminsStr)
 
-	router.Group(func(r chi.Router) {
-		r.Use(auth.OnlyAuthenticatedUsers(sessionStorage))
-		authRoutes(r)
-	})
+	if len(superAdmins) == 0 {
+		logger.Log.Warn().Msg("nenhum super administrador definido")
+	} else {
+		logger.Log.Info().Interface("super_admins", superAdmins).Msg("super administradores definidos")
+	}
+
+	app := cartola.NewCartola(appName, vkClient, db, session, appCache, topicUpdater, superAdmins)
+
+	// topicUpdater.RegisterWorker(func(job updater.TopicUpdateJob) error {
+	// 	logger.Log.Info().Msgf("Handling1 job: %d", job.ID)
+	// 	time.Sleep(10 * time.Millisecond)
+	// 	return fmt.Errorf("aaa isso é um erro")
+	// }, true)
+	// topicUpdater.StartProcessing()
+
+	appPort := util.GetStringFromEnvOrFatalError("APP_PORT")
+	logger.Log.Info().Msgf("iniciando o servidor na porta %s", appPort)
+
+	err = http.ListenAndServe(fmt.Sprintf(":%s", appPort), app)
+	if err != nil {
+		logger.Log.Fatal().Msgf("erro ao iniciar o servidor http, %v", err)
+	}
 }
 
 func setupSessionStorage() sessions.Store {
@@ -140,20 +113,12 @@ func setupVKClient() *vk.VKClient {
 	vkEmail := util.GetStringFromEnvOrFatalError("VK_EMAIL")
 	vkPassword := util.GetStringFromEnvOrFatalError("VK_PASSWORD")
 
+	_ = vkEmail
+	_ = vkPassword
 	logger.Log.Info().Msg("criando cliente VK")
-	vkClient, err := vk.NewVKClient(vkEmail, vkPassword)
-	if err != nil {
-		logger.Log.Fatal().Msgf("erro ao criar o cliente VK, %v", err)
-	}
-	return vkClient
-}
-
-func setupRouter() *chi.Mux {
-	router := chi.NewRouter()
-	router.Use(middleware.Recoverer)
-	router.Use(middleware.Compress(flate.DefaultCompression))
-	router.Use(cors.New(corsOpts).Handler)
-	router.Use(middleware.Timeout(10 * time.Minute))
-	router.Use(middleware.RedirectSlashes)
-	return router
+	// vkClient, err := vk.NewVKClient(vkEmail, vkPassword)
+	// if err != nil {
+	// 	logger.Log.Fatal().Msgf("erro ao criar o cliente VK, %v", err)
+	// }
+	return &vk.VKClient{}
 }

@@ -14,7 +14,7 @@ var (
 	alwaysAllowedRoutes = []string{"/favicon.ico"}
 )
 
-func OnlyAuthenticatedUsers(sessionStorage sessions.Store) func(next http.Handler) http.Handler {
+func OnlyAuthenticatedUsers(sessionStorage sessions.Store, userTypeHandler *UserTypeHandler) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 			if isRouteAllowed(request.URL.String()) {
@@ -37,8 +37,11 @@ func OnlyAuthenticatedUsers(sessionStorage sessions.Store) func(next http.Handle
 
 			userIDInt, err := strconv.Atoi(userID)
 			if err == nil {
-				model.SetVKIDOnRequest(request, userIDInt)
+				request = model.SetVKIDOnRequest(request, userIDInt)
 			}
+
+			userType := userTypeHandler.GetUserType(userIDInt)
+			request = model.SetVKTypeOnRequest(request, userType)
 
 			if userID != "" {
 				next.ServeHTTP(writer, request)

@@ -25,3 +25,22 @@ func SetVKIDOnContext(ctx context.Context, vkID int) context.Context {
 func SetVKIDOnRequest(r *http.Request, vkID int) *http.Request {
 	return r.WithContext(SetVKIDOnContext(r.Context(), vkID))
 }
+
+type vkTypeKey struct{}
+
+func VKTypeFromContext(ctx context.Context) (string, bool) {
+	vkType, found := ctx.Value(vkTypeKey{}).(string)
+	return vkType, found
+}
+
+func VKTypeFromRequest(r *http.Request) (string, bool) {
+	return VKTypeFromContext(r.Context())
+}
+
+func SetVKTypeOnContext(ctx context.Context, vkType string) context.Context {
+	return context.WithValue(ctx, vkTypeKey{}, vkType)
+}
+
+func SetVKTypeOnRequest(r *http.Request, vkType string) *http.Request {
+	return r.WithContext(SetVKTypeOnContext(r.Context(), vkType))
+}

@@ -98,6 +98,18 @@ func IntJoin(ints []int, sep string) string {
 	return strings.Join(result, sep)
 }
 
+func StringToIntSlice(input string) []int {
+	parts := strings.Split(input, ",")
+	var result []int
+
+	for _, i := range parts {
+		n, _ := strconv.Atoi(i)
+		result = append(result, n)
+	}
+
+	return result
+}
+
 func GetIntFromEnvOrFatalError(key string) int {
 	envContent := os.Getenv(key)
 

@@ -9,6 +9,7 @@ import (
 
 	"github.com/crossworth/cartola-web-admin/cache"
 	"github.com/crossworth/cartola-web-admin/database"
+	"github.com/crossworth/cartola-web-admin/httputil"
 	"github.com/crossworth/cartola-web-admin/util"
 )
 
@@ -33,7 +34,7 @@ func Search(provider SearchProvider, cache *cache.Cache) func(w http.ResponseWri
 		limit := util.ToIntWithDefaultMin(r.URL.Query().Get("limit"), 10)
 
 		if term == "" {
-			errorCode(w, NewError("nenhum termo fornecido"), 400)
+			httputil.SendErrorCode(w, httputil.NewError("nenhum termo fornecido"), 400)
 			return
 		}
 
@@ -60,7 +61,7 @@ func Search(provider SearchProvider, cache *cache.Cache) func(w http.ResponseWri
 
 		data, castOK := searchCache.(SearchCache)
 		if !castOK {
-			databaseError(w, searchCache.(error))
+			httputil.SendDatabaseError(w, searchCache.(error))
 			return
 		}
 
@@ -75,7 +76,7 @@ func Search(provider SearchProvider, cache *cache.Cache) func(w http.ResponseWri
 			next = fmt.Sprintf("%s/search?limit=%d&page=%d&term=%s&fromID=%d&createdAfter=%d&createdBefore=%d", os.Getenv("APP_API_URL"), limit, page+1, term, fromID, createdAfter, createdBefore)
 		}
 
-		pagination(w, data.Results, 200, PaginationMeta{
+		httputil.SendPagination(w, data.Results, 200, httputil.PaginationMeta{
 			Prev:    prev,
 			Current: fmt.Sprintf("%s/search?limit=%d&page=%d&term=%s&fromID=%d&createdAfter=%d&createdBefore=%d", os.Getenv("APP_API_URL"), limit, page, term, fromID, createdAfter, createdBefore),
 			Next:    next,

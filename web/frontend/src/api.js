@@ -74,6 +74,10 @@ const getTopicSearch = (term, page, limit, fromID = 0, createdAfter = 0, created
   return api.get(`/search?term=${term}&page=${page}&limit=${limit}&fromID=${fromID}&createdAfter=${createdAfter}&createdBefore=${createdBefore}`)
 }
 
+const getAdministratorsProfiles = () => {
+  return api.get(`/administrators-profiles`)
+}
+
 export {
   unixNow,
   resolveProfile,
@@ -86,5 +90,6 @@ export {
   getProfiles,
   getTopics,
   getTopicsRanking,
-  getTopicSearch
+  getTopicSearch,
+  getAdministratorsProfiles
 }

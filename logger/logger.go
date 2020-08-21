@@ -89,6 +89,10 @@ func SetupLoggerOnRouter(router chi.Router) {
 			l.Str("vk_id", strconv.Itoa(vkID))
 		}
 
+		if vkType, ok := model.VKTypeFromRequest(r); ok {
+			l.Str("vk_type", vkType)
+		}
+
 		l.Msg("")
 	}))
 
@@ -96,4 +100,8 @@ func SetupLoggerOnRouter(router chi.Router) {
 	router.Use(hlog.UserAgentHandler("user_agent"))
 	router.Use(hlog.RefererHandler("referer"))
 	router.Use(hlog.RequestIDHandler("req_id", "request-id"))
+}
+
+func LogFromRequest(r *http.Request) *zerolog.Logger {
+	return hlog.FromRequest(r)
 }

@@ -62,6 +62,11 @@ const changeLog = `
 - Ajustado problema com membros, onde estatísticas por Mês/Semana/Dia apenas consideram o primeiro dia do mês
 - Otimizado query de membros
 - Adicionado API publica para conseguir estatísticas de membro para ser usada pelo Jônathas Raskólnikov
+
+20 Agosto
+- Adicionado fila para atualização de tópicos
+- Adicionado bloqueio de listagem de diretório
+- Iniciado implementação de de diferentes tipos de membros
 `
 
 export {

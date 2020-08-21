@@ -27,6 +27,13 @@ import Settings from './Settings'
 
 const { Sider, Content } = Layout
 
+if (window.User === undefined) {
+  window.User = {
+    id: 0,
+    type: 'super_admin'
+  }
+}
+
 export default () => {
   const selectedMenu = window.location.pathname.substr(0)
 
@@ -93,12 +100,14 @@ export default () => {
                 </Link>
               </Menu.Item>
 
-              <Menu.Item key="configuracoes">
-                <Link to="/configuracoes">
-                  <LogoutOutlined/>
-                  <span>Configurações</span>
-                </Link>
-              </Menu.Item>
+              {
+                window.User.type === 'super_admin' && <Menu.Item key="configuracoes">
+                  <Link to="/configuracoes">
+                    <LogoutOutlined/>
+                    <span>Configurações</span>
+                  </Link>
+                </Menu.Item>
+              }
 
               <Menu.Item key="logout">
                 <a href="/logout">
@@ -141,9 +150,11 @@ export default () => {
               <Route path='/resolver/:name?' render={(props) => <ProfileResolve {...props}/>}>
               </Route>
 
-              <Route path='/configuracoes' exact>
-                <Settings/>
-              </Route>
+              {
+                window.User.type === 'super_admin' && <Route path='/configuracoes' exact>
+                  <Settings/>
+                </Route>
+              }
 
               <Route path='/topicos/pesquisa' exact>
                 <TopicSearch/>

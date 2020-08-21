@@ -10,6 +10,7 @@ import (
 	"github.com/crossworth/cartola-web-admin/api/handle"
 	"github.com/crossworth/cartola-web-admin/cache"
 	"github.com/crossworth/cartola-web-admin/database"
+	"github.com/crossworth/cartola-web-admin/httputil"
 	"github.com/crossworth/cartola-web-admin/logger"
 	"github.com/crossworth/cartola-web-admin/vk"
 )
@@ -37,16 +38,20 @@ func NewServer(vk *vk.VKClient, db *database.PostgreSQL, cache *cache.Cache) *Se
 	s.router.Use(middleware.NoCache)
 	s.router.Use(middleware.Compress(flate.DefaultCompression))
 
-	s.router.NotFound(handle.NotFoundHandler)
-	s.router.MethodNotAllowed(handle.MethodNotAllowedHandler)
+	s.router.NotFound(httputil.NotFoundHandler)
+	s.router.MethodNotAllowed(httputil.MethodNotAllowedHandler)
 
-	// public routes
-	s.router.Get("/resolve-profile", handle.ProfileLinkToID(s.vk))
-
-	// authenticated routes
+	// SUPER-ADMIN ONLY
 	s.router.Group(func(r chi.Router) {
+		r.Use(OnlySuperAdmin())
+		r.Get("/administrators-profiles", handle.AdminProfiles(s.db))
+	})
+
+	// ADMIN ONLY
+	s.router.Group(func(r chi.Router) {
+		r.Use(OnlyAdmin())
+		r.Get("/resolve-profile", handle.ProfileLinkToID(s.vk))
 		r.Get("/auto-complete/profile/{profile}", handle.AutoCompleteProfileName(s.db))
-		r.Get("/profiles/ids", handle.ProfilesIDS(s.db))
 
 		r.Get("/profiles", handle.Profiles(s.db, s.cache))
 		r.Get("/profiles/{profile}", handle.ProfileByID(s.db))

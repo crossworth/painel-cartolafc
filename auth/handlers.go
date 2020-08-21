@@ -2,8 +2,8 @@ package auth
 
 import (
 	"context"
-	"html/template"
 	"net/http"
+	"text/template"
 
 	"github.com/gorilla/sessions"
 	"github.com/markbates/goth/gothic"
@@ -100,5 +100,35 @@ func Logout(sessionStorage sessions.Store) func(http.ResponseWriter, *http.Reque
 		_ = gothic.Logout(writer, request)
 		logger.Log.Info().Str("vk_id", userID).Msg("logout membro")
 		http.Redirect(writer, request, "/fazer-login", http.StatusTemporaryRedirect)
+	}
+}
+
+type userInfo struct {
+	UserID   int
+	UserType string
+}
+
+const userInfoPage = `window.User = {
+  id: {{ .UserID }},
+  type: '{{ .UserType }}'
+};`
+
+func UserInfo() func(http.ResponseWriter, *http.Request) {
+	userInfoTpl, err := template.New("userInfo").Parse(userInfoPage)
+	if err != nil {
+		logger.Log.Fatal().Err(err).Msg("não foi possível fazer o parse do template de configurações")
+	}
+
+	return func(writer http.ResponseWriter, request *http.Request) {
+		vkID, _ := model.VKIDFromRequest(request)
+		vkType, _ := model.VKTypeFromRequest(request)
+
+		writer.Header().Set("Content-Type", "text/javascript; charset=utf-8")
+		data := userInfo{
+			UserID:   vkID,
+			UserType: vkType,
+		}
+
+		_ = userInfoTpl.Execute(writer, data)
 	}
 }

@@ -13,6 +13,7 @@ import (
 
 	"github.com/crossworth/cartola-web-admin/cache"
 	"github.com/crossworth/cartola-web-admin/database"
+	"github.com/crossworth/cartola-web-admin/httputil"
 	"github.com/crossworth/cartola-web-admin/model"
 	"github.com/crossworth/cartola-web-admin/util"
 	"github.com/crossworth/cartola-web-admin/vk"
@@ -35,13 +36,13 @@ func ProfileLinkToID(provider ScreeNameProvider) func(w http.ResponseWriter, r *
 		link := r.URL.Query().Get("link")
 
 		if link == "" {
-			json(w, NewError("link de perfil não informado"), 400)
+			httputil.SendJSON(w, httputil.NewError("link de perfil não informado"), 400)
 			return
 		}
 
 		screenNameOrID, err := vk.ProfileScreenNameOrIDFromURL(link)
 		if err != nil {
-			errorCode(w, err, 400)
+			httputil.SendErrorCode(w, err, 400)
 			return
 		}
 
@@ -51,7 +52,7 @@ func ProfileLinkToID(provider ScreeNameProvider) func(w http.ResponseWriter, r *
 			// NOTE(Pedro): Maybe group?
 			id, screenName, err = provider.GroupScreenNameToProfileID(r.Context(), screenNameOrID)
 			if err != nil {
-				errorCode(w, err, 400)
+				httputil.SendErrorCode(w, err, 400)
 				return
 			}
 		}
@@ -62,7 +63,7 @@ func ProfileLinkToID(provider ScreeNameProvider) func(w http.ResponseWriter, r *
 			canonicalProfileLink = "https://vk.com/club" + util.ToString(int(math.Abs(float64(id))))
 		}
 
-		json(w, ProfileLinkResponse{
+		httputil.SendJSON(w, ProfileLinkResponse{
 			ID:                   id,
 			ScreenName:           screenName,
 			ProfileLink:          "https://vk.com/" + screenName,
@@ -80,17 +81,17 @@ func ProfileByID(provider ProfileByIDProvider) func(w http.ResponseWriter, r *ht
 		id := util.ToInt(chi.URLParam(r, "profile"))
 
 		if id == 0 {
-			json(w, NewError("id de perfil inválido"), 400)
+			httputil.SendJSON(w, httputil.NewError("id de perfil inválido"), 400)
 			return
 		}
 
 		profile, err := provider.ProfileByID(r.Context(), id)
 		if err != nil {
-			databaseError(w, err)
+			httputil.SendDatabaseError(w, err)
 			return
 		}
 
-		json(w, profile, 200)
+		httputil.SendJSON(w, profile, 200)
 	}
 }
 
@@ -103,17 +104,17 @@ func ProfileHistoryByID(provider ProfileHistoryProvider) func(w http.ResponseWri
 		id := util.ToInt(chi.URLParam(r, "profile"))
 
 		if id == 0 {
-			json(w, NewError("id de perfil inválido"), 400)
+			httputil.SendJSON(w, httputil.NewError("id de perfil inválido"), 400)
 			return
 		}
 
 		profileHistory, err := provider.ProfileHistoryByProfileID(r.Context(), id)
 		if err != nil {
-			databaseError(w, err)
+			httputil.SendDatabaseError(w, err)
 			return
 		}
 
-		json(w, profileHistory, 200)
+		httputil.SendJSON(w, profileHistory, 200)
 	}
 }
 
@@ -130,25 +131,25 @@ func TopicsByProfileID(provider ProfileTopicsProvider) func(w http.ResponseWrite
 		limit := util.ToIntWithDefaultMin(r.URL.Query().Get("limit"), 10)
 
 		if id == 0 {
-			json(w, NewError("id de perfil inválido"), 400)
+			httputil.SendJSON(w, httputil.NewError("id de perfil inválido"), 400)
 			return
 		}
 
 		total, err := provider.TopicsCountByProfileID(r.Context(), id)
 		if err != nil {
-			databaseError(w, err)
+			httputil.SendDatabaseError(w, err)
 			return
 		}
 
 		topics, err := provider.TopicsByProfileID(r.Context(), id, before, limit)
 		if err != nil {
-			databaseError(w, err)
+			httputil.SendDatabaseError(w, err)
 			return
 		}
 
 		paginationTimestamps, err := provider.TopicsPaginationTimestampByProfileID(r.Context(), id, before, limit)
 		if err != nil {
-			databaseError(w, err)
+			httputil.SendDatabaseError(w, err)
 			return
 		}
 
@@ -166,7 +167,7 @@ func TopicsByProfileID(provider ProfileTopicsProvider) func(w http.ResponseWrite
 			before = topics[0].CreatedAt
 		}
 
-		pagination(w, topics, 200, PaginationMeta{
+		httputil.SendPagination(w, topics, 200, httputil.PaginationMeta{
 			Prev:    prev,
 			Current: fmt.Sprintf("%s/profiles/%d/topics?limit=%d&before=%d", os.Getenv("APP_API_URL"), id, limit, before),
 			Next:    next,
@@ -188,25 +189,25 @@ func CommentsByProfileID(provider ProfileCommentsProvider) func(w http.ResponseW
 		limit := util.ToIntWithDefaultMin(r.URL.Query().Get("limit"), 10)
 
 		if id == 0 {
-			json(w, NewError("id de perfil inválido"), 400)
+			httputil.SendJSON(w, httputil.NewError("id de perfil inválido"), 400)
 			return
 		}
 
 		total, err := provider.CommentsCountByProfileID(r.Context(), id)
 		if err != nil {
-			databaseError(w, err)
+			httputil.SendDatabaseError(w, err)
 			return
 		}
 
 		comments, err := provider.CommentsByProfileID(r.Context(), id, before, limit)
 		if err != nil {
-			databaseError(w, err)
+			httputil.SendDatabaseError(w, err)
 			return
 		}
 
 		paginationTimestamps, err := provider.CommentsPaginationTimestampByProfileID(r.Context(), id, before, limit)
 		if err != nil {
-			databaseError(w, err)
+			httputil.SendDatabaseError(w, err)
 			return
 		}
 
@@ -224,7 +225,7 @@ func CommentsByProfileID(provider ProfileCommentsProvider) func(w http.ResponseW
 			before = comments[0].Date
 		}
 
-		pagination(w, comments, 200, PaginationMeta{
+		httputil.SendPagination(w, comments, 200, httputil.PaginationMeta{
 			Prev:    prev,
 			Current: fmt.Sprintf("%s/profiles/%d/comments?limit=%d&before=%d", os.Getenv("APP_API_URL"), id, limit, before),
 			Next:    next,
@@ -250,23 +251,23 @@ func ProfileStatsByID(provider ProfileStatsAndHistoryProvider) func(w http.Respo
 		id := util.ToInt(chi.URLParam(r, "profile"))
 
 		if id == 0 {
-			json(w, NewError("id de perfil inválido"), 400)
+			httputil.SendJSON(w, httputil.NewError("id de perfil inválido"), 400)
 			return
 		}
 
 		stats, err := provider.ProfileStatsByProfileID(r.Context(), id)
 		if err != nil {
-			databaseError(w, err)
+			httputil.SendDatabaseError(w, err)
 			return
 		}
 
 		totalProfileChanges, err := provider.ProfileHistoryByProfileID(r.Context(), id)
 		if err != nil {
-			databaseError(w, err)
+			httputil.SendDatabaseError(w, err)
 			return
 		}
 
-		json(w, ProfileStatsResponse{
+		httputil.SendJSON(w, ProfileStatsResponse{
 			TotalTopics:         stats.Topics,
 			TotalComments:       stats.Comments,
 			TotalLikes:          stats.Likes,
@@ -284,17 +285,34 @@ func AutoCompleteProfileName(provider ProfileNameProvider) func(w http.ResponseW
 		profile := chi.URLParam(r, "profile")
 
 		if profile == "" {
-			json(w, []model.Profile{}, 200)
+			httputil.SendJSON(w, []model.Profile{}, 200)
 			return
 		}
 
 		profiles, err := provider.SearchProfileName(r.Context(), profile)
 		if err != nil {
-			databaseError(w, err)
+			httputil.SendDatabaseError(w, err)
 			return
 		}
 
-		json(w, profiles, 200)
+		httputil.SendJSON(w, profiles, 200)
+	}
+}
+
+type AdminProfileProvider interface {
+	AdminProfiles(context context.Context) ([]model.Profile, error)
+}
+
+func AdminProfiles(provider AdminProfileProvider) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		profiles, err := provider.AdminProfiles(r.Context())
+		if err != nil {
+			httputil.SendDatabaseError(w, err)
+			return
+		}
+
+		httputil.SendJSON(w, profiles, 200)
 	}
 }
 
@@ -348,7 +366,7 @@ func Profiles(provider ProfilesProvider, cache *cache.Cache) func(w http.Respons
 
 		data, castOK := profilesCache.(ProfilesCache)
 		if !castOK {
-			databaseError(w, profilesCache.(error))
+			httputil.SendDatabaseError(w, profilesCache.(error))
 			return
 		}
 
@@ -371,29 +389,13 @@ func Profiles(provider ProfilesProvider, cache *cache.Cache) func(w http.Respons
 			}
 		}
 
-		pagination(w, data.Profiles, 200, PaginationMeta{
+		httputil.SendPagination(w, data.Profiles, 200, httputil.PaginationMeta{
 			Prev:     prev,
 			Current:  fmt.Sprintf("%s/profiles?limit=%d&page=%d&orderBy=%s&orderDir=%s&period=%s", os.Getenv("APP_API_URL"), limit, page, orderBy, orderDir.Stringer(), period.URLString()),
 			Next:     next,
 			Total:    data.Total,
 			CachedAt: &data.CreatedAt,
 		})
-	}
-}
-
-type ProfileIDsProvider interface {
-	ProfileIDs(context context.Context) ([]int, error)
-}
-
-func ProfilesIDS(provider ProfileIDsProvider) func(w http.ResponseWriter, r *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ids, err := provider.ProfileIDs(r.Context())
-		if err != nil {
-			databaseError(w, err)
-			return
-		}
-
-		json(w, ids, 200)
 	}
 }
 
@@ -407,7 +409,7 @@ func PublicProfileStatsByID(provider ProfileStatsAndHistoryProvider, cache *cach
 		id := util.ToInt(chi.URLParam(r, "profile"))
 
 		if id == 0 {
-			json(w, NewError("id de perfil inválido"), 400)
+			httputil.SendJSON(w, httputil.NewError("id de perfil inválido"), 400)
 			return
 		}
 
@@ -426,10 +428,10 @@ func PublicProfileStatsByID(provider ProfileStatsAndHistoryProvider, cache *cach
 
 		data, castOK := profileStatCache.(PublicProfileStatCache)
 		if !castOK {
-			databaseError(w, profileStatCache.(error))
+			httputil.SendDatabaseError(w, profileStatCache.(error))
 			return
 		}
 
-		json(w, data, 200)
+		httputil.SendJSON(w, data, 200)
 	}
 }

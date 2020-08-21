@@ -12,6 +12,7 @@ import (
 
 	"github.com/crossworth/cartola-web-admin/cache"
 	"github.com/crossworth/cartola-web-admin/database"
+	"github.com/crossworth/cartola-web-admin/httputil"
 	"github.com/crossworth/cartola-web-admin/util"
 )
 
@@ -29,7 +30,7 @@ func Topics(provider TopicsProvider) func(w http.ResponseWriter, r *http.Request
 
 		total, err := provider.TopicsCount(r.Context())
 		if err != nil {
-			databaseError(w, err)
+			httputil.SendDatabaseError(w, err)
 			return
 		}
 
@@ -41,13 +42,13 @@ func Topics(provider TopicsProvider) func(w http.ResponseWriter, r *http.Request
 
 		topics, err := provider.Topics(r.Context(), before, limit, orderBy)
 		if err != nil {
-			databaseError(w, err)
+			httputil.SendDatabaseError(w, err)
 			return
 		}
 
 		paginationTimestamps, err := provider.TopicsPaginationTimestamp(r.Context(), before, limit, orderBy)
 		if err != nil {
-			databaseError(w, err)
+			httputil.SendDatabaseError(w, err)
 			return
 		}
 
@@ -65,7 +66,7 @@ func Topics(provider TopicsProvider) func(w http.ResponseWriter, r *http.Request
 			before = topics[0].CreatedAt
 		}
 
-		pagination(w, topics, 200, PaginationMeta{
+		httputil.SendPagination(w, topics, 200, httputil.PaginationMeta{
 			Prev:    prev,
 			Current: fmt.Sprintf("%s/topics?limit=%d&before=%d&orderBy=%s", os.Getenv("APP_API_URL"), limit, before, orderBy.Stringer()),
 			Next:    next,
@@ -84,11 +85,11 @@ func TopicByID(provider TopicProvider) func(w http.ResponseWriter, r *http.Reque
 
 		topic, err := provider.TopicByID(r.Context(), id)
 		if err != nil {
-			databaseError(w, err)
+			httputil.SendDatabaseError(w, err)
 			return
 		}
 
-		json(w, topic, 200)
+		httputil.SendJSON(w, topic, 200)
 	}
 }
 
@@ -107,14 +108,14 @@ func CommentFromTopicByID(provider TopicCommentsProvider) func(w http.ResponseWr
 
 		total, err := provider.CommentsCountByTopicID(r.Context(), id)
 		if err != nil {
-			databaseError(w, err)
+			httputil.SendDatabaseError(w, err)
 			return
 		}
 
 		if after == 0 {
 			createdAt, err := provider.CreatedAtByTopic(r.Context(), id)
 			if err != nil {
-				databaseError(w, err)
+				httputil.SendDatabaseError(w, err)
 				return
 			}
 
@@ -123,13 +124,13 @@ func CommentFromTopicByID(provider TopicCommentsProvider) func(w http.ResponseWr
 
 		comments, err := provider.CommentsByTopicID(r.Context(), id, after, limit)
 		if err != nil {
-			databaseError(w, err)
+			httputil.SendDatabaseError(w, err)
 			return
 		}
 
 		paginationTimestamps, err := provider.CommentsPaginationTimestampByTopicID(r.Context(), id, after, limit)
 		if err != nil {
-			databaseError(w, err)
+			httputil.SendDatabaseError(w, err)
 			return
 		}
 
@@ -147,7 +148,7 @@ func CommentFromTopicByID(provider TopicCommentsProvider) func(w http.ResponseWr
 			after = comments[0].Date
 		}
 
-		pagination(w, comments, 200, PaginationMeta{
+		httputil.SendPagination(w, comments, 200, httputil.PaginationMeta{
 			Prev:    prev,
 			Current: fmt.Sprintf("%s/topics/%d/comments?limit=%d&after=%d", os.Getenv("APP_API_URL"), id, limit, after),
 			Next:    next,
@@ -212,7 +213,7 @@ func TopicsWithStats(provider TopicsWithStatsProvider, cache *cache.Cache) func(
 
 		data, castOK := topicsCache.(TopicsWithStatsCache)
 		if !castOK {
-			databaseError(w, topicsCache.(error))
+			httputil.SendDatabaseError(w, topicsCache.(error))
 			return
 		}
 
@@ -235,7 +236,7 @@ func TopicsWithStats(provider TopicsWithStatsProvider, cache *cache.Cache) func(
 			}
 		}
 
-		pagination(w, data.Topics, 200, PaginationMeta{
+		httputil.SendPagination(w, data.Topics, 200, httputil.PaginationMeta{
 			Prev:     prev,
 			Current:  fmt.Sprintf("%s/topics-ranking?limit=%d&page=%d&orderBy=%s&orderDir=%s&period=%s&showOlderTopics=%t", os.Getenv("APP_API_URL"), limit, page, orderBy, orderDir.Stringer(), period.URLString(), showOlderTopics),
 			Next:     next,
