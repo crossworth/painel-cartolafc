@@ -1,9 +1,11 @@
 package api
 
 import (
+	"compress/flate"
 	"net/http"
 
 	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/middleware"
 
 	"github.com/crossworth/cartola-web-admin/api/handle"
 	"github.com/crossworth/cartola-web-admin/cache"
@@ -26,6 +28,8 @@ func NewPublicAPI(db *database.PostgreSQL, cache *cache.Cache) *PublicAPI {
 
 	logger.SetupLoggerOnRouter(api.router)
 
+	api.router.Use(middleware.NoCache)
+	api.router.Use(middleware.Compress(flate.DefaultCompression))
 	api.router.Get("/profile-stat/{profile}", handle.PublicProfileStatsByID(api.db, api.cache))
 	return api
 }

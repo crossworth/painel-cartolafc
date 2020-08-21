@@ -82,7 +82,12 @@ func NewCartola(
 	c.router.Group(func(r chi.Router) {
 		r.Use(auth.OnlyAuthenticatedUsers(c.session, c.userTypeHandler))
 
-		r.Get("/userinfo.js", auth.UserInfo())
+		r.Group(func(noCache chi.Router) {
+			noCache.Use(middleware.NoCache)
+			noCache.Use(middleware.Compress(flate.DefaultCompression))
+			noCache.Get("/userinfo.js", auth.UserInfo())
+		})
+
 		r.Mount("/api", api.NewServer(c.vkClient, c.db, c.cache))
 		r.Mount("/", web.New())
 	})
