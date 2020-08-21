@@ -6,6 +6,7 @@ import (
 
 	"github.com/gorilla/sessions"
 
+	"github.com/crossworth/cartola-web-admin/httputil"
 	"github.com/crossworth/cartola-web-admin/logger"
 	"github.com/crossworth/cartola-web-admin/model"
 	"github.com/crossworth/cartola-web-admin/util"
@@ -15,7 +16,7 @@ var (
 	alwaysAllowedRoutes = []string{"/favicon.ico"}
 )
 
-func OnlyAuthenticatedUsers(sessionStorage sessions.Store, userTypeHandler *UserTypeHandler) func(next http.Handler) http.Handler {
+func OnlyAuthenticatedUsers(sessionStorage sessions.Store, userHandler *UserHandler) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 			if isRouteAllowed(request.URL.String()) {
@@ -26,7 +27,7 @@ func OnlyAuthenticatedUsers(sessionStorage sessions.Store, userTypeHandler *User
 			session, err := sessionStorage.Get(request, model.UserSession)
 			if err != nil {
 				logger.Log.Error().Err(err).Msg("erro ao conseguir a session de usuário no middleware")
-				http.Redirect(writer, request, "/fazer-login", http.StatusTemporaryRedirect)
+				httputil.Redirect(writer, request, "/fazer-login?motivo-redirect="+httputil.TextToQueryString("erro ao conseguir sessão do membro"), http.StatusTemporaryRedirect)
 				return
 			}
 
@@ -37,7 +38,7 @@ func OnlyAuthenticatedUsers(sessionStorage sessions.Store, userTypeHandler *User
 
 			userID, ok := session.Values["user_id"].(string)
 			if !ok {
-				http.Redirect(writer, request, "/fazer-login", http.StatusTemporaryRedirect)
+				httputil.Redirect(writer, request, "/fazer-login?motivo-redirect="+httputil.TextToQueryString("membro não autenticado"), http.StatusTemporaryRedirect)
 				return
 			}
 
@@ -46,15 +47,22 @@ func OnlyAuthenticatedUsers(sessionStorage sessions.Store, userTypeHandler *User
 				request = model.SetVKIDOnRequest(request, userIDInt)
 			}
 
-			userType := userTypeHandler.GetUserType(userIDInt)
+			userType := userHandler.GetUserType(userIDInt)
 			request = model.SetVKTypeOnRequest(request, userType)
+
+			isUserAllowed := userHandler.IsUserAllowed(userIDInt)
+
+			if !isUserAllowed && userType != "super_admin" {
+				httputil.Redirect(writer, request, "/fazer-login?motivo-redirect="+httputil.TextToQueryString("membro não autorizado"), http.StatusTemporaryRedirect)
+				return
+			}
 
 			if userID != "" {
 				next.ServeHTTP(writer, request)
 				return
 			}
 
-			http.Redirect(writer, request, "/fazer-login", http.StatusTemporaryRedirect)
+			httputil.Redirect(writer, request, "/fazer-login?motivo-redirect="+httputil.TextToQueryString("membro não autenticado"), http.StatusTemporaryRedirect)
 		})
 	}
 }

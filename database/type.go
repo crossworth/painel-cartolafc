@@ -114,14 +114,13 @@ func (s SearchType) Stringer() string {
 }
 
 type Search struct {
-	Term            string     `json:"term"`
-	Text            string     `json:"text"`
-	HighlightedPart string     `json:"highlighted_part"`
-	Type            SearchType `json:"type"`
-	Date            int        `json:"date"`
-	FromID          int        `json:"from_id"`
-	TopicID         int        `json:"topic_id"`
-	CommentID       int        `json:"comment_id"`
+	Term      string     `json:"term"`
+	Headline  string     `json:"headline"`
+	Type      SearchType `json:"type"`
+	Date      int        `json:"date"`
+	TopicID   int        `json:"topic_id"`
+	CommentID int        `json:"comment_id"`
+	Rank      float32    `json:"-"`
 }
 
 type TopicsWithStats struct {

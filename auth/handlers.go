@@ -8,6 +8,7 @@ import (
 	"github.com/gorilla/sessions"
 	"github.com/markbates/goth/gothic"
 
+	"github.com/crossworth/cartola-web-admin/httputil"
 	"github.com/crossworth/cartola-web-admin/logger"
 	"github.com/crossworth/cartola-web-admin/model"
 	"github.com/crossworth/cartola-web-admin/util"
@@ -49,14 +50,14 @@ func LoginCallback(vkAPI *vk.VKClient, sessionStorage sessions.Store) func(http.
 		user, err := gothic.CompleteUserAuth(writer, request)
 		if err != nil {
 			logger.Log.Error().Err(err).Msg("erro ao fazer segunda parte do login")
-			http.Redirect(writer, request, "/fazer-login", http.StatusTemporaryRedirect)
+			http.Redirect(writer, request, "/fazer-login?motivo-redirect="+httputil.TextToQueryString("erro ao fazer login com VK"), http.StatusTemporaryRedirect)
 			return
 		}
 
 		session, err := sessionStorage.Get(request, model.UserSession)
 		if err != nil {
 			logger.Log.Error().Err(err).Msg("erro ao conseguir a session de usuário")
-			http.Redirect(writer, request, "/fazer-login", http.StatusTemporaryRedirect)
+			http.Redirect(writer, request, "/fazer-login?motivo-redirect="+httputil.TextToQueryString("erro ao conseguir sessão do membro"), http.StatusTemporaryRedirect)
 			return
 		}
 
@@ -65,21 +66,21 @@ func LoginCallback(vkAPI *vk.VKClient, sessionStorage sessions.Store) func(http.
 			util.GetIntFromEnvOrFatalError("APP_VK_GROUP_ID"))
 		if err != nil {
 			logger.Log.Error().Err(err).Msg("erro ao salvar a session de usuário")
-			http.Redirect(writer, request, "/fazer-login", http.StatusTemporaryRedirect)
+			http.Redirect(writer, request, "/fazer-login?motivo-redirect="+httputil.TextToQueryString("erro ao conseguir dados do membro"), http.StatusTemporaryRedirect)
 			return
 		}
 
 		if !isOnCommunity {
 			_ = gothic.Logout(writer, request)
 			logger.Log.Warn().Str("vk_id", user.UserID).Msg("usuário não faz parte da comunidade")
-			http.Redirect(writer, request, "/fazer-login", http.StatusTemporaryRedirect)
+			http.Redirect(writer, request, "/fazer-login?motivo-redirect="+httputil.TextToQueryString("membro não faz parte da comunidade"), http.StatusTemporaryRedirect)
 			return
 		}
 
 		err = session.Save(request, writer)
 		if err != nil {
 			logger.Log.Error().Err(err).Msg("erro ao salvar a session de usuário")
-			http.Redirect(writer, request, "/fazer-login", http.StatusTemporaryRedirect)
+			http.Redirect(writer, request, "/fazer-login?motivo-redirect="+httputil.TextToQueryString("não foi possível salva a sessão do membro"), http.StatusTemporaryRedirect)
 			return
 		}
 

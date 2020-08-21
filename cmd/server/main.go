@@ -113,12 +113,11 @@ func setupVKClient() *vk.VKClient {
 	vkEmail := util.GetStringFromEnvOrFatalError("VK_EMAIL")
 	vkPassword := util.GetStringFromEnvOrFatalError("VK_PASSWORD")
 
-	_ = vkEmail
-	_ = vkPassword
 	logger.Log.Info().Msg("criando cliente VK")
-	// vkClient, err := vk.NewVKClient(vkEmail, vkPassword)
-	// if err != nil {
-	// 	logger.Log.Fatal().Msgf("erro ao criar o cliente VK, %v", err)
-	// }
-	return &vk.VKClient{}
+	vkClient, err := vk.NewVKClient(vkEmail, vkPassword)
+	if err != nil {
+		logger.Log.Fatal().Msgf("erro ao criar o cliente VK, %v", err)
+	}
+
+	return vkClient
 }

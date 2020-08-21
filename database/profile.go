@@ -214,6 +214,8 @@ WHERE p.id = $1`
 			&profile.Comments,
 			&profile.Likes,
 		)
+
+		profile.TopicsPlusComments = profile.Topics + profile.Comments
 	})
 
 	return profile, err

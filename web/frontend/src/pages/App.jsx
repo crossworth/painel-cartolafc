@@ -89,7 +89,7 @@ export default () => {
               <Menu.Item key="/pesquisa">
                 <Link to="/pesquisa">
                   <SearchOutlined/>
-                  <span>Pesquisa Tópicos</span>
+                  <span>Pesquisar Tópicos</span>
                 </Link>
               </Menu.Item>
 

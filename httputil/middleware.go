@@ -2,9 +2,12 @@ package httputil
 
 import (
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/go-chi/chi"
+
+	"github.com/crossworth/cartola-web-admin/util"
 )
 
 func RemoveDoubleSlashes(next http.Handler) http.Handler {
@@ -24,4 +27,18 @@ func RemoveDoubleSlashes(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	}
 	return http.HandlerFunc(fn)
+}
+
+func OnlyAllowedHost(next http.Handler) http.Handler {
+	host := util.GetStringFromEnvOrDefault("APP_BASE_URL", "")
+	hostUrl, _ := url.Parse(host)
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if hostUrl.Host != "" && r.Host != hostUrl.Host {
+			r.Close = true
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }

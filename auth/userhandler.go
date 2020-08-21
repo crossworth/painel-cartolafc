@@ -57,17 +57,22 @@ func (u *UserHandler) IsUserAllowed(id int) bool {
 	}
 
 	allowed := false
+	isAdmin := u.GetUserType(id) == "admin"
 
 	for _, line := range rulesLines {
 		if strings.TrimSpace(line) == "*" {
 			allowed = true
 		}
 
-		if line == strconv.Itoa(id) {
+		if strings.TrimSpace(line) == strconv.Itoa(id) {
 			allowed = true
 		}
 
-		if line == "!"+strconv.Itoa(id) {
+		if strings.TrimSpace(line) == "admin" && isAdmin {
+			allowed = true
+		}
+
+		if strings.TrimSpace(line) == "!"+strconv.Itoa(id) {
 			allowed = false
 		}
 	}

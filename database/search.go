@@ -1,69 +1,38 @@
 package database
 
 import (
-	"bytes"
 	"context"
-	"strconv"
-	"strings"
 
 	"github.com/travelaudience/go-sx"
 )
 
-func (p *PostgreSQL) Search(context context.Context, text string, page int, limit int, fromID int, createdAfter int, createdBefore int) ([]Search, error) {
+func (p *PostgreSQL) SearchTopics(context context.Context, term string, page int, limit int) ([]Search, error) {
 	var result []Search
 
-	searchTerm := `'% ` + text +` %'`
-
-	query := bytes.Buffer{}
-
-	query.WriteString(`(SELECT title AS text, created_at AS date, created_by AS from_id, 'topic' AS type, id, 0 FROM topics WHERE title LIKE ` + searchTerm + ``)
-
-	if fromID != 0 {
-		query.WriteString(` AND created_by = ` + strconv.Itoa(fromID))
-	}
-
-	if createdAfter != 0 {
-		query.WriteString(` AND created_at >= ` + strconv.Itoa(createdAfter))
-	}
-
-	if createdBefore != 0 {
-		query.WriteString(` AND created_at <= ` + strconv.Itoa(createdBefore) + ` `)
-	}
-
-	query.WriteString(`ORDER BY title OFFSET $1 LIMIT $2)`)
-	query.WriteString(`UNION`)
-	query.WriteString(`(SELECT text AS text, date AS date, from_id AS from_id, 'comment' AS type, topic_id, id FROM comments WHERE text LIKE ` + searchTerm + ``)
-
-	if fromID != 0 {
-		query.WriteString(` AND from_id = ` + strconv.Itoa(fromID))
-	}
-
-	if createdAfter != 0 {
-		query.WriteString(` AND date >= ` + strconv.Itoa(createdAfter))
-	}
-
-	if createdBefore != 0 {
-		query.WriteString(` AND date <= ` + strconv.Itoa(createdBefore) + ` `)
-	}
-
-	query.WriteString(`ORDER BY text OFFSET $1 LIMIT $2)`)
+	query := `SELECT $1                                                                    as term,
+       ts_headline((select title from topics t where t.id = ft.topic_id), q) as headline,
+       ft.topic_id                                                           as topic_id,
+       ft.date                                                               as date,
+       ts_rank(tsv, q)                                                       as rank
+FROM full_text_search_topic ft,
+     plainto_tsquery($1) q
+WHERE tsv @@ q
+ORDER BY rank ASC, date DESC
+OFFSET $2 LIMIT $3`
 
 	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {
 		// NOTE(Pedro): to get the correct number of results we have to divide by two
 		// since its two queries
-		tx.MustQueryContext(context, query.String(), (page-1)*limit/2, limit/2).Each(func(r *sx.Rows) {
+		tx.MustQueryContext(context, query, term, (page-1)*limit, limit).Each(func(r *sx.Rows) {
 			var search Search
-			var typeString string
-			search.Term = text
-			r.MustScan(&search.Text, &search.Date, &search.FromID, &typeString, &search.TopicID, &search.CommentID)
-
+			r.MustScan(
+				&search.Term,
+				&search.Headline,
+				&search.TopicID,
+				&search.Date,
+				&search.Rank,
+			)
 			search.Type = SearchTypeTopic
-
-			if typeString == "comment" {
-				search.Type = SearchTypeComment
-			}
-
-			search.HighlightedPart = strings.ReplaceAll(search.Text, text, "<strong>"+text+"</strong>")
 			result = append(result, search)
 		})
 	})
@@ -71,47 +40,63 @@ func (p *PostgreSQL) Search(context context.Context, text string, page int, limi
 	return result, err
 }
 
-func (p *PostgreSQL) SearchCount(context context.Context, text string, page int, limit int, fromID int, createdAfter int, createdBefore int) (int, error) {
+func (p *PostgreSQL) SearchTopicsCount(context context.Context, term string) (int, error) {
 	var total int
 
-	searchTerm := `'% ` + text +` %'`
+	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {
+		tx.MustQueryRowContext(context, `SELECT COUNT(*)
+FROM full_text_search_topic ft,
+     plainto_tsquery($1) q
+WHERE tsv @@ q`, term).MustScan(&total)
+	})
 
-	query := bytes.Buffer{}
+	return total, err
+}
 
-	query.WriteString(`SELECT COUNT(*) FROM ((SELECT title AS text, created_at AS date, created_by AS from_id, 'topic' AS type, id, 0 FROM topics WHERE title LIKE ` + searchTerm + ``)
+func (p *PostgreSQL) SearchComments(context context.Context, term string, page int, limit int) ([]Search, error) {
+	var result []Search
 
-	if fromID != 0 {
-		query.WriteString(` AND created_by = ` + strconv.Itoa(fromID))
-	}
-
-	if createdAfter != 0 {
-		query.WriteString(` AND created_at >= ` + strconv.Itoa(createdAfter))
-	}
-
-	if createdBefore != 0 {
-		query.WriteString(` AND created_at <= ` + strconv.Itoa(createdBefore) + ` `)
-	}
-
-	query.WriteString(`ORDER BY title)`)
-	query.WriteString(`UNION`)
-	query.WriteString(`(SELECT text AS text, date AS date, from_id AS from_id, 'comment' AS type, topic_id, id FROM comments WHERE text LIKE ` + searchTerm + ``)
-
-	if fromID != 0 {
-		query.WriteString(` AND from_id = ` + strconv.Itoa(fromID))
-	}
-
-	if createdAfter != 0 {
-		query.WriteString(` AND date >= ` + strconv.Itoa(createdAfter))
-	}
-
-	if createdBefore != 0 {
-		query.WriteString(` AND date <= ` + strconv.Itoa(createdBefore) + ` `)
-	}
-
-	query.WriteString(`ORDER BY text)) q`)
+	query := `SELECT $1                                                                       as term,
+       ts_headline((select text from comments c where c.id = fc.comment_id), q) as headline,
+       fc.topic_id                                                              as topic_id,
+       fc.comment_id                                                            as comment_id,
+       fc.date                                                                  as date,
+       ts_rank(tsv, q)                                                          as rank
+FROM full_text_search_comment fc,
+     plainto_tsquery($1) q
+WHERE tsv @@ q
+ORDER BY rank ASC, date DESC
+OFFSET $2 LIMIT $3`
 
 	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {
-		tx.MustQueryRowContext(context, query.String()).MustScan(&total)
+		// NOTE(Pedro): to get the correct number of results we have to divide by two
+		// since its two queries
+		tx.MustQueryContext(context, query, term, (page-1)*limit, limit).Each(func(r *sx.Rows) {
+			var search Search
+			r.MustScan(
+				&search.Term,
+				&search.Headline,
+				&search.TopicID,
+				&search.CommentID,
+				&search.Date,
+				&search.Rank,
+			)
+			search.Type = SearchTypeComment
+			result = append(result, search)
+		})
+	})
+
+	return result, err
+}
+
+func (p *PostgreSQL) SearchCommentsCount(context context.Context, term string) (int, error) {
+	var total int
+
+	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {
+		tx.MustQueryRowContext(context, `SELECT COUNT(*)
+FROM full_text_search_comment ft,
+     plainto_tsquery($1) q
+WHERE tsv @@ q`, term).MustScan(&total)
 	})
 
 	return total, err

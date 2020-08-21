@@ -30,7 +30,7 @@ type Cartola struct {
 	cache           *cache.Cache
 	router          chi.Router
 	superAdmins     []int
-	userTypeHandler *auth.UserTypeHandler
+	userTypeHandler *auth.UserHandler
 }
 
 var corsOpts = cors.Options{
@@ -60,10 +60,11 @@ func NewCartola(
 		superAdmins:  superAdmins,
 	}
 
-	c.userTypeHandler = auth.NewUserTypeHandler(c.db, c.superAdmins)
+	c.userTypeHandler = auth.NewUserHandler(c.db, c.superAdmins)
 
 	c.router = chi.NewRouter()
 	c.router.Use(middleware.Recoverer)
+	c.router.Use(httputil.OnlyAllowedHost)
 	c.router.Use(middleware.Compress(flate.DefaultCompression))
 	c.router.Use(cors.New(corsOpts).Handler)
 	c.router.Use(middleware.Timeout(10 * time.Minute))

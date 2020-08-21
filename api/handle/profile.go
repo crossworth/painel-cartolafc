@@ -241,10 +241,11 @@ type ProfileStatsAndHistoryProvider interface {
 }
 
 type ProfileStatsResponse struct {
-	TotalTopics         int `json:"total_topics"`
-	TotalComments       int `json:"total_comments"`
-	TotalLikes          int `json:"total_likes"`
-	TotalProfileChanges int `json:"total_profile_changes"`
+	TotalTopics             int `json:"total_topics"`
+	TotalComments           int `json:"total_comments"`
+	TotalLikes              int `json:"total_likes"`
+	TotalTopicsPlusComments int `json:"total_topics_plus_comments"`
+	TotalProfileChanges     int `json:"total_profile_changes"`
 }
 
 func ProfileStatsByID(provider ProfileStatsAndHistoryProvider) func(w http.ResponseWriter, r *http.Request) {
@@ -269,11 +270,72 @@ func ProfileStatsByID(provider ProfileStatsAndHistoryProvider) func(w http.Respo
 		}
 
 		httputil.SendJSON(w, ProfileStatsResponse{
-			TotalTopics:         stats.Topics,
-			TotalComments:       stats.Comments,
-			TotalLikes:          stats.Likes,
-			TotalProfileChanges: len(totalProfileChanges),
+			TotalTopics:             stats.Topics,
+			TotalComments:           stats.Comments,
+			TotalLikes:              stats.Likes,
+			TotalTopicsPlusComments: stats.TopicsPlusComments,
+			TotalProfileChanges:     len(totalProfileChanges),
 		}, 200)
+	}
+}
+
+type MyProfileProvider interface {
+	ProfileStatsAndHistoryProvider
+	ProfileByID(context context.Context, id int) (model.Profile, error)
+}
+
+type MyProfileStats struct {
+	TotalTopics             int `json:"total_topics"`
+	TotalComments           int `json:"total_comments"`
+	TotalLikes              int `json:"total_likes"`
+	TotalTopicsPlusComments int `json:"total_topics_plus_comments"`
+}
+
+type MyProfileCache struct {
+	User  model.Profile  `json:"user"`
+	Stats MyProfileStats `json:"stats"`
+}
+
+func MyProfile(provider MyProfileProvider, cache *cache.Cache) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vkID, found := model.VKIDFromRequest(r)
+		if !found || vkID == 0 {
+			httputil.SendError(w, fmt.Errorf("usuário não logado!?"))
+			return
+		}
+
+		cacheKey := fmt.Sprintf("profile_stats_%d", vkID)
+		profilesCache := cache.GetShortCache(cacheKey, func() interface{} {
+			stats, err := provider.ProfileStatsByProfileID(r.Context(), vkID)
+			if err != nil {
+				return err
+			}
+
+			user, err := provider.ProfileByID(r.Context(), vkID)
+			if err != nil {
+				return err
+			}
+
+			profilesCache := MyProfileCache{
+				User: user,
+				Stats: MyProfileStats{
+					TotalTopics:             stats.Topics,
+					TotalComments:           stats.Comments,
+					TotalLikes:              stats.Likes,
+					TotalTopicsPlusComments: stats.TopicsPlusComments,
+				},
+			}
+
+			return profilesCache
+		})
+
+		data, castOK := profilesCache.(MyProfileCache)
+		if !castOK {
+			httputil.SendDatabaseError(w, profilesCache.(error))
+			return
+		}
+
+		httputil.SendJSON(w, data, 200)
 	}
 }
 
@@ -317,6 +379,7 @@ func GetAdministratorProfiles(provider AdministratorProfileProvider) func(w http
 		httputil.SendJSON(w, profiles, 200)
 	}
 }
+
 func SetAdministratorProfiles(provider AdministratorProfileProvider) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var ids []int
@@ -327,6 +390,87 @@ func SetAdministratorProfiles(provider AdministratorProfileProvider) func(w http
 		}
 
 		err = provider.SetAdministratorProfiles(r.Context(), ids)
+		if err != nil {
+			httputil.SendDatabaseError(w, err)
+			return
+		}
+
+		httputil.SendJSON(w, []int{}, 200)
+	}
+}
+
+type SettingsProvider interface {
+	SettingByName(context context.Context, name string) (string, error)
+	UpdateSetting(context context.Context, name string, value string) error
+}
+
+type MembersRule struct {
+	Value string `json:"value"`
+}
+
+func GetMembersRule(provider SettingsProvider) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		value, err := provider.SettingByName(r.Context(), model.MembersRuleSettingName)
+		if err != nil {
+			httputil.SendDatabaseError(w, err)
+			return
+		}
+
+		httputil.SendJSON(w, MembersRule{
+			Value: value,
+		}, 200)
+	}
+}
+
+func SetMembersRule(provider SettingsProvider) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var result MembersRule
+		err := json.NewDecoder(r.Body).Decode(&result)
+		if err != nil {
+			httputil.SendError(w, err)
+			return
+		}
+
+		err = provider.UpdateSetting(r.Context(), model.MembersRuleSettingName, result.Value)
+		if err != nil {
+			httputil.SendDatabaseError(w, err)
+			return
+		}
+
+		httputil.SendJSON(w, []int{}, 200)
+	}
+}
+
+type HomePage struct {
+	Value string `json:"value"`
+}
+
+func GetHomePage(provider SettingsProvider) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		value, err := provider.SettingByName(r.Context(), model.HomePageSettingName)
+		if err != nil {
+			httputil.SendDatabaseError(w, err)
+			return
+		}
+
+		httputil.SendJSON(w, MembersRule{
+			Value: value,
+		}, 200)
+	}
+}
+
+func SetHomePage(provider SettingsProvider) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var result MembersRule
+		err := json.NewDecoder(r.Body).Decode(&result)
+		if err != nil {
+			httputil.SendError(w, err)
+			return
+		}
+
+		err = provider.UpdateSetting(r.Context(), model.HomePageSettingName, result.Value)
 		if err != nil {
 			httputil.SendDatabaseError(w, err)
 			return
