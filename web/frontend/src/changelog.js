@@ -67,6 +67,8 @@ const changeLog = `
 - Adicionado fila para atualização de tópicos
 - Adicionado bloqueio de listagem de diretório
 - Iniciado implementação de de diferentes tipos de membros
+- Adicionado opção de definir administradores
+- Adicionado quantidade de likes em tópicos de usuário
 `
 
 export {

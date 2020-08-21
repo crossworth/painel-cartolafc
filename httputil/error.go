@@ -23,3 +23,8 @@ func NewError(text string) error {
 func SendErrorCode(writer http.ResponseWriter, err error, status int) {
 	SendJSON(writer, NewError(err.Error()), status)
 }
+
+func SendError(writer http.ResponseWriter, err error) {
+	status := 400
+	SendErrorCode(writer, NewError(err.Error()), status)
+}

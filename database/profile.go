@@ -26,7 +26,7 @@ func (p *PostgreSQL) ProfileByID(context context.Context, id int) (model.Profile
 	return profile, err
 }
 
-func (p *PostgreSQL) AdminProfiles(context context.Context) ([]model.Profile, error) {
+func (p *PostgreSQL) GetAdministratorProfiles(context context.Context) ([]model.Profile, error) {
 	var profiles []model.Profile
 
 	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {
@@ -48,15 +48,38 @@ WHERE id IN (SELECT id FROM administrators)`).Each(func(rows *sx.Rows) {
 	return profiles, err
 }
 
-func (p *PostgreSQL) TopicsByProfileID(context context.Context, id int, before int, limit int) ([]model.Topic, error) {
-	var topics []model.Topic
+func (p *PostgreSQL) SetAdministratorProfiles(context context.Context, ids []int) error {
+	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {
+		tx.MustExecContext(context, `DELETE FROM administrators`)
+
+		for _, id := range ids {
+			tx.MustExecContext(context, `INSERT INTO administrators VALUES($1) ON CONFLICT DO NOTHING`, id)
+		}
+	})
+
+	return err
+}
+
+func (p *PostgreSQL) TopicsByProfileID(context context.Context, id int, before int, limit int) ([]model.TopicWithLikes, error) {
+	var topics []model.TopicWithLikes
 
 	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {
-		query := `SELECT * FROM topics WHERE created_by = $1 AND created_at <= $2 ORDER BY created_at DESC LIMIT $3`
+		query := `SELECT t.*, (SELECT SUM(c.likes) FROM comments c WHERE c.topic_id = t.id) as likes FROM topics t WHERE t.created_by = $1 AND created_at <= $2 ORDER BY created_at DESC LIMIT $3`
 
 		tx.MustQueryContext(context, query, id, before, limit).Each(func(r *sx.Rows) {
-			var t model.Topic
-			r.MustScans(&t)
+			var t model.TopicWithLikes
+			r.MustScan(
+				&t.ID,
+				&t.Title,
+				&t.IsClosed,
+				&t.IsFixed,
+				&t.CreatedAt,
+				&t.UpdatedAt,
+				&t.CreatedBy,
+				&t.UpdatedBy,
+				&t.Deleted,
+				&t.Likes,
+			)
 			topics = append(topics, t)
 		})
 	})
@@ -148,7 +171,7 @@ func (p *PostgreSQL) SearchProfileName(context context.Context, text string) ([]
 	var profiles []model.Profile
 
 	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {
-		query := `SELECT * FROM profiles WHERE LOWER(first_name) LIKE '%' || $1 || '%' OR LOWER(last_name) LIKE '%' || $1 || '%' OR LOWER(screen_name) LIKE '%' || $1 || '%' OR LOWER(CONCAT(first_name, ' ', last_name)) LIKE '%' || $1 || '%'`
+		query := `SELECT * FROM profiles WHERE f_unaccent(LOWER(first_name)) LIKE f_unaccent('%' || $1 || '%') OR f_unaccent(LOWER(last_name)) LIKE f_unaccent('%' || $1 || '%') OR f_unaccent(LOWER(screen_name)) LIKE f_unaccent('%' || $1 || '%') OR f_unaccent(LOWER(CONCAT(first_name, ' ', last_name))) LIKE f_unaccent('%' || $1 || '%')`
 
 		tx.MustQueryContext(context, query, strings.ToLower(text)).Each(func(r *sx.Rows) {
 			var p model.Profile

@@ -110,6 +110,12 @@ func StringToIntSlice(input string) []int {
 	return result
 }
 
+func GetIntFromEnvOrDefault(key string, defaultInt int) int {
+	str := StringOrDefault(os.Getenv(key), strconv.Itoa(defaultInt))
+	val, _ := strconv.Atoi(str)
+	return val
+}
+
 func GetIntFromEnvOrFatalError(key string) int {
 	envContent := os.Getenv(key)
 

@@ -14,6 +14,7 @@ import (
 	"github.com/crossworth/cartola-web-admin/auth"
 	"github.com/crossworth/cartola-web-admin/cache"
 	"github.com/crossworth/cartola-web-admin/database"
+	"github.com/crossworth/cartola-web-admin/httputil"
 	"github.com/crossworth/cartola-web-admin/logger"
 	"github.com/crossworth/cartola-web-admin/updater"
 	"github.com/crossworth/cartola-web-admin/vk"
@@ -67,6 +68,7 @@ func NewCartola(
 	c.router.Use(cors.New(corsOpts).Handler)
 	c.router.Use(middleware.Timeout(10 * time.Minute))
 	c.router.Use(middleware.RedirectSlashes)
+	c.router.Use(httputil.RemoveDoubleSlashes)
 
 	logger.Log.Info().Msg("montando endpoints")
 	c.router.Get("/fazer-login", auth.LoginPage(appName))

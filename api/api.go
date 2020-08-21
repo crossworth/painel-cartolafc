@@ -44,7 +44,8 @@ func NewServer(vk *vk.VKClient, db *database.PostgreSQL, cache *cache.Cache) *Se
 	// SUPER-ADMIN ONLY
 	s.router.Group(func(r chi.Router) {
 		r.Use(OnlySuperAdmin())
-		r.Get("/administrators-profiles", handle.AdminProfiles(s.db))
+		r.Get("/administrators-profiles", handle.GetAdministratorProfiles(s.db))
+		r.Post("/set-administrators-profiles", handle.SetAdministratorProfiles(s.db))
 	})
 
 	// ADMIN ONLY

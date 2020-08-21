@@ -11,3 +11,8 @@ type Topic struct {
 	UpdatedBy int    `json:"updated_by"`
 	Deleted   bool   `json:"-"`
 }
+
+type TopicWithLikes struct {
+	Topic
+	Likes int `json:"likes"`
+}

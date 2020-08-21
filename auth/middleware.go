@@ -8,6 +8,7 @@ import (
 
 	"github.com/crossworth/cartola-web-admin/logger"
 	"github.com/crossworth/cartola-web-admin/model"
+	"github.com/crossworth/cartola-web-admin/util"
 )
 
 var (
@@ -27,6 +28,11 @@ func OnlyAuthenticatedUsers(sessionStorage sessions.Store, userTypeHandler *User
 				logger.Log.Error().Err(err).Msg("erro ao conseguir a session de usuário no middleware")
 				http.Redirect(writer, request, "/fazer-login", http.StatusTemporaryRedirect)
 				return
+			}
+
+			debugUser := util.GetStringFromEnvOrDefault("DEBUG_AS_USER", "")
+			if debugUser != "" {
+				session.Values["user_id"] = debugUser
 			}
 
 			userID, ok := session.Values["user_id"].(string)

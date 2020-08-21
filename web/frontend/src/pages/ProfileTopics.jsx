@@ -19,6 +19,11 @@ const columns = [
     key: 'title',
   },
   {
+    title: 'Soma likes',
+    dataIndex: 'likes',
+    key: 'likes',
+  },
+  {
     title: 'Data',
     dataIndex: 'created_at',
     key: 'created_at',

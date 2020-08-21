@@ -10,6 +10,7 @@ import LinkOutlined from '@ant-design/icons/lib/icons/LinkOutlined'
 import SearchOutlined from '@ant-design/icons/lib/icons/SearchOutlined'
 import LogoutOutlined from '@ant-design/icons/lib/icons/LogoutOutlined'
 import SettingOutlined from '@ant-design/icons/lib/icons/SettingOutlined'
+import OrderedListOutlined from '@ant-design/icons/lib/icons/OrderedListOutlined'
 import UnorderedListOutlined from '@ant-design/icons/lib/icons/UnorderedListOutlined'
 
 import Profile from './Profile'
@@ -26,13 +27,6 @@ import TopicSearch from './TopicSearch'
 import Settings from './Settings'
 
 const { Sider, Content } = Layout
-
-if (window.User === undefined) {
-  window.User = {
-    id: 0,
-    type: 'super_admin'
-  }
-}
 
 export default () => {
   const selectedMenu = window.location.pathname.substr(0)
@@ -74,7 +68,7 @@ export default () => {
 
               <Menu.Item key="/topicos/ranking">
                 <Link to="/topicos/ranking">
-                  <UnorderedListOutlined/>
+                  <OrderedListOutlined/>
                   <span>Ranking Tópicos</span>
                 </Link>
               </Menu.Item>

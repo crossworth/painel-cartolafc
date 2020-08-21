@@ -2,6 +2,7 @@ package handle
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"math"
 	"net/http"
@@ -119,7 +120,7 @@ func ProfileHistoryByID(provider ProfileHistoryProvider) func(w http.ResponseWri
 }
 
 type ProfileTopicsProvider interface {
-	TopicsByProfileID(context context.Context, id int, before int, limit int) ([]model.Topic, error)
+	TopicsByProfileID(context context.Context, id int, before int, limit int) ([]model.TopicWithLikes, error)
 	TopicsCountByProfileID(context context.Context, id int) (int, error)
 	TopicsPaginationTimestampByProfileID(context context.Context, id int, before int, limit int) (database.PaginationTimestamps, error)
 }
@@ -299,20 +300,39 @@ func AutoCompleteProfileName(provider ProfileNameProvider) func(w http.ResponseW
 	}
 }
 
-type AdminProfileProvider interface {
-	AdminProfiles(context context.Context) ([]model.Profile, error)
+type AdministratorProfileProvider interface {
+	GetAdministratorProfiles(context context.Context) ([]model.Profile, error)
+	SetAdministratorProfiles(context context.Context, ids []int) error
 }
 
-func AdminProfiles(provider AdminProfileProvider) func(w http.ResponseWriter, r *http.Request) {
+func GetAdministratorProfiles(provider AdministratorProfileProvider) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		profiles, err := provider.AdminProfiles(r.Context())
+		profiles, err := provider.GetAdministratorProfiles(r.Context())
 		if err != nil {
 			httputil.SendDatabaseError(w, err)
 			return
 		}
 
 		httputil.SendJSON(w, profiles, 200)
+	}
+}
+func SetAdministratorProfiles(provider AdministratorProfileProvider) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var ids []int
+		err := json.NewDecoder(r.Body).Decode(&ids)
+		if err != nil {
+			httputil.SendError(w, err)
+			return
+		}
+
+		err = provider.SetAdministratorProfiles(r.Context(), ids)
+		if err != nil {
+			httputil.SendDatabaseError(w, err)
+			return
+		}
+
+		httputil.SendJSON(w, []int{}, 200)
 	}
 }
 

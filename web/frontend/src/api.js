@@ -78,6 +78,10 @@ const getAdministratorsProfiles = () => {
   return api.get(`/administrators-profiles`)
 }
 
+const setAdministratorsProfiles = profilesIDs => {
+  return api.post(`/set-administrators-profiles`, profilesIDs)
+}
+
 export {
   unixNow,
   resolveProfile,
@@ -91,5 +95,6 @@ export {
   getTopics,
   getTopicsRanking,
   getTopicSearch,
-  getAdministratorsProfiles
+  getAdministratorsProfiles,
+  setAdministratorsProfiles
 }
