@@ -77,8 +77,8 @@ const getTopicsRanking = (page, limit, orderBy = 'comments', orderDir = 'desc', 
   return api.get(`/topics-ranking?orderBy=${orderBy}&orderDir=${orderDir}&page=${page}&limit=${limit}&period=${period}&showOlderTopics=${showOlderTopics}`)
 }
 
-const getSearch = (term, page, limit, searchType) => {
-  return api.get(`/search?term=${term}&page=${page}&limit=${limit}&searchType=${searchType}`)
+const getSearch = (term, page, limit, searchType, fullText) => {
+  return api.get(`/search?term=${term}&page=${page}&limit=${limit}&searchType=${searchType}&fullText=${fullText}`)
 }
 
 const getAdministratorsProfiles = () => {

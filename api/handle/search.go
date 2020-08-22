@@ -14,10 +14,10 @@ import (
 )
 
 type SearchProvider interface {
-	SearchTopics(context context.Context, term string, page int, limit int) ([]database.Search, error)
-	SearchTopicsCount(context context.Context, term string) (int, error)
-	SearchComments(context context.Context, term string, page int, limit int) ([]database.Search, error)
-	SearchCommentsCount(context context.Context, term string) (int, error)
+	SearchTopics(context context.Context, term string, page int, limit int, fullText bool) ([]database.Search, error)
+	SearchTopicsCount(context context.Context, term string, fullText bool) (int, error)
+	SearchComments(context context.Context, term string, page int, limit int, fullText bool) ([]database.Search, error)
+	SearchCommentsCount(context context.Context, term string, fullText bool) (int, error)
 }
 
 type SearchCache struct {
@@ -30,6 +30,7 @@ func Search(provider SearchProvider, cache *cache.Cache) func(w http.ResponseWri
 	return func(w http.ResponseWriter, r *http.Request) {
 		term := util.StringWithDefault(r.URL.Query().Get("term"), "")
 		searchType := util.StringWithDefault(r.URL.Query().Get("searchType"), "title")
+		fullText := util.BoolWithDefault(r.URL.Query().Get("fullText"), true)
 		page := util.ToIntWithDefaultMin(r.URL.Query().Get("page"), 1)
 		limit := util.ToIntWithDefaultMin(r.URL.Query().Get("limit"), 10)
 
@@ -42,18 +43,18 @@ func Search(provider SearchProvider, cache *cache.Cache) func(w http.ResponseWri
 			searchType = "title"
 		}
 
-		cacheKey := fmt.Sprintf("search_%s_%s_%d_%d", term, searchType, page, limit)
+		cacheKey := fmt.Sprintf("search_%s_%s_%t_%d_%d", term, searchType, fullText, page, limit)
 		searchCache := cache.GetShortCache(cacheKey, func() interface{} {
 			var results []database.Search
 			var err error
 
 			if searchType == "title" {
-				results, err = provider.SearchTopics(r.Context(), term, page, limit)
+				results, err = provider.SearchTopics(r.Context(), term, page, limit, fullText)
 				if err != nil {
 					return err
 				}
 			} else {
-				results, err = provider.SearchComments(r.Context(), term, page, limit)
+				results, err = provider.SearchComments(r.Context(), term, page, limit, fullText)
 				if err != nil {
 					return err
 				}
@@ -61,12 +62,12 @@ func Search(provider SearchProvider, cache *cache.Cache) func(w http.ResponseWri
 
 			var total int
 			if searchType == "title" {
-				total, err = provider.SearchTopicsCount(r.Context(), term)
+				total, err = provider.SearchTopicsCount(r.Context(), term, fullText)
 				if err != nil {
 					return err
 				}
 			} else {
-				total, err = provider.SearchCommentsCount(r.Context(), term)
+				total, err = provider.SearchCommentsCount(r.Context(), term, fullText)
 				if err != nil {
 					return err
 				}

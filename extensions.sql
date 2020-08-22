@@ -1,6 +1,5 @@
 -- ativas atualmente
--- plpgsql
+-- plpgsql ?!
 -- unaccent
-
--- text pesquisa exata
+-- pg_trgm
 CREATE extension pg_trgm;

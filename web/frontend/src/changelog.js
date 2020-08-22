@@ -78,6 +78,7 @@ const changeLog = `
 - Melhorado velocidade de pesquisa
 - Adicionado suporte a blacklist/whitelist de membros
 - Adicionado suporte a edição da home facilmente
+- Adicionado opção de pesquisa exata
 `
 
 export {

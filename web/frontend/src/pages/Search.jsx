@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Button, Form, Input, Radio, Space, Spin, Table, Typography } from 'antd'
+import { Button, Checkbox, Form, Input, Radio, Space, Spin, Table, Typography } from 'antd'
 import { getSearch } from '../api'
 import {
   getGlobalPageSize,
@@ -63,6 +63,7 @@ const Search = (props) => {
     showSizeChanger: true,
     term: stringWithDefault(searchParams.get('term'), ''),
     searchType: stringWithDefault(searchParams.get('searchType'), 'title'),
+    fullText: stringWithDefault(searchParams.get('fullText'), 'true'),
     pageSizeOptions: [10, 20, 50, 100, 1000]
   })
 
@@ -95,6 +96,11 @@ const Search = (props) => {
       searchParams.set('searchType', pagination.searchType)
     }
 
+    if (!searchParams.has('fullText') || pagination.fullText !== searchParams.get('fullText')) {
+      shouldUpdate = true
+      searchParams.set('fullText', pagination.fullText)
+    }
+
     if (shouldUpdate) {
       history.push({
         pathname: location.pathname,
@@ -103,7 +109,7 @@ const Search = (props) => {
     }
   }, [history, location, pagination])
 
-  const { current, pageSize, term, searchType } = pagination
+  const { current, pageSize, term, searchType, fullText } = pagination
 
   const setPaginationTotal = (total, page = null, pageSize = null) => {
     let pag = Object.assign({}, pagination, {
@@ -130,10 +136,17 @@ const Search = (props) => {
     setPagination(pag)
   }
 
+  const setFullText = fullText => {
+    let pag = Object.assign({}, pagination, {
+      fullText: fullText.toString(),
+    })
+    setPagination(pag)
+  }
+
   const handleTableChange = pag => {
     setLoading(true)
 
-    getSearch(pag.term, pag.current, pag.pageSize, pag.searchType).then(data => {
+    getSearch(pag.term, pag.current, pag.pageSize, pag.searchType, pag.fullText).then(data => {
       setTableData(data.data)
       setTableMeta(data.meta)
       setPaginationTotal(data.meta.total, pag.current, pag.pageSize)
@@ -162,7 +175,7 @@ const Search = (props) => {
     }
 
     setLoading(true)
-    getSearch(term, current, pageSize, searchType).then(data => {
+    getSearch(term, current, pageSize, searchType, fullText).then(data => {
       setTableData(data.data)
       setTableMeta(data.meta)
       setPaginationTotal(data.meta.total)
@@ -171,7 +184,7 @@ const Search = (props) => {
     }).finally(() => {
       setLoading(false)
     })
-  }, [term, current, pageSize, searchType])
+  }, [term, current, pageSize, searchType, fullText])
 
   const searchTypeOptions = [
     { label: 'Título tópico', value: 'title' },
@@ -208,6 +221,10 @@ const Search = (props) => {
                   optionType="button"
                   buttonStyle="solid"
                 />
+              </Form.Item>
+
+              <Form.Item>
+                <Checkbox checked={fullText === 'false'} onChange={e => setFullText(!e.target.checked)}>Pesquisa exata</Checkbox>
               </Form.Item>
 
               <Form.Item>
