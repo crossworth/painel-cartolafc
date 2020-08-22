@@ -220,7 +220,8 @@ const TopicRankingList = (props) => {
           Atualmente o servidor do painel e banco de dados é um dos mais baratos (USD 5.00) 1vCPU/1GB, estamos
           trabalhando para melhorar a performance e/ou trocar de servidor.<br/>
           Por esse motivo o resultado dessa página é armazenado em cache e a cada 1 hora é atualizado novamente. <br/>
-          Se você perceber que está demorando mais para carregar, aguarde por que provavelmente você está criando o cache.
+          Se você perceber que está demorando mais para carregar, aguarde porque provavelmente você está criando
+          o cache.
         </>}
         type="info"
         showIcon
