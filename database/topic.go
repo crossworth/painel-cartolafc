@@ -236,7 +236,7 @@ func (p *PostgreSQL) CommentsPaginationTimestampByTopicID(context context.Contex
 	return timestamps, err
 }
 
-func (p *PostgreSQL) TopicWithStats(context context.Context, orderBy string, orderDirection OrderByDirection, period Period, showOlderTopics bool, page int, limit int) ([]TopicsWithStats, error) {
+func (p *PostgreSQL) TopicWithStats(context context.Context, orderBy string, orderDirection OrderByDirection, period Period, showOlderTopics bool, excludePseudoFixed bool, page int, limit int) ([]TopicsWithStats, error) {
 	var topics []TopicsWithStats
 
 	if orderBy != "comments" && orderBy != "likes" {
@@ -250,8 +250,21 @@ func (p *PostgreSQL) TopicWithStats(context context.Context, orderBy string, ord
 		periodComments = fmt.Sprintf("WHERE date >= EXTRACT(epoch FROM current_date - INTERVAL '1 %s') AND date < EXTRACT(epoch FROM current_date)", period.Stringer())
 	}
 
+	hasHaving := false
+
 	if !showOlderTopics && period != PeriodAll {
+		hasHaving = true
 		periodTopics = fmt.Sprintf("HAVING t.created_at >= EXTRACT(epoch FROM current_date - INTERVAL '1 %s') AND t.created_at < EXTRACT(epoch FROM current_date)", period.Stringer())
+	}
+
+	excludePseudoFixedComparison := `t.title NOT ILIKE 'FIXO%' AND t.title NOT ILIKE 'CARTOLA%' AND t.title NOT ILIKE '###%' AND t.title NOT ILIKE '%A/D/D%' AND t.title NOT ILIKE '%Antes/Durante/Depois%'`
+
+	if excludePseudoFixed && !hasHaving {
+		periodTopics = fmt.Sprintf("HAVING %s", excludePseudoFixedComparison)
+	}
+
+	if excludePseudoFixed && hasHaving {
+		periodTopics = fmt.Sprintf("%s AND %s", periodTopics, excludePseudoFixedComparison)
 	}
 
 	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {
@@ -291,4 +304,110 @@ GROUP BY t.id, c.total, l.total ` + periodTopics + ` ORDER BY ` + orderBy + ` ` 
 	})
 
 	return topics, err
+}
+
+func (p *PostgreSQL) TopicWithStatsCount(context context.Context, period Period, showOlderTopics bool, excludePseudoFixed bool) (int, error) {
+	var total int
+
+	periodTopics := ""
+	hasWhere := false
+
+	if !showOlderTopics && period != PeriodAll {
+		hasWhere = true
+		periodTopics = fmt.Sprintf("WHERE t.created_at >= EXTRACT(epoch FROM current_date - INTERVAL '1 %s') AND t.created_at < EXTRACT(epoch FROM current_date)", period.Stringer())
+	}
+
+	excludePseudoFixedComparison := `t.title NOT ILIKE 'FIXO%' AND t.title NOT ILIKE 'CARTOLA%' AND t.title NOT ILIKE '###%' AND t.title NOT ILIKE '%A/D/D%' AND t.title NOT ILIKE '%Antes/Durante/Depois%'`
+
+	if excludePseudoFixed && !hasWhere {
+		periodTopics = fmt.Sprintf("WHERE %s", excludePseudoFixedComparison)
+	}
+
+	if excludePseudoFixed && hasWhere {
+		periodTopics = fmt.Sprintf("%s AND %s", periodTopics, excludePseudoFixedComparison)
+	}
+
+	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {
+		query := `SELECT
+    COUNT(*)
+FROM topics t ` + periodTopics
+		tx.MustQueryRowContext(context, query).MustScan(&total)
+	})
+
+	return total, err
+}
+
+func (p *PostgreSQL) TopicsWithMoreCommentsByID(context context.Context, id int, limit int) ([]model.TopicWithComments, error) {
+	var result []model.TopicWithComments
+
+	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {
+		tx.MustQueryContext(context, `SELECT t.*,
+       (SELECT COUNT(*) FROM "comments" c WHERE c.topic_id = t.id) AS comments_count
+FROM topics t
+WHERE t.created_by = $1
+ORDER BY comments_count DESC LIMIT $2`, id, limit).Each(func(rows *sx.Rows) {
+			var t model.TopicWithComments
+			rows.MustScan(
+				&t.ID,
+				&t.Title,
+				&t.IsClosed,
+				&t.IsFixed,
+				&t.CreatedAt,
+				&t.UpdatedAt,
+				&t.CreatedBy,
+				&t.UpdatedBy,
+				&t.Deleted,
+				&t.CommentsCount,
+			)
+			result = append(result, t)
+		})
+	})
+
+	return result, err
+}
+
+func (p *PostgreSQL) TopicsWithMoreLikesByID(context context.Context, id int, limit int) ([]model.TopicWithLikes, error) {
+	var result []model.TopicWithLikes
+
+	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {
+		tx.MustQueryContext(context, `SELECT t.*,
+       (SELECT SUM(c.likes) FROM "comments" c WHERE c.topic_id = t.id) AS likes_count
+FROM topics t
+WHERE t.created_by = $1
+ORDER BY likes_count DESC LIMIT $2`, id, limit).Each(func(rows *sx.Rows) {
+			var t model.TopicWithLikes
+			rows.MustScan(
+				&t.ID,
+				&t.Title,
+				&t.IsClosed,
+				&t.IsFixed,
+				&t.CreatedAt,
+				&t.UpdatedAt,
+				&t.CreatedBy,
+				&t.UpdatedBy,
+				&t.Deleted,
+				&t.LikesCount,
+			)
+			result = append(result, t)
+		})
+	})
+
+	return result, err
+}
+
+func (p *PostgreSQL) CommentsWithMoreLikes(context context.Context, id int, limit int) ([]model.Comment, error) {
+	var result []model.Comment
+
+	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {
+		tx.MustQueryContext(context, `SELECT *
+FROM "comments" c
+WHERE from_id = $1
+ORDER BY likes DESC LIMIT $2`, id, limit).Each(func(rows *sx.Rows) {
+			var c model.Comment
+			rows.MustScans(&c)
+			result = append(result, c)
+		})
+	})
+
+	return result, err
 }

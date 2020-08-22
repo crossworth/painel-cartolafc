@@ -79,12 +79,12 @@ export default () => {
                 </Link>
               </Menu.Item>)}
 
-              {adminOnly(<Menu.Item key="/topicos/ranking">
+             <Menu.Item key="/topicos/ranking">
                 <Link to="/topicos/ranking">
                   <OrderedListOutlined/>
                   <span>Ranking Tópicos</span>
                 </Link>
-              </Menu.Item>)}
+              </Menu.Item>
 
               <Menu.Item key="/pesquisa">
                 <Link to="/pesquisa">
@@ -107,7 +107,7 @@ export default () => {
                 </Link>
               </Menu.Item>)}
 
-              {superAdminOnly(<Menu.Item key="/configuracoes">
+              {adminOnly(<Menu.Item key="/configuracoes">
                 <Link to="/configuracoes">
                   <LogoutOutlined/>
                   <span>Configurações</span>
@@ -143,7 +143,7 @@ export default () => {
               {adminOnly(<Route path='/resolver/:name?' render={(props) => <ProfileResolve {...props}/>}>
               </Route>)}
 
-              {superAdminOnly(<Route path='/configuracoes' exact>
+              {adminOnly(<Route path='/configuracoes' exact>
                 <Settings/>
               </Route>)}
 
@@ -155,9 +155,9 @@ export default () => {
                 <TopicList/>
               </Route>)}
 
-              {adminOnly(<Route path='/topicos/ranking' exact>
+              <Route path='/topicos/ranking' exact>
                 <TopicRankingList/>
-              </Route>)}
+              </Route>
 
               {adminOnly(<Route path='/perfil/nao-encontrado' exact>
                 <ProfileNotFound/>

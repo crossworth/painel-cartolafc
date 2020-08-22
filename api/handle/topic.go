@@ -158,8 +158,8 @@ func CommentFromTopicByID(provider TopicCommentsProvider) func(w http.ResponseWr
 }
 
 type TopicsWithStatsProvider interface {
-	TopicWithStats(context context.Context, orderBy string, orderDirection database.OrderByDirection, period database.Period, showOlderTopics bool, page int, limit int) ([]database.TopicsWithStats, error)
-	TopicsCount(context context.Context) (int, error)
+	TopicWithStats(context context.Context, orderBy string, orderDirection database.OrderByDirection, period database.Period, showOlderTopics bool, excludePseudoFixed bool, page int, limit int) ([]database.TopicsWithStats, error)
+	TopicWithStatsCount(context context.Context, period database.Period, showOlderTopics bool, excludePseudoFixed bool) (int, error)
 }
 
 type TopicsWithStatsCache struct {
@@ -176,6 +176,7 @@ func TopicsWithStats(provider TopicsWithStatsProvider, cache *cache.Cache) func(
 		page := util.ToIntWithDefaultMin(r.URL.Query().Get("page"), 1)
 		limit := util.ToIntWithDefaultMin(r.URL.Query().Get("limit"), 10)
 		showOlderTopics := util.BoolWithDefault(r.URL.Query().Get("showOlderTopics"), true)
+		excludePseudoFixed := util.BoolWithDefault(r.URL.Query().Get("excludePseudoFixed"), false)
 
 		orderDir := database.OrderByASC
 
@@ -190,14 +191,14 @@ func TopicsWithStats(provider TopicsWithStatsProvider, cache *cache.Cache) func(
 			showOlderTopics = true
 		}
 
-		cacheKey := fmt.Sprintf("topics_with_stats_%s_%s_%d_%d_%s_%t", orderBy, orderDir.Stringer(), page, limit, period.Stringer(), showOlderTopics)
+		cacheKey := fmt.Sprintf("topics_with_stats_%s_%s_%d_%d_%s_%t_%t", orderBy, orderDir.Stringer(), page, limit, period.Stringer(), showOlderTopics, excludePseudoFixed)
 		topicsCache := cache.Get(cacheKey, func() interface{} {
-			topics, err := provider.TopicWithStats(r.Context(), orderBy, orderDir, period, showOlderTopics, page, limit)
+			topics, err := provider.TopicWithStats(r.Context(), orderBy, orderDir, period, showOlderTopics, excludePseudoFixed, page, limit)
 			if err != nil {
 				return err
 			}
 
-			total, err := provider.TopicsCount(r.Context())
+			total, err := provider.TopicWithStatsCount(r.Context(), period, showOlderTopics, excludePseudoFixed)
 			if err != nil {
 				return err
 			}

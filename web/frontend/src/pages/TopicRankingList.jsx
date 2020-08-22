@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Button, Radio, Space, Spin, Switch, Table, Typography } from 'antd'
+import { Alert, Button, Checkbox, Radio, Space, Spin, Table, Typography } from 'antd'
 import { getTopicsRanking } from '../api'
 import { getGlobalPageSize, parseIntWithDefault, setGlobalPageSize, stringWithDefault, timeStampToDate } from '../util'
 import { withRouter } from 'react-router-dom'
@@ -78,6 +78,7 @@ const TopicRankingList = (props) => {
     orderDir: stringWithDefault(searchParams.get('orderDir'), 'desc'),
     period: stringWithDefault(searchParams.get('period'), 'all'),
     showOlderTopics: stringWithDefault(searchParams.get('showOlderTopics'), 'true'),
+    excludePseudoFixed: stringWithDefault(searchParams.get('excludePseudoFixed'), 'false'),
     pageSizeOptions: [10, 20, 50, 100, 1000]
   })
 
@@ -119,6 +120,11 @@ const TopicRankingList = (props) => {
       searchParams.set('showOlderTopics', pagination.showOlderTopics)
     }
 
+    if (!searchParams.has('excludePseudoFixed') || pagination.excludePseudoFixed !== searchParams.get('excludePseudoFixed')) {
+      shouldUpdate = true
+      searchParams.set('excludePseudoFixed', pagination.excludePseudoFixed)
+    }
+
     if (shouldUpdate) {
       history.push({
         pathname: location.pathname,
@@ -127,7 +133,7 @@ const TopicRankingList = (props) => {
     }
   }, [history, location, pagination])
 
-  const { current, pageSize, orderBy, orderDir, period, showOlderTopics } = pagination
+  const { current, pageSize, orderBy, orderDir, period, showOlderTopics, excludePseudoFixed } = pagination
 
   const setPaginationTotal = (total, page = null, orderBy = null, orderDir = null, pageSize = null) => {
     let pag = Object.assign({}, pagination, {
@@ -163,10 +169,17 @@ const TopicRankingList = (props) => {
     setPagination(pag)
   }
 
+  const setExcludePseudoFixed = exclude => {
+    let pag = Object.assign({}, pagination, {
+      excludePseudoFixed: exclude.toString()
+    })
+    setPagination(pag)
+  }
+
   const handleTableChange = pag => {
     setLoading(true)
 
-    getTopicsRanking(pag.current, pag.pageSize, pag.orderBy, pag.orderDir, pag.period, pag.showOlderTopics).then(data => {
+    getTopicsRanking(pag.current, pag.pageSize, pag.orderBy, pag.orderDir, pag.period, pag.showOlderTopics, pag.excludePseudoFixed).then(data => {
       setTableData(data.data)
       setTableMeta(data.meta)
       setPaginationTotal(data.meta.total, pag.current, pag.orderBy, pag.orderDir, pag.pageSize)
@@ -179,7 +192,7 @@ const TopicRankingList = (props) => {
 
   useEffect(() => {
     setLoading(true)
-    getTopicsRanking(current, pageSize, orderBy, orderDir, period, showOlderTopics).then(data => {
+    getTopicsRanking(current, pageSize, orderBy, orderDir, period, showOlderTopics, excludePseudoFixed).then(data => {
       setTableData(data.data)
       setTableMeta(data.meta)
       setPaginationTotal(data.meta.total)
@@ -190,7 +203,7 @@ const TopicRankingList = (props) => {
     })
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [current, pageSize, orderBy, orderDir, period, showOlderTopics])
+  }, [current, pageSize, orderBy, orderDir, period, showOlderTopics, excludePseudoFixed])
 
   return (
     <Spin tip="Carregando..." spinning={loading}>
@@ -201,6 +214,18 @@ const TopicRankingList = (props) => {
             : <div>Carregando dados</div>
         }
       </Title>
+      <Alert
+        message="Demorando para carregar?"
+        description={<>
+          Atualmente o servidor do painel e banco de dados é um dos mais baratos (USD 5.00) 1vCPU/1GB, estamos
+          trabalhando para melhorar a performance e/ou trocar de servidor.<br/>
+          Por esse motivo o resultado dessa página é armazenado em cache e a cada 1 hora é atualizado novamente. <br/>
+          Se você perceber que está demorando mais para carregar, aguarde por que provavelmente você está criando o cache.
+        </>}
+        type="info"
+        showIcon
+      />
+      <br/>
       <div>
         {!loading &&
         <div>
@@ -218,11 +243,14 @@ const TopicRankingList = (props) => {
             </Radio.Group>
 
             {
-              pagination.period !== 'all' && <Switch
-                checkedChildren="Exibir tópicos antigos" unCheckedChildren="Exibir tópicos antigos"
-                checked={pagination.showOlderTopics === 'true'}
-                onChange={toggleShowOlderTopics}/>
+              pagination.period !== 'all' &&
+              <Checkbox checked={pagination.showOlderTopics === 'true'} onChange={toggleShowOlderTopics}>Exibir tópicos
+                antigos</Checkbox>
             }
+
+            <Checkbox checked={excludePseudoFixed === 'true'} onChange={e => setExcludePseudoFixed(e.target.checked)}>Excluir
+              tópicos que iniciem com <Text code>FIXO</Text>, <Text code>CARTOLA</Text>, <Text code>###</Text> ou
+              contenham <Text code>A/D/D</Text></Checkbox>
           </Space>
         </div>
         }

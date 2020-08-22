@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 
 import { Spin } from 'antd'
 import { getHomePage } from '../api'
+import 'react-quill/dist/quill.snow.css'
 
 const HomePage = () => {
 
@@ -18,7 +19,9 @@ const HomePage = () => {
   return (
     <div>
       <Spin tip="Carregando..." spinning={homePageContent === null}>
-        <div dangerouslySetInnerHTML={{ __html: homePageContent }}/>
+        <div className="ql-editor">
+          <div dangerouslySetInnerHTML={{ __html: homePageContent }}/>
+        </div>
       </Spin>
     </div>
   )

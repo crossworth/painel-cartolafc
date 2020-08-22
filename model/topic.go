@@ -12,7 +12,12 @@ type Topic struct {
 	Deleted   bool   `json:"-"`
 }
 
+type TopicWithComments struct {
+	Topic
+	CommentsCount int `json:"comments_count"`
+}
+
 type TopicWithLikes struct {
 	Topic
-	Likes int `json:"likes"`
+	LikesCount int `json:"likes_count"`
 }

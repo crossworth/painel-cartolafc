@@ -5,6 +5,7 @@ import {
   getAdministratorsProfiles,
   getHomePage,
   getMembersRules,
+  isSuperAdmin,
   setAdministratorsProfiles,
   setHomePage,
   setMembersRules
@@ -13,6 +14,7 @@ import { debounce } from '../util'
 import { Link } from 'react-router-dom'
 import ReactQuill from 'react-quill'
 import 'react-quill/dist/quill.snow.css'
+import SuperAdminOnly from '../components/SuperAdminOnly'
 
 const { Option } = Select
 const { Title, Text } = Typography
@@ -95,9 +97,11 @@ const Settings = () => {
   const [homePageContent, setHomePageContent] = useState('')
 
   useEffect(() => {
-    getAdministratorsProfiles().then(data => {
-      setCurrentAdmins(data)
-    })
+    if (isSuperAdmin()) {
+      getAdministratorsProfiles().then(data => {
+        setCurrentAdmins(data)
+      })
+    }
   }, [])
 
   useEffect(() => {
@@ -115,7 +119,15 @@ const Settings = () => {
   const [saving, setSaving] = useState(false)
   const saveAdminsAndMembersRules = () => {
     setSaving(true)
-    Promise.all([setAdministratorsProfiles(currentAdmins.map(user => user.id)), setMembersRules(membersRule)]).finally(() => {
+
+    const promises = []
+    promises.push(setMembersRules(membersRule))
+
+    if (isSuperAdmin()) {
+      promises.push(setAdministratorsProfiles(currentAdmins.map(user => user.id)))
+    }
+
+    Promise.all(promises).finally(() => {
       setSaving(false)
     })
   }
@@ -127,58 +139,82 @@ const Settings = () => {
     })
   }
 
-  return (<div>
+  const modules = {
+    'toolbar': [
+      [{ 'header': [1, 2, 3, 4, 5, 6] }],
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ 'color': [] }, { 'background': [] }],
+      [{ 'script': 'super' }, { 'script': 'sub' }],
+      ['blockquote'],
+      [{ 'list': 'ordered' }, { 'list': 'bullet' }, { 'indent': '-1' }, { 'indent': '+1' }],
+      [{ 'align': [] }],
+      ['link', 'image', 'video'],
+      ['clean']
+    ]
+  }
+
+  const formats = [
+    'header',
+    'bold', 'italic', 'underline', 'strike', 'blockquote',
+    'color', 'background', 'script',
+    'list', 'bullet', 'indent', 'align',
+    'link', 'image', 'video'
+  ]
+
+  return (<div className="settings-page">
     <Spin tip="Salvando..." spinning={saving}>
       <Title level={4}>
         Configurações
       </Title>
       <Tabs type="card">
         <TabPane tab="Membros" key="1">
-          <Divider plain>Membros com acesso administrador</Divider>
-          <List
-            size="small"
-            header={<div>Administradores atuais</div>}
-            bordered
-            dataSource={currentAdmins}
-            renderItem={user => <List.Item>
-              <List.Item.Meta
-                avatar={
-                  <Avatar src={user.photo}/>}
-                title={<Link to={`/perfil/${user.id}`}>{user.first_name} {user.last_name}</Link>}
-                description={`@${user.screen_name}`}
-              />
-              <div><Button type="primary" onClick={() => deleteUser(user.id)} danger>
-                Remover
-              </Button></div>
-            </List.Item>}
-          />
+          <SuperAdminOnly>
+            <Divider plain>Membros com acesso administrador</Divider>
+            <List
+              size="small"
+              header={<div>Administradores atuais</div>}
+              bordered
+              dataSource={currentAdmins}
+              renderItem={user => <List.Item>
+                <List.Item.Meta
+                  avatar={
+                    <Avatar src={user.photo}/>}
+                  title={<Link to={`/perfil/${user.id}`}>{user.first_name} {user.last_name}</Link>}
+                  description={`@${user.screen_name}`}
+                />
+                <div><Button type="primary" onClick={() => deleteUser(user.id)} danger>
+                  Remover
+                </Button></div>
+              </List.Item>}
+            />
 
-          <br/>
-          <strong>Adicionar novo</strong>
-          <br/>
-          <Select
-            mode="multiple"
-            style={{ width: '100%' }}
-            value={admins}
-            placeholder="Selecione os membros"
-            notFoundContent={loadingUsers ? <Spin size="small"/> : <div>Nenhum resultado</div>}
-            onSearch={onSearch}
-            onChange={handleChange}
-            filterOption={false}
-            open={open}
-            ref={adminSelect}
-            onBlur={() => setOpen(false)}
-            onFocus={() => setOpen(true)}
-            tagRender={tagRender}>
-            {users.map(user => (
-              <Option key={user.id}>
-                <img src={user.photo} alt={user.screen_name} width="40" style={{ marginRight: 5 }}/>
-                {user.first_name} {user.last_name} (@{user.screen_name})
-              </Option>
-            ))}
-          </Select>
-          <br/>
-          <br/>
+            <br/>
+            <strong>Adicionar novo</strong>
+            <br/>
+            <Select
+              mode="multiple"
+              style={{ width: '100%' }}
+              value={admins}
+              placeholder="Selecione os membros"
+              notFoundContent={loadingUsers ? <Spin size="small"/> : <div>Nenhum resultado</div>}
+              onSearch={onSearch}
+              onChange={handleChange}
+              filterOption={false}
+              open={open}
+              ref={adminSelect}
+              onBlur={() => setOpen(false)}
+              onFocus={() => setOpen(true)}
+              tagRender={tagRender}>
+              {users.map(user => (
+                <Option key={user.id}>
+                  <img src={user.photo} alt={user.screen_name} width="40" style={{ marginRight: 5 }}/>
+                  {user.first_name} {user.last_name} (@{user.screen_name})
+                </Option>
+              ))}
+            </Select>
+            <br/>
+            <br/>
+          </SuperAdminOnly>
 
           <Divider plain>Regras de acesso membros</Divider>
           <Alert
@@ -214,7 +250,12 @@ const Settings = () => {
           </Button>
         </TabPane>
         <TabPane tab="Home" key="2">
-          <ReactQuill theme="snow" value={homePageContent} onChange={value => setHomePageContent(value)}/>
+          <ReactQuill
+            theme="snow"
+            value={homePageContent}
+            modules={modules}
+            formats={formats}
+            onChange={value => setHomePageContent(value)}/>
           <br/>
           <br/>
           <Button type="primary" onClick={saveHomePage}>

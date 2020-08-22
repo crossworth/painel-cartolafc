@@ -79,6 +79,14 @@ const changeLog = `
 - Adicionado suporte a blacklist/whitelist de membros
 - Adicionado suporte a edição da home facilmente
 - Adicionado opção de pesquisa exata
+
+22 Agosto
+- Adicionado mais dados a página Meu Perfil
+- Adicionado mais opções ao editor da home
+- Liberado acesso ao ranking de tópicos aos membros
+- Liberado acesso ao editor da home/regras de membros aos administradores
+- Adicionado filtro para excluir certos tipos de tópicos do Ranking de tópicos
+- Corrigido problema na busca exata onde resultados eram exibidos somente para a primeira página
 `
 
 export {

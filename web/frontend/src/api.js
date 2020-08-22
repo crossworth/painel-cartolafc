@@ -73,8 +73,8 @@ const getTopics = (before, limit, orderBy = 'updated_at') => {
   return api.get(`/topics?orderBy=${orderBy}&before=${before}&limit=${limit}`)
 }
 
-const getTopicsRanking = (page, limit, orderBy = 'comments', orderDir = 'desc', period = 'all', showOlderTopics = 'true') => {
-  return api.get(`/topics-ranking?orderBy=${orderBy}&orderDir=${orderDir}&page=${page}&limit=${limit}&period=${period}&showOlderTopics=${showOlderTopics}`)
+const getTopicsRanking = (page, limit, orderBy = 'comments', orderDir = 'desc', period = 'all', showOlderTopics = 'true', excludePseudoFixed = 'false') => {
+  return api.get(`/topics-ranking?orderBy=${orderBy}&orderDir=${orderDir}&page=${page}&limit=${limit}&period=${period}&showOlderTopics=${showOlderTopics}&excludePseudoFixed=${excludePseudoFixed}`)
 }
 
 const getSearch = (term, page, limit, searchType, fullText) => {

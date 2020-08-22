@@ -78,7 +78,7 @@ func (p *PostgreSQL) TopicsByProfileID(context context.Context, id int, before i
 				&t.CreatedBy,
 				&t.UpdatedBy,
 				&t.Deleted,
-				&t.Likes,
+				&t.LikesCount,
 			)
 			topics = append(topics, t)
 		})

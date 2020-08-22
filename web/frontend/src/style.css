@@ -34,3 +34,8 @@
     width: 100%;
     min-width: 300px;
 }
+
+
+.settings-page .ant-tabs, .main-content {
+    overflow: visible !important;
+}

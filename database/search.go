@@ -58,7 +58,6 @@ FROM topics t
 WHERE t.title ILIKE '%' || $1 || '%'
 ORDER BY t.created_at DESC
 OFFSET $2 LIMIT $3`
-
 	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {
 		tx.MustQueryContext(context, query, term, (page-1)*limit, limit).Each(func(r *sx.Rows) {
 			var search Search
@@ -83,7 +82,7 @@ func (p *PostgreSQL) SearchTopicsCount(context context.Context, term string, ful
 	if fullText {
 		return p.SearchTopicsCountFullText(context, term)
 	} else {
-		return 0, nil
+		return p.SearchTopicsCountILike(context, term)
 	}
 }
 

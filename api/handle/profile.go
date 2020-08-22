@@ -282,6 +282,9 @@ func ProfileStatsByID(provider ProfileStatsAndHistoryProvider) func(w http.Respo
 type MyProfileProvider interface {
 	ProfileStatsAndHistoryProvider
 	ProfileByID(context context.Context, id int) (model.Profile, error)
+	TopicsWithMoreCommentsByID(context context.Context, id int, limit int) ([]model.TopicWithComments, error)
+	TopicsWithMoreLikesByID(context context.Context, id int, limit int) ([]model.TopicWithLikes, error)
+	CommentsWithMoreLikes(context context.Context, id int, limit int) ([]model.Comment, error)
 }
 
 type MyProfileStats struct {
@@ -292,8 +295,11 @@ type MyProfileStats struct {
 }
 
 type MyProfileCache struct {
-	User  model.Profile  `json:"user"`
-	Stats MyProfileStats `json:"stats"`
+	User                  model.Profile             `json:"user"`
+	Stats                 MyProfileStats            `json:"stats"`
+	TopicWithMoreLikes    []model.TopicWithLikes    `json:"topic_with_more_likes"`
+	TopicWithMoreComments []model.TopicWithComments `json:"topic_with_more_comments"`
+	CommentsWithMoreLikes []model.Comment           `json:"comments_with_more_likes"`
 }
 
 func MyProfile(provider MyProfileProvider, cache *cache.Cache) func(w http.ResponseWriter, r *http.Request) {
@@ -316,6 +322,21 @@ func MyProfile(provider MyProfileProvider, cache *cache.Cache) func(w http.Respo
 				return err
 			}
 
+			topicsWithMoreComments, err := provider.TopicsWithMoreCommentsByID(r.Context(), vkID, 5)
+			if err != nil {
+				return err
+			}
+
+			topicsWithMoreLikes, err := provider.TopicsWithMoreLikesByID(r.Context(), vkID, 5)
+			if err != nil {
+				return err
+			}
+
+			commentsWithMoreLikes, err := provider.CommentsWithMoreLikes(r.Context(), vkID, 5)
+			if err != nil {
+				return err
+			}
+
 			profilesCache := MyProfileCache{
 				User: user,
 				Stats: MyProfileStats{
@@ -324,6 +345,9 @@ func MyProfile(provider MyProfileProvider, cache *cache.Cache) func(w http.Respo
 					TotalLikes:              stats.Likes,
 					TotalTopicsPlusComments: stats.TopicsPlusComments,
 				},
+				TopicWithMoreLikes:    topicsWithMoreLikes,
+				TopicWithMoreComments: topicsWithMoreComments,
+				CommentsWithMoreLikes: commentsWithMoreLikes,
 			}
 
 			return profilesCache
