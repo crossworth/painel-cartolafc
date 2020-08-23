@@ -212,14 +212,14 @@ const ProfileList = (props) => {
         {!loading &&
         <div>
           <Space direction="vertical">
-            <Radio.Group value={pagination.period} onChange={event => setPeriod(event.target.value)}>
+            <Radio.Group value={pagination.period} onChange={event => setPeriod(event.target.value)} optionType="button" buttonStyle="solid">
               <Radio.Button value="all">Sempre</Radio.Button>
               <Radio.Button value="last_month">Último mês</Radio.Button>
               <Radio.Button value="last_week">Última semana</Radio.Button>
               <Radio.Button value="last_day">Último dia</Radio.Button>
             </Radio.Group>
 
-            <Radio.Group value={pagination.orderBy} onChange={event => setOrderBy(event.target.value)}>
+            <Radio.Group value={pagination.orderBy} onChange={event => setOrderBy(event.target.value)} optionType="button" buttonStyle="solid">
               <Radio.Button value="topics">Por tópicos</Radio.Button>
               <Radio.Button value="comments">Por comentários</Radio.Button>
               <Radio.Button value="likes">Por likes</Radio.Button>

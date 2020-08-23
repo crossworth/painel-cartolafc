@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { Button, Checkbox, Form, Input, Radio, Space, Spin, Table, Typography } from 'antd'
 import { getSearch } from '../api'
 import {
-  getGlobalPageSize,
+  getGlobalPageSize, normalizeComment,
   normalizeQuote,
   parseIntWithDefault,
   setGlobalPageSize,
@@ -19,13 +19,25 @@ const columns = [
     title: 'Texto',
     dataIndex: 'headline',
     key: 'headline',
-    render: (text, data) => <div dangerouslySetInnerHTML={{ __html: normalizeQuote(text) }}/>
+    render: (text, data) => <div dangerouslySetInnerHTML={{ __html: normalizeComment(normalizeQuote(text)) }}/>
   },
   {
     title: 'Data',
     dataIndex: 'date',
     key: 'date',
     render: (text, data) => timeStampToDate(text)
+  },
+  {
+    title: '',
+    dataIndex: 'type',
+    key: 'type',
+    render: (text, data) => {
+      if (data.type === 'topic') {
+        return <div>{data.comments_count} comentários</div>
+      } else {
+        return <div>{data.likes_count} likes</div>
+      }
+    }
   },
   {
     title: '',

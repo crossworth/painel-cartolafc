@@ -87,6 +87,13 @@ const changeLog = `
 - Liberado acesso ao editor da home/regras de membros aos administradores
 - Adicionado filtro para excluir certos tipos de tópicos do Ranking de tópicos
 - Corrigido problema na busca exata onde resultados eram exibidos somente para a primeira página
+
+23 Agosto
+- Adicionado suporte a pesquisa com caracteres especiais (+18)
+- Adicionado número de comentários e likes a resultado de pesquisa
+- Normalizado estilos de botões de filtros
+- Adicionado citações de bot no meu perfil
+- Ajustado problema onde imagens/documentos/anexos não eram exibidos em comentários (exibido texto informando no lugar)
 `
 
 export {

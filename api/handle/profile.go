@@ -363,6 +363,38 @@ func MyProfile(provider MyProfileProvider, cache *cache.Cache) func(w http.Respo
 	}
 }
 
+type BotQuoteProvider interface {
+	QuotesByBotByID(context context.Context, botID int, id int) ([]database.QuotesByBot, error)
+}
+
+func MyProfileBotQuotes(provider BotQuoteProvider, cache *cache.Cache, botQuoteID int) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vkID, found := model.VKIDFromRequest(r)
+		if !found || vkID == 0 {
+			httputil.SendError(w, fmt.Errorf("usuário não logado!?"))
+			return
+		}
+
+		cacheKey := fmt.Sprintf("profile_bot_quotes_%d", vkID)
+		quotesCache := cache.GetShortCache(cacheKey, func() interface{} {
+			quotes, err := provider.QuotesByBotByID(r.Context(), botQuoteID, vkID)
+			if err != nil {
+				return err
+			}
+
+			return quotes
+		})
+
+		data, castOK := quotesCache.([]database.QuotesByBot)
+		if !castOK {
+			httputil.SendDatabaseError(w, quotesCache.(error))
+			return
+		}
+
+		httputil.SendJSON(w, data, 200)
+	}
+}
+
 type ProfileNameProvider interface {
 	SearchProfileName(context context.Context, text string) ([]model.Profile, error)
 }

@@ -69,6 +69,7 @@ const getProfiles = (page, limit, orderBy = 'topics', orderDir = 'desc', period 
   return api.get(`/profiles?orderBy=${orderBy}&orderDir=${orderDir}&page=${page}&limit=${limit}&period=${period}`)
 }
 
+
 const getTopics = (before, limit, orderBy = 'updated_at') => {
   return api.get(`/topics?orderBy=${orderBy}&before=${before}&limit=${limit}`)
 }
@@ -78,7 +79,8 @@ const getTopicsRanking = (page, limit, orderBy = 'comments', orderDir = 'desc', 
 }
 
 const getSearch = (term, page, limit, searchType, fullText) => {
-  return api.get(`/search?term=${term}&page=${page}&limit=${limit}&searchType=${searchType}&fullText=${fullText}`)
+  const termEncoded = encodeURIComponent(term)
+  return api.get(`/search?term=${termEncoded}&page=${page}&limit=${limit}&searchType=${searchType}&fullText=${fullText}`)
 }
 
 const getAdministratorsProfiles = () => {
@@ -91,6 +93,10 @@ const setAdministratorsProfiles = profilesIDs => {
 
 const getMyProfileStats = () => {
   return api.get(`/my-profile`)
+}
+
+const getMyProfileBotQuotes = () => {
+  return api.get(`/my-profile/bot-quotes`)
 }
 
 const getMembersRules = () => {
@@ -137,6 +143,7 @@ export {
   getAdministratorsProfiles,
   setAdministratorsProfiles,
   getMyProfileStats,
+  getMyProfileBotQuotes,
   getMembersRules,
   setMembersRules,
   getHomePage,

@@ -22,7 +22,8 @@ func (p *PostgreSQL) SearchTopicsFullText(context context.Context, term string, 
        ts_headline((select title from topics t where t.id = ft.topic_id), q) as headline,
        ft.topic_id                                                           as topic_id,
        ft.date                                                               as date,
-       ts_rank(tsv, q)                                                       as rank
+       ts_rank(tsv, q)                                                       as rank,
+       (SELECT COUNT(c.*) FROM comments c WHERE c.topic_id = ft.topic_id)    as comments_count
 FROM full_text_search_topic ft,
      plainto_tsquery($1) q
 WHERE tsv @@ q
@@ -38,6 +39,7 @@ OFFSET $2 LIMIT $3`
 				&search.TopicID,
 				&search.Date,
 				&search.Rank,
+				&search.CommentsCount,
 			)
 			search.Type = SearchTypeTopic
 			result = append(result, search)
@@ -50,10 +52,11 @@ OFFSET $2 LIMIT $3`
 func (p *PostgreSQL) SearchTopicsILike(context context.Context, term string, page int, limit int) ([]Search, error) {
 	var result []Search
 
-	query := `SELECT $1           as term,
-       t.title      as headline,
-       t.id         as topic_id,
-       t.created_at as date
+	query := `SELECT $1                                                          as term,
+       t.title                                                     as headline,
+       t.id                                                        as topic_id,
+       t.created_at                                                as date,
+       (SELECT COUNT(c.*) FROM comments c WHERE c.topic_id = t.id) as comments_count
 FROM topics t
 WHERE t.title ILIKE '%' || $1 || '%'
 ORDER BY t.created_at DESC
@@ -66,6 +69,7 @@ OFFSET $2 LIMIT $3`
 				&search.Headline,
 				&search.TopicID,
 				&search.Date,
+				&search.CommentsCount,
 			)
 			search.Type = SearchTypeTopic
 			start := strings.Index(strings.ToLower(search.Headline), strings.ToLower(term))
@@ -123,11 +127,12 @@ func (p *PostgreSQL) SearchCommentsFullText(context context.Context, term string
 	var result []Search
 
 	query := `SELECT $1                                                                                as term,
-       ts_headline((select noquote(text) from comments c where c.id = fc.comment_id), q) as headline,
+       ts_headline((SELECT noquote(text) FROM comments c WHERE c.id = fc.comment_id), q) as headline,
        fc.topic_id                                                                       as topic_id,
        fc.comment_id                                                                     as comment_id,
        fc.date                                                                           as date,
-       ts_rank(tsv, q)                                                                   as rank
+       ts_rank(tsv, q)                                                                   as rank,
+       (SELECT c.likes FROM comments c WHERE c.id = fc.comment_id)                       as likes_count
 FROM full_text_search_comment fc,
      plainto_tsquery($1) q
 WHERE tsv @@ q
@@ -144,6 +149,7 @@ OFFSET $2 LIMIT $3`
 				&search.CommentID,
 				&search.Date,
 				&search.Rank,
+				&search.LikesCount,
 			)
 			search.Type = SearchTypeComment
 			result = append(result, search)
@@ -160,7 +166,8 @@ func (p *PostgreSQL) SearchCommentsILike(context context.Context, term string, p
        noquote(text) as headline,
        c.topic_id    as topic_id,
        c.id          as comment_id,
-       c.date        as date
+       c.date        as date,
+       c.likes       as likes_count
 FROM comments c
 WHERE noquote(text) ILIKE '%' || $1 || '%'
 ORDER BY date DESC
@@ -175,6 +182,7 @@ OFFSET $2 LIMIT $3`
 				&search.TopicID,
 				&search.CommentID,
 				&search.Date,
+				&search.LikesCount,
 			)
 			search.Type = SearchTypeComment
 			start := strings.Index(strings.ToLower(search.Headline), strings.ToLower(term))

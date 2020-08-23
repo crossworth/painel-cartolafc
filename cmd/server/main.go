@@ -38,6 +38,8 @@ func main() {
 
 	appName := util.GetStringFromEnvOrFatalError("APP_NAME")
 
+	vkBotQuoteID := util.GetIntFromEnvOrFatalError("VK_BOT_QUOTES_ID")
+
 	vkAppID := util.GetStringFromEnvOrFatalError("VK_APP_ID")
 	vkSecureKey := util.GetStringFromEnvOrFatalError("VK_SECURE_KEY")
 	vkCallBackURL := util.GetStringFromEnvOrFatalError("VK_CALLBACK_URL")
@@ -57,7 +59,7 @@ func main() {
 		logger.Log.Info().Interface("super_admins", superAdmins).Msg("super administradores definidos")
 	}
 
-	app := cartola.NewCartola(appName, vkClient, db, session, appCache, topicUpdater, superAdmins)
+	app := cartola.NewCartola(appName, vkClient, db, session, appCache, topicUpdater, superAdmins, vkBotQuoteID)
 
 	// topicUpdater.RegisterWorker(func(job updater.TopicUpdateJob) error {
 	// 	logger.Log.Info().Msgf("Handling1 job: %d", job.ID)

@@ -49,7 +49,8 @@ func NewCartola(
 	session sessions.Store,
 	cache *cache.Cache,
 	topicUpdater *updater.TopicUpdater,
-	superAdmins []int) *Cartola {
+	superAdmins []int,
+	botQuoteID int) *Cartola {
 	c := &Cartola{
 		appName:      appName,
 		vkClient:     vkClient,
@@ -88,7 +89,7 @@ func NewCartola(
 			noCache.Get("/userinfo.js", auth.UserInfo())
 		})
 
-		r.Mount("/api", api.NewServer(c.vkClient, c.db, c.cache))
+		r.Mount("/api", api.NewServer(c.vkClient, c.db, c.cache, botQuoteID))
 		r.Mount("/", web.New())
 	})
 

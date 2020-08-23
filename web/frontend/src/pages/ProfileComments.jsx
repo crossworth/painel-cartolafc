@@ -2,7 +2,7 @@ import React from 'react'
 import { withRouter } from 'react-router-dom'
 
 import { Button } from 'antd'
-import { normalizeQuote, timeStampToDate } from '../util'
+import { normalizeComment, normalizeQuote, timeStampToDate } from '../util'
 import ProfileTabularData from '../components/ProfileTabularData'
 import { getCommentsFromProfile } from '../api'
 
@@ -17,7 +17,7 @@ const columns = [
     title: 'Comentário',
     dataIndex: 'text',
     key: 'text',
-    render: (text, data) => <div>{normalizeQuote(text)}</div>
+    render: (text, data) => <div>{normalizeComment(normalizeQuote(text))}</div>
   },
   {
     title: 'Likes',

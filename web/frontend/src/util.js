@@ -97,6 +97,14 @@ const normalizeScreenName = (screenName, id) => {
   return screenName
 }
 
+const normalizeComment = text => {
+  if (text.trim() === '') {
+    return '[CONTEÚDO-NÃO-TEXTUAL]'
+  }
+
+  return text
+}
+
 export {
   timeStampToDate,
   getBeforeFromURL,
@@ -108,5 +116,6 @@ export {
   stringWithDefault,
   setGlobalPageSize,
   getGlobalPageSize,
-  normalizeScreenName
+  normalizeScreenName,
+  normalizeComment
 }

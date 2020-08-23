@@ -284,3 +284,31 @@ func (p *PostgreSQL) ProfileCount(context context.Context) (int, error) {
 
 	return total, err
 }
+
+type QuotesByBot struct {
+	TopicID     int    `json:"topic_id"`
+	CommentID   int    `json:"comment_id"`
+	TopicTitle  string `json:"topic_title"`
+	DateComment int    `json:"date_comment"`
+}
+
+func (p *PostgreSQL) QuotesByBotByID(context context.Context, botID int, id int) ([]QuotesByBot, error) {
+	var result []QuotesByBot
+
+	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {
+		tx.MustQueryContext(context, `SELECT c.topic_id                                           AS topic_id,
+       c.id                                                 AS comment_id,
+       (SELECT title FROM topics t WHERE t.id = c.topic_id) AS topic_title,
+       date                                                 AS comment_date
+FROM "comments" c
+WHERE from_id = $1
+  AND text ILIKE '%id' || $2 || '%'
+ORDER BY date DESC`, botID, id).Each(func(rows *sx.Rows) {
+			var q QuotesByBot
+			rows.MustScans(&q)
+			result = append(result, q)
+		})
+	})
+
+	return result, err
+}

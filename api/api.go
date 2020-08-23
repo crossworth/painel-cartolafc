@@ -22,7 +22,7 @@ type Server struct {
 	cache  *cache.Cache
 }
 
-func NewServer(vk *vk.VKClient, db *database.PostgreSQL, cache *cache.Cache) *Server {
+func NewServer(vk *vk.VKClient, db *database.PostgreSQL, cache *cache.Cache, botQuoteID int) *Server {
 	s := &Server{
 		router: chi.NewRouter(),
 		vk:     vk,
@@ -33,7 +33,7 @@ func NewServer(vk *vk.VKClient, db *database.PostgreSQL, cache *cache.Cache) *Se
 	logger.SetupLoggerOnRouter(s.router)
 
 	s.router.Use(middleware.RequestID)
-	s.router.Use(middleware.RealIP)
+	s.router.Use(httputil.RealIP)
 	s.router.Use(middleware.Recoverer)
 	s.router.Use(middleware.NoCache)
 	s.router.Use(middleware.Compress(flate.DefaultCompression))
@@ -42,6 +42,7 @@ func NewServer(vk *vk.VKClient, db *database.PostgreSQL, cache *cache.Cache) *Se
 	s.router.MethodNotAllowed(httputil.MethodNotAllowedHandler)
 
 	s.router.Get("/my-profile", handle.MyProfile(s.db, s.cache))
+	s.router.Get("/my-profile/bot-quotes", handle.MyProfileBotQuotes(s.db, s.cache, botQuoteID))
 	s.router.Get("/search", handle.Search(s.db, s.cache))
 	s.router.Get("/home-page", handle.GetHomePage(s.db))
 	s.router.Get("/topics-ranking", handle.TopicsWithStats(s.db, s.cache))
