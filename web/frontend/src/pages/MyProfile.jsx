@@ -119,7 +119,7 @@ const MyProfile = () => {
           <TabPane tab="Citações Bot" key="2">
             <List
               size="small"
-              header={<strong>Vez que você foi citado pelo bot</strong>}
+              header={<strong>Vezes que você foi citado pelo bot</strong>}
               bordered
               dataSource={quotesByBot}
               renderItem={quote => <List.Item>
