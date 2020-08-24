@@ -2,6 +2,7 @@ package cartola
 
 import (
 	"compress/flate"
+	"encoding/json"
 	"net/http"
 	"time"
 
@@ -22,15 +23,17 @@ import (
 )
 
 type Cartola struct {
-	appName         string
-	vkClient        *vk.VKClient
-	db              *database.PostgreSQL
-	session         sessions.Store
-	topicUpdater    *updater.TopicUpdater
-	cache           *cache.Cache
-	router          chi.Router
-	superAdmins     []int
-	userTypeHandler *auth.UserHandler
+	appName                     string
+	vkClient                    *vk.VKClient
+	db                          *database.PostgreSQL
+	session                     sessions.Store
+	topicUpdater                *updater.TopicUpdater
+	cache                       *cache.Cache
+	router                      chi.Router
+	superAdmins                 []int
+	userTypeHandler             *auth.UserHandler
+	vkWebhookConfirmationString string
+	vkWebhookSecret             string
 }
 
 var corsOpts = cors.Options{
@@ -50,15 +53,19 @@ func NewCartola(
 	cache *cache.Cache,
 	topicUpdater *updater.TopicUpdater,
 	superAdmins []int,
-	botQuoteID int) *Cartola {
+	botQuoteID int,
+	vkWebhookConfirmationString string,
+	vkWebhookSecret string) *Cartola {
 	c := &Cartola{
-		appName:      appName,
-		vkClient:     vkClient,
-		db:           db,
-		session:      session,
-		cache:        cache,
-		topicUpdater: topicUpdater,
-		superAdmins:  superAdmins,
+		appName:                     appName,
+		vkClient:                    vkClient,
+		db:                          db,
+		session:                     session,
+		cache:                       cache,
+		topicUpdater:                topicUpdater,
+		superAdmins:                 superAdmins,
+		vkWebhookConfirmationString: vkWebhookConfirmationString,
+		vkWebhookSecret:             vkWebhookSecret,
 	}
 
 	c.userTypeHandler = auth.NewUserHandler(c.db, c.superAdmins)
@@ -73,6 +80,8 @@ func NewCartola(
 	c.router.Use(httputil.RemoveDoubleSlashes)
 
 	logger.Log.Info().Msg("montando endpoints")
+	c.router.HandleFunc("/vk-webhook", c.handleVKWebHook)
+
 	c.router.Get("/fazer-login", auth.LoginPage(appName))
 	c.router.Get("/login", auth.Login())
 	c.router.Get("/login/callback", auth.LoginCallback(c.vkClient, c.session))
@@ -94,6 +103,40 @@ func NewCartola(
 	})
 
 	return c
+}
+
+type VKObject struct {
+	TopicID int `json:"topic_id"`
+}
+
+type VKEvent struct {
+	Type   string   `json:"type"`
+	Object VKObject `json:"object"`
+	Secret string   `json:"secret"`
+}
+
+func (c *Cartola) handleVKWebHook(w http.ResponseWriter, r *http.Request) {
+	var event VKEvent
+
+	err := json.NewDecoder(r.Body).Decode(&event)
+	if err != nil {
+		return
+	}
+
+	if event.Type == "confirmation" {
+		_, _ = w.Write([]byte(c.vkWebhookConfirmationString))
+		return
+	}
+
+	if c.vkWebhookSecret != "" && event.Secret != c.vkWebhookSecret {
+		return
+	}
+
+	if event.Type == "board_post_new" || event.Type == "board_post_edit" && event.Object.TopicID != 0 {
+		_ = c.topicUpdater.EnqueueTopicID(event.Object.TopicID)
+	}
+
+	_, _ = w.Write([]byte("ok"))
 }
 
 func (c *Cartola) ServeHTTP(w http.ResponseWriter, r *http.Request) {

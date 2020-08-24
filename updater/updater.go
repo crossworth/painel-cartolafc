@@ -19,9 +19,8 @@ type TopicUpdateJob struct {
 	Priority   int
 	RunAfter   time.Time
 	RetryWaits Durations
-	RanAt      sql.NullTime
+	RanAt      time.Time
 	Error      string
-	Locked     bool
 }
 
 type WorkerFunc func(TopicUpdateJob) error
@@ -45,11 +44,6 @@ func NewTopicUpdater(db *sql.DB) *TopicUpdater {
 		db:                 db,
 		stopChan:           make(chan bool),
 		jobPollingInterval: 10 * time.Millisecond,
-	}
-
-	err := unloadAll(t.db)
-	if err != nil {
-		logger.Log.Warn().Err(err).Msg("não foi possível remover a trava dos trabalhos")
 	}
 
 	return t
@@ -90,18 +84,27 @@ func (t *TopicUpdater) run() {
 }
 
 func (t *TopicUpdater) performNextJob(worker *Worker) bool {
-	job, err := getNextJob(t.db)
+	tx, err := t.db.Begin()
+	if err != nil {
+		logger.Log.Warn().Err(err).Msg("erro ao iniciar uma transaction")
+		return false
+	}
+
+	job, err := getNextJob(tx)
 	if errors.Is(err, sql.ErrNoRows) {
+		_ = tx.Rollback()
 		return false
 	}
 
 	if err != nil {
 		logger.Log.Warn().Err(err).Msg("erro ao conseguir próximo trabalho em TopicUpdater")
-		return false // maybe database slow? returning false will make it sleep for a few seconds
+		_ = tx.Rollback()
+		return false
 	}
 
 	if worker.fn == nil {
 		logger.Log.Warn().Msg("função de worker nula em TopicUpdater")
+		_ = tx.Rollback()
 		return false
 	}
 
@@ -117,28 +120,26 @@ func (t *TopicUpdater) performNextJob(worker *Worker) bool {
 	}()
 
 	if jobErr == nil && worker.deleteJobOnComplete {
-		err = deleteJob(t.db, job.ID)
+		err = deleteJob(tx, job.ID)
 		if err != nil {
 			logger.Log.Warn().Err(err).Msgf("erro ao apagar job %d", job.ID)
 		}
 	} else {
 		if len(job.RetryWaits) > 0 {
 			afterTime := time.Now().Add(job.RetryWaits[0])
-			err := updateTopicJob(t.db, job.ID, afterTime, job.RetryWaits[1:])
+			err := updateTopicJob(tx, job.ID, afterTime, job.RetryWaits[1:])
 			if err != nil {
 				logger.Log.Warn().Err(err).Msgf("não foi possível atualizar o job %d", job.ID)
 			}
 		} else {
-			err = updateJobFailed(t.db, job.ID, sql.NullTime{
-				Time:  ranAt,
-				Valid: true,
-			}, jobErr.Error())
+			err = updateJobFailed(tx, job.ID, ranAt, jobErr.Error())
 			if err != nil {
 				logger.Log.Warn().Err(err).Msgf("erro ao atualizar job %d", job.ID)
 			}
 		}
 	}
 
+	_ = tx.Commit()
 	return jobErr != nil
 }
 
@@ -161,10 +162,10 @@ func (t *TopicUpdater) RegisterWorker(workerFunc WorkerFunc, deleteJobOnComplete
 	})
 }
 
-func (t *TopicUpdater) EnqueueTopicID(topicID int) (int64, error) {
+func (t *TopicUpdater) EnqueueTopicID(topicID int) error {
 	return enqueueTopicID(t.db, topicID, 10)
 }
 
-func (t *TopicUpdater) EnqueueTopicIDWithPriority(topicID int, priority int) (int64, error) {
+func (t *TopicUpdater) EnqueueTopicIDWithPriority(topicID int, priority int) error {
 	return enqueueTopicID(t.db, topicID, priority)
 }

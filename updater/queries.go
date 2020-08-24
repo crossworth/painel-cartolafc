@@ -7,47 +7,38 @@ import (
 	"github.com/travelaudience/go-sx"
 )
 
-func getNextJob(db *sql.DB) (TopicUpdateJob, error) {
+func getNextJob(tx *sql.Tx) (TopicUpdateJob, error) {
 	var result TopicUpdateJob
 
-	err := sx.Do(db, func(tx *sx.Tx) {
-		tx.MustQueryRow(`UPDATE topic_update_job
-SET locked = true
-WHERE id = (SELECT id
-            FROM topic_update_job
-            WHERE run_after
-                < $1
-              AND ran_at IS NULL
-              AND locked IS false
-            ORDER BY priority, run_after
-            LIMIT 1)
-RETURNING id, created_at, topic_id, priority, run_after, retry_waits, ran_at, error, locked;`, time.Now()).
-			MustScan(
-				&result.ID,
-				&result.CreatedAt,
-				&result.TopicID,
-				&result.Priority,
-				&result.RunAfter,
-				&result.RetryWaits,
-				&result.RanAt,
-				&result.Error,
-				&result.Locked,
-			)
-	})
+	row := tx.QueryRow(`SELECT id,
+       created_at,
+       topic_id,
+       priority,
+       run_after,
+       retry_waits,
+       ran_at,
+       error
+FROM topic_update_job
+WHERE run_after < $1
+  AND ran_at = '0001-01-01 00:00:00'
+ORDER BY priority, run_after
+LIMIT 1 FOR UPDATE SKIP LOCKED;`, time.Now())
+
+	err := row.Scan(
+		&result.ID,
+		&result.CreatedAt,
+		&result.TopicID,
+		&result.Priority,
+		&result.RunAfter,
+		&result.RetryWaits,
+		&result.RanAt,
+		&result.Error,
+	)
 
 	return result, err
 }
 
-func unloadAll(db *sql.DB) error {
-	err := sx.Do(db, func(tx *sx.Tx) {
-		tx.MustExec(`UPDATE topic_update_job
-SET locked = false
-WHERE locked = true`)
-	})
-	return err
-}
-
-func enqueueTopicID(db *sql.DB, topicID int, priority int) (int64, error) {
+func enqueueTopicID(db *sql.DB, topicID int, priority int) error {
 	return enqueueTopicJob(db, topicID, priority, time.Now(), []time.Duration{
 		time.Second * 60,
 		time.Second * 60 * 10,
@@ -56,7 +47,7 @@ func enqueueTopicID(db *sql.DB, topicID int, priority int) (int64, error) {
 	})
 }
 
-func enqueueTopicJob(db *sql.DB, topicID int, priority int, runAfter time.Time, durations Durations) (int64, error) {
+func enqueueTopicJob(db *sql.DB, topicID int, priority int, runAfter time.Time, durations Durations) error {
 	job := TopicUpdateJob{
 		TopicID:    topicID,
 		Priority:   priority,
@@ -64,51 +55,43 @@ func enqueueTopicJob(db *sql.DB, topicID int, priority int, runAfter time.Time, 
 		RetryWaits: durations,
 	}
 
-	var jobID int64
-
 	err := sx.Do(db, func(tx *sx.Tx) {
-		tx.MustQueryRow(`INSERT INTO topic_update_job (topic_id,
+		tx.MustExec(`INSERT INTO topic_update_job (topic_id,
                               priority,
                               run_after,
-                              retry_waits)
+                              retry_waits,
+                              ran_at)
 VALUES ($1,
         $2,
         $3,
-        $4)
-ON CONFLICT (topic_id,run_after) DO UPDATE SET priority = $2
-RETURNING id`, job.TopicID, job.Priority, job.RunAfter, job.RetryWaits).MustScan(&jobID)
+        $4,
+        $5)
+ON CONFLICT DO NOTHING`, job.TopicID, job.Priority, job.RunAfter, job.RetryWaits, time.Time{})
 	})
 
-	return jobID, err
+	return err
 }
 
-func updateJobFailed(db *sql.DB, jobID int64, ranAt sql.NullTime, jobError string) error {
-	err := sx.Do(db, func(tx *sx.Tx) {
-		tx.MustExec(`UPDATE topic_update_job
+func updateJobFailed(tx *sql.Tx, jobID int64, ranAt time.Time, jobError string) error {
+	_, err := tx.Exec(`UPDATE topic_update_job
 SET ran_at = $1,
-    error  = $2,
-    locked = false
+    error  = $2
 WHERE id = $3`, ranAt, jobError, jobID)
-	})
+
 	return err
 }
 
-func updateTopicJob(db *sql.DB, jobID int64, afterTime time.Time, durations Durations) error {
-	err := sx.Do(db, func(tx *sx.Tx) {
-		tx.MustExec(`UPDATE topic_update_job
+func updateTopicJob(tx *sql.Tx, jobID int64, afterTime time.Time, durations Durations) error {
+	_, err := tx.Exec(`UPDATE topic_update_job
 SET run_after   = $1,
-    retry_waits = $2,
-    locked      = false
+    retry_waits = $2
 WHERE id = $3`, afterTime, durations, jobID)
-	})
 	return err
 }
 
-func deleteJob(db *sql.DB, jobID int64) error {
-	err := sx.Do(db, func(tx *sx.Tx) {
-		tx.MustExec(`DELETE
+func deleteJob(tx *sql.Tx, jobID int64) error {
+	_, err := tx.Exec(`DELETE
 FROM topic_update_job
 WHERE id = $1`, jobID)
-	})
 	return err
 }

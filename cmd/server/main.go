@@ -44,6 +44,9 @@ func main() {
 	vkSecureKey := util.GetStringFromEnvOrFatalError("VK_SECURE_KEY")
 	vkCallBackURL := util.GetStringFromEnvOrFatalError("VK_CALLBACK_URL")
 
+	vkWebhookConfirmationString := util.GetStringFromEnvOrFatalError("VK_WEBHOOK_CONFIRMATION_STRING")
+	vkWebhookSecret := util.GetStringFromEnvOrDefault("VK_WEBHOOK_SECRET", "")
+
 	goth.UseProviders(
 		openid.New(vkAppID, vkSecureKey, vkCallBackURL, "groups"),
 	)
@@ -59,14 +62,18 @@ func main() {
 		logger.Log.Info().Interface("super_admins", superAdmins).Msg("super administradores definidos")
 	}
 
-	app := cartola.NewCartola(appName, vkClient, db, session, appCache, topicUpdater, superAdmins, vkBotQuoteID)
-
-	// topicUpdater.RegisterWorker(func(job updater.TopicUpdateJob) error {
-	// 	logger.Log.Info().Msgf("Handling1 job: %d", job.ID)
-	// 	time.Sleep(10 * time.Millisecond)
-	// 	return fmt.Errorf("aaa isso é um erro")
-	// }, true)
-	// topicUpdater.StartProcessing()
+	app := cartola.NewCartola(
+		appName,
+		vkClient,
+		db,
+		session,
+		appCache,
+		topicUpdater,
+		superAdmins,
+		vkBotQuoteID,
+		vkWebhookConfirmationString,
+		vkWebhookSecret,
+	)
 
 	appPort := util.GetStringFromEnvOrFatalError("APP_PORT")
 	logger.Log.Info().Msgf("iniciando o servidor na porta %s", appPort)
