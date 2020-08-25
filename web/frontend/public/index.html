@@ -4,12 +4,20 @@
     <meta charset="utf-8"/>
     <link rel="icon" href="%PUBLIC_URL%/favicon.ico"/>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
-    <title>CartolaFC - WebAdmin</title>
+    <title>Painel CartolaFC</title>
     <meta name="robots" content="noindex,nofollow">
 </head>
 <body>
 <noscript>Você precisa ativar o Javascript para poder rodar esse aplicativo.</noscript>
 <div id="root"></div>
 <script src="%REACT_APP_BASE_URL%/userinfo.js"></script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-176156290-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-176156290-1');
+</script>
 </body>
 </html>

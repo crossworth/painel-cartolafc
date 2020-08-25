@@ -1,0 +1,8 @@
+db_user: root
+db_password: root
+db_host: localhost
+db_database: database
+group_id: 0
+accounts:
+  - email: account@email.com
+    password: "password"

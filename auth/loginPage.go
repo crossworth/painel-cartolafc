@@ -18,7 +18,7 @@ const loginPage = `<!doctype html>
 <script>
   var urlParams = new URLSearchParams(window.location.search)
   var reason = urlParams.get('motivo-redirect')
-  if (reason !== '') {
+  if (reason !== null && reason !== '') {
     alert(reason)
   }
 </script>

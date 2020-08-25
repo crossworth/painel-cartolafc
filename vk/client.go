@@ -14,3 +14,7 @@ func NewVKClient(user string, password string) (*VKClient, error) {
 		client: client,
 	}, err
 }
+
+func (v *VKClient) GetClient() *vkapi.VKClient {
+	return v.client
+}

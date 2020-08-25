@@ -1,5 +1,9 @@
+# github.com/carlescere/scheduler v0.0.0-20170109141437-ee74d2f83d82
+github.com/carlescere/scheduler
 # github.com/crossworth/multiwriter v0.0.0-20200607193327-ddded5c6e949
 github.com/crossworth/multiwriter
+# github.com/fatih/color v1.7.0
+github.com/fatih/color
 # github.com/go-chi/chi v4.1.2+incompatible
 github.com/go-chi/chi
 github.com/go-chi/chi/middleware
@@ -17,6 +21,15 @@ github.com/gobuffalo/packr/v2/file/resolver
 github.com/gobuffalo/packr/v2/file/resolver/encoding/hex
 github.com/gobuffalo/packr/v2/jam/parser
 github.com/gobuffalo/packr/v2/plog
+# github.com/goccy/go-yaml v1.8.0
+github.com/goccy/go-yaml
+github.com/goccy/go-yaml/ast
+github.com/goccy/go-yaml/internal/errors
+github.com/goccy/go-yaml/lexer
+github.com/goccy/go-yaml/parser
+github.com/goccy/go-yaml/printer
+github.com/goccy/go-yaml/scanner
+github.com/goccy/go-yaml/token
 # github.com/golang/protobuf v1.3.1
 github.com/golang/protobuf/proto
 # github.com/gorilla/context v1.1.1
@@ -85,6 +98,9 @@ golang.org/x/sync/errgroup
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
 golang.org/x/sys/windows
+# golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543
+golang.org/x/xerrors
+golang.org/x/xerrors/internal
 # google.golang.org/appengine v1.1.0
 google.golang.org/appengine/internal
 google.golang.org/appengine/internal/base

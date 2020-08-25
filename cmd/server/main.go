@@ -62,8 +62,11 @@ func main() {
 		logger.Log.Info().Interface("super_admins", superAdmins).Msg("super administradores definidos")
 	}
 
+	vkGroupID := util.GetIntFromEnvOrFatalError("APP_VK_GROUP_ID")
+
 	app := cartola.NewCartola(
 		appName,
+		vkGroupID,
 		vkClient,
 		db,
 		session,

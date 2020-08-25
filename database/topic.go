@@ -342,7 +342,7 @@ func (p *PostgreSQL) TopicsWithMoreCommentsByID(context context.Context, id int,
 
 	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {
 		tx.MustQueryContext(context, `SELECT t.*,
-       (SELECT COUNT(*) FROM "comments" c WHERE c.topic_id = t.id) AS comments_count
+       COALESCE((SELECT COUNT(*) FROM "comments" c WHERE c.topic_id = t.id), 0) AS comments_count
 FROM topics t
 WHERE t.created_by = $1
 ORDER BY comments_count DESC LIMIT $2`, id, limit).Each(func(rows *sx.Rows) {
@@ -371,7 +371,7 @@ func (p *PostgreSQL) TopicsWithMoreLikesByID(context context.Context, id int, li
 
 	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {
 		tx.MustQueryContext(context, `SELECT t.*,
-       (SELECT SUM(c.likes) FROM "comments" c WHERE c.topic_id = t.id) AS likes_count
+       COALESCE((SELECT SUM(c.likes) FROM "comments" c WHERE c.topic_id = t.id), 0) AS likes_count
 FROM topics t
 WHERE t.created_by = $1
 ORDER BY likes_count DESC LIMIT $2`, id, limit).Each(func(rows *sx.Rows) {

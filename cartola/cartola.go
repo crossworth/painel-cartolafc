@@ -4,6 +4,8 @@ import (
 	"compress/flate"
 	"encoding/json"
 	"net/http"
+	"net/url"
+	"strconv"
 	"time"
 
 	"github.com/go-chi/chi"
@@ -24,6 +26,7 @@ import (
 
 type Cartola struct {
 	appName                     string
+	groupID                     int
 	vkClient                    *vk.VKClient
 	db                          *database.PostgreSQL
 	session                     sessions.Store
@@ -47,6 +50,7 @@ var corsOpts = cors.Options{
 
 func NewCartola(
 	appName string,
+	groupID int,
 	vkClient *vk.VKClient,
 	db *database.PostgreSQL,
 	session sessions.Store,
@@ -58,6 +62,7 @@ func NewCartola(
 	vkWebhookSecret string) *Cartola {
 	c := &Cartola{
 		appName:                     appName,
+		groupID:                     groupID,
 		vkClient:                    vkClient,
 		db:                          db,
 		session:                     session,
@@ -102,6 +107,9 @@ func NewCartola(
 		r.Mount("/", web.New())
 	})
 
+	// _, _ = scheduler.Every(1).Day().NotImmediately().Run(c.enqueueAllTopicsIDs)
+	// c.enqueueAllTopicsIDs() // fixme: remove this
+
 	return c
 }
 
@@ -141,4 +149,39 @@ func (c *Cartola) handleVKWebHook(w http.ResponseWriter, r *http.Request) {
 
 func (c *Cartola) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	c.router.ServeHTTP(w, r)
+}
+
+func (c *Cartola) enqueueAllTopicsIDs() {
+	logger.Log.Info().Msg("adicionando tópicos a fila de atualização")
+	go func() {
+		params := url.Values{}
+		params.Set("order", "-2")
+
+		skip := 0
+		total := 0
+
+		for {
+			params.Set("offset", strconv.Itoa(skip))
+
+			topics, err := c.vkClient.GetClient().BoardGetTopics(c.groupID, 100, params)
+			if err != nil {
+				logger.Log.Warn().Err(err).Msg("erro ao conseguir todos os ids dos tópicos")
+				continue
+			}
+
+			for _, topic := range topics.Topics {
+				_ = c.topicUpdater.EnqueueTopicIDWithPriority(topic.ID, 15)
+			}
+
+			total += len(topics.Topics)
+
+			if total >= topics.Count {
+				break
+			}
+
+			skip += 100
+		}
+
+		logger.Log.Info().Msg("adicionado todos os tópicos a fila")
+	}()
 }

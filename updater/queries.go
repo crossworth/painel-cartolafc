@@ -22,7 +22,7 @@ FROM topic_update_job
 WHERE run_after < $1
   AND ran_at = '0001-01-01 00:00:00'
 ORDER BY priority, run_after
-LIMIT 1 FOR UPDATE SKIP LOCKED;`, time.Now())
+LIMIT 1 FOR UPDATE SKIP LOCKED;`, time.Now().UTC())
 
 	err := row.Scan(
 		&result.ID,

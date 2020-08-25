@@ -58,6 +58,7 @@ func (t *TopicUpdater) run() {
 		default:
 			t.workersLock.Lock()
 			var worker *Worker
+
 			for i := range t.workers {
 				if t.workers[i].running {
 					continue
