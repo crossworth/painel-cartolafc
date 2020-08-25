@@ -96,7 +96,6 @@ func SetupLoggerOnRouter(router chi.Router) {
 		l.Msg("")
 	}))
 
-	router.Use(hlog.RemoteAddrHandler("ip"))
 	router.Use(hlog.UserAgentHandler("user_agent"))
 	router.Use(hlog.RefererHandler("referer"))
 	router.Use(hlog.RequestIDHandler("req_id", "request-id"))

@@ -94,6 +94,11 @@ const changeLog = `
 - Normalizado estilos de botões de filtros
 - Adicionado citações de bot no meu perfil
 - Ajustado problema onde imagens/documentos/anexos não eram exibidos em comentários (exibido texto informando no lugar)
+
+24 Agosto
+- Adicionado dark theme
+- Adicionado paginação citações do bot
+- Adicionado últimos tópicos
 `
 
 export {

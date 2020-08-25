@@ -1,46 +1,70 @@
 import React, { useEffect, useState } from 'react'
 
-import { Col, Divider, List, Row, Spin, Statistic, Tabs, Typography } from 'antd'
+import { Button, Col, Divider, List, Row, Spin, Statistic, Tabs, Typography } from 'antd'
 import { normalizeComment, normalizeQuote, normalizeScreenName, timeStampToDate } from '../util'
-import { getMyProfileBotQuotes, getMyProfileStats } from '../api'
+import { getMyLastTopics, getMyProfileBotQuotes, getMyProfileStats } from '../api'
 import { VK_GROUP_ID } from '../config'
 
 const { Title } = Typography
 const { TabPane } = Tabs
 
+const quotesByBotLimit = 20
+
 const MyProfile = () => {
 
+  const [doneInitialLoading, setDoneInitialLoading] = useState(false)
   const [user, setUser] = useState({})
+  const [loading, setLoading] = useState(false)
   const [userStats, setUserStats] = useState({})
   const [topicWithMoreLikes, setTopicWithMoreLikes] = useState([])
   const [topicWithMoreComments, setTopicWithMoreComments] = useState([])
   const [commentsWithMoreLikes, setCommentsWithMoreLikes] = useState([])
   const [quotesByBot, setQuotesByBot] = useState([])
+  const [lastTopics, setLastTopics] = useState([])
+  const [quotesByBotPage, setQuotesByBotPage] = useState(1)
 
   useEffect(() => {
-    getMyProfileStats().then(values => {
-      setUser(values.user)
-      setUserStats(values.stats)
-      setTopicWithMoreComments(values.topic_with_more_comments)
-      setCommentsWithMoreLikes(values.comments_with_more_likes)
-      setTopicWithMoreLikes(values.topic_with_more_likes)
+    setLoading(true)
+    Promise.all([
+      getMyProfileStats(),
+      getMyProfileBotQuotes(quotesByBotPage, quotesByBotLimit),
+      getMyLastTopics()
+    ]).then(results => {
+      setUser(results[0].user)
+      setUserStats(results[0].stats)
+      setTopicWithMoreComments(results[0].topic_with_more_comments)
+      setCommentsWithMoreLikes(results[0].comments_with_more_likes)
+      setTopicWithMoreLikes(results[0].topic_with_more_likes)
+      setQuotesByBot(results[1])
+      setLastTopics(results[2])
     }).catch(err => {
 
+    }).finally(() => {
+      setLoading(false)
+      setDoneInitialLoading(true)
     })
+
   }, [])
 
   useEffect(() => {
-    getMyProfileBotQuotes().then(values => {
+    if (!doneInitialLoading) {
+      return
+    }
+
+    setLoading(true)
+    getMyProfileBotQuotes(quotesByBotPage, quotesByBotLimit).then(values => {
+      console.log(values)
       setQuotesByBot(values)
     }).catch(err => {
 
+    }).finally(() => {
+      setLoading(false)
     })
-  }, [])
-
+  }, [quotesByBotPage])
 
   return (
     <div>
-      <Spin tip="Carregando..." spinning={!user.first_name}>
+      <Spin tip="Carregando..." spinning={loading}>
         <Title level={4}>
           {
             user.first_name ?
@@ -116,17 +140,49 @@ const MyProfile = () => {
               </List.Item>}
             />
           </TabPane>
-          <TabPane tab="Citações Bot" key="2">
+          <TabPane tab={`Citações Bot (${quotesByBot.meta ? quotesByBot.meta.total : 0})`} key="2">
+            <Row gutter={16}>
+              <Col>
+                <Button
+                  disabled={quotesByBotPage <= 1}
+                  onClick={() => {
+                    setQuotesByBotPage(quotesByBotPage - 1)
+                  }}>Página anterior</Button>
+              </Col>
+              <Col>
+                <Button
+                  disabled={quotesByBot.meta === undefined || quotesByBotPage >= (quotesByBot.meta.total / quotesByBotLimit)}
+                  onClick={() => {
+                    setQuotesByBotPage(quotesByBotPage + 1)
+                  }}>Próxima página</Button>
+              </Col>
+            </Row>
+            <br/>
             <List
               size="small"
               header={<strong>Vezes que você foi citado pelo bot</strong>}
               bordered
-              dataSource={quotesByBot}
+              dataSource={quotesByBot.data}
               renderItem={quote => <List.Item>
                 <List.Item.Meta
                   title={<a href={`https://vk.com/topic-${VK_GROUP_ID}_${quote.topic_id}?post=${quote.comment_id}`}
                             target="_blank" rel="noopener noreferrer">{quote.topic_title}</a>}
                   description={`em ${timeStampToDate(quote.date_comment)}`}
+                />
+              </List.Item>}
+            />
+          </TabPane>
+          <TabPane tab="Últimos tópicos" key="3">
+            <List
+              size="small"
+              header={<strong>Seus últimos tópicos</strong>}
+              bordered
+              dataSource={lastTopics}
+              renderItem={quote => <List.Item>
+                <List.Item.Meta
+                  title={<a href={`https://vk.com/topic-${VK_GROUP_ID}_${quote.id}`}
+                            target="_blank" rel="noopener noreferrer">{quote.title}</a>}
+                  description={`em ${timeStampToDate(quote.created_at)}`}
                 />
               </List.Item>}
             />

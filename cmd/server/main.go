@@ -48,7 +48,7 @@ func main() {
 	vkWebhookSecret := util.GetStringFromEnvOrDefault("VK_WEBHOOK_SECRET", "")
 
 	goth.UseProviders(
-		openid.New(vkAppID, vkSecureKey, vkCallBackURL, "groups"),
+		openid.New(vkAppID, vkSecureKey, vkCallBackURL),
 	)
 
 	gothic.Store = session

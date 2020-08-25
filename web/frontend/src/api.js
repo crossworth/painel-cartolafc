@@ -95,8 +95,12 @@ const getMyProfileStats = () => {
   return api.get(`/my-profile`)
 }
 
-const getMyProfileBotQuotes = () => {
-  return api.get(`/my-profile/bot-quotes`)
+const getMyLastTopics = () => {
+  return api.get(`/my-profile/last-topics`)
+}
+
+const getMyProfileBotQuotes = (page = 0, limit = 0) => {
+  return api.get(`/my-profile/bot-quotes?page=${page}&limit=${limit}`)
 }
 
 const getMembersRules = () => {
@@ -143,6 +147,7 @@ export {
   getAdministratorsProfiles,
   setAdministratorsProfiles,
   getMyProfileStats,
+  getMyLastTopics,
   getMyProfileBotQuotes,
   getMembersRules,
   setMembersRules,

@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"runtime/debug"
 	"sync"
 	"time"
 
@@ -114,7 +115,7 @@ func (t *TopicUpdater) performNextJob(worker *Worker) bool {
 	func() {
 		defer func() {
 			if r := recover(); r != nil {
-				jobErr = fmt.Errorf("panic ao executar o job %d com tópico %d: Job: %v, Panic: %v", job.ID, job.TopicID, jobErr, r)
+				jobErr = fmt.Errorf("%v, %s", r, string(debug.Stack()))
 			}
 		}()
 		jobErr = worker.fn(job)

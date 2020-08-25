@@ -131,3 +131,10 @@ type TopicsWithStats struct {
 	Likes    int `json:"likes"`
 	Position int `json:"position,omitempty"`
 }
+
+type QuotesByBot struct {
+	TopicID     int    `json:"topic_id"`
+	CommentID   int    `json:"comment_id"`
+	TopicTitle  string `json:"topic_title"`
+	DateComment int    `json:"date_comment"`
+}

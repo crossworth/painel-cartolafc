@@ -76,25 +76,28 @@ func NewCartola(
 	c.userTypeHandler = auth.NewUserHandler(c.db, c.superAdmins)
 
 	c.router = chi.NewRouter()
-	c.router.Use(middleware.Recoverer)
-	c.router.Use(httputil.OnlyAllowedHost)
-	c.router.Use(middleware.Compress(flate.DefaultCompression))
-	c.router.Use(cors.New(corsOpts).Handler)
-	c.router.Use(middleware.Timeout(10 * time.Minute))
-	c.router.Use(middleware.RedirectSlashes)
-	c.router.Use(httputil.RemoveDoubleSlashes)
+	c.router.Mount("/debug", middleware.Profiler())
+
+	cartola := chi.NewRouter()
+	cartola.Use(middleware.Recoverer)
+	cartola.Use(httputil.OnlyAllowedHost)
+	cartola.Use(middleware.Compress(flate.DefaultCompression))
+	cartola.Use(cors.New(corsOpts).Handler)
+	cartola.Use(middleware.Timeout(10 * time.Minute))
+	cartola.Use(middleware.RedirectSlashes)
+	cartola.Use(httputil.RemoveDoubleSlashes)
 
 	logger.Log.Info().Msg("montando endpoints")
-	c.router.HandleFunc("/vk-webhook", c.handleVKWebHook)
+	cartola.HandleFunc("/vk-webhook", c.handleVKWebHook)
 
-	c.router.Get("/fazer-login", auth.LoginPage(appName))
-	c.router.Get("/login", auth.Login())
-	c.router.Get("/login/callback", auth.LoginCallback(c.vkClient, c.session))
-	c.router.Get("/logout", auth.Logout(c.session))
+	cartola.Get("/fazer-login", auth.LoginPage(appName))
+	cartola.Get("/login", auth.Login())
+	cartola.Get("/login/callback", auth.LoginCallback(c.vkClient, c.session))
+	cartola.Get("/logout", auth.Logout(c.session))
 
-	c.router.Mount("/public/api", api.NewPublicAPI(c.db, c.cache))
+	cartola.Mount("/public/api", api.NewPublicAPI(c.db, c.cache))
 
-	c.router.Group(func(r chi.Router) {
+	cartola.Group(func(r chi.Router) {
 		r.Use(auth.OnlyAuthenticatedUsers(c.session, c.userTypeHandler))
 
 		r.Group(func(noCache chi.Router) {
@@ -107,6 +110,7 @@ func NewCartola(
 		r.Mount("/", web.New())
 	})
 
+	c.router.Mount("/", cartola)
 	// _, _ = scheduler.Every(1).Day().NotImmediately().Run(c.enqueueAllTopicsIDs)
 	// c.enqueueAllTopicsIDs() // fixme: remove this
 

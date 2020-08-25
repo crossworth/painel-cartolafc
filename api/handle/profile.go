@@ -364,10 +364,77 @@ func MyProfile(provider MyProfileProvider, cache *cache.Cache) func(w http.Respo
 }
 
 type BotQuoteProvider interface {
-	QuotesByBotByID(context context.Context, botID int, id int) ([]database.QuotesByBot, error)
+	QuotesByBotByID(context context.Context, botID int, id int, page int, limit int) ([]database.QuotesByBot, error)
+	QuotesByBotByIDCount(context context.Context, botID int, id int) (int, error)
+}
+
+type BotQuoteCache struct {
+	Quotes    []database.QuotesByBot `json:"quotes"`
+	Total     int                    `json:"total"`
+	CreatedAt time.Time              `json:"created_at"`
 }
 
 func MyProfileBotQuotes(provider BotQuoteProvider, cache *cache.Cache, botQuoteID int) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vkID, found := model.VKIDFromRequest(r)
+		page := util.ToIntWithDefaultMin(r.URL.Query().Get("page"), 1)
+		limit := util.ToIntWithDefaultMin(r.URL.Query().Get("limit"), 10)
+		if !found || vkID == 0 {
+			httputil.SendError(w, fmt.Errorf("usuário não logado!?"))
+			return
+		}
+
+		cacheKey := fmt.Sprintf("profile_bot_quotes_%d_%d_%d_%d", vkID, botQuoteID, page, limit)
+		quotesCache := cache.GetShortCache(cacheKey, func() interface{} {
+			quotes, err := provider.QuotesByBotByID(r.Context(), botQuoteID, vkID, page, limit)
+			if err != nil {
+				return err
+			}
+
+			total, err := provider.QuotesByBotByIDCount(r.Context(), botQuoteID, vkID)
+			if err != nil {
+				return err
+			}
+
+			return BotQuoteCache{
+				Quotes:    quotes,
+				Total:     total,
+				CreatedAt: time.Now(),
+			}
+		})
+
+		data, castOK := quotesCache.(BotQuoteCache)
+		if !castOK {
+			httputil.SendDatabaseError(w, quotesCache.(error))
+			return
+		}
+
+		next := ""
+		prev := ""
+
+		if page != 1 {
+			prev = fmt.Sprintf("%s/my-profile/bot-quotes?limit=%d&page=%d", os.Getenv("APP_API_URL"), limit, page-1)
+		}
+
+		if page*limit < data.Total {
+			next = fmt.Sprintf("%s/my-profile/bot-quotes?limit=%d&page=%d", os.Getenv("APP_API_URL"), limit, page+1)
+		}
+
+		httputil.SendPagination(w, data.Quotes, 200, httputil.PaginationMeta{
+			Prev:     prev,
+			Current:  fmt.Sprintf("%s/my-profile/bot-quotes?limit=%d&page=%d", os.Getenv("APP_API_URL"), limit, page),
+			Next:     next,
+			Total:    data.Total,
+			CachedAt: &data.CreatedAt,
+		})
+	}
+}
+
+type LastTopicsProvider interface {
+	LastTopicsByID(context context.Context, id int, limit int) ([]model.Topic, error)
+}
+
+func LastTopics(provider LastTopicsProvider) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vkID, found := model.VKIDFromRequest(r)
 		if !found || vkID == 0 {
@@ -375,23 +442,13 @@ func MyProfileBotQuotes(provider BotQuoteProvider, cache *cache.Cache, botQuoteI
 			return
 		}
 
-		cacheKey := fmt.Sprintf("profile_bot_quotes_%d", vkID)
-		quotesCache := cache.GetShortCache(cacheKey, func() interface{} {
-			quotes, err := provider.QuotesByBotByID(r.Context(), botQuoteID, vkID)
-			if err != nil {
-				return err
-			}
-
-			return quotes
-		})
-
-		data, castOK := quotesCache.([]database.QuotesByBot)
-		if !castOK {
-			httputil.SendDatabaseError(w, quotesCache.(error))
+		topics, err := provider.LastTopicsByID(r.Context(), vkID, 5)
+		if err != nil {
+			httputil.SendDatabaseError(w, err)
 			return
 		}
 
-		httputil.SendJSON(w, data, 200)
+		httputil.SendJSON(w, topics, 200)
 	}
 }
 

@@ -285,14 +285,7 @@ func (p *PostgreSQL) ProfileCount(context context.Context) (int, error) {
 	return total, err
 }
 
-type QuotesByBot struct {
-	TopicID     int    `json:"topic_id"`
-	CommentID   int    `json:"comment_id"`
-	TopicTitle  string `json:"topic_title"`
-	DateComment int    `json:"date_comment"`
-}
-
-func (p *PostgreSQL) QuotesByBotByID(context context.Context, botID int, id int) ([]QuotesByBot, error) {
+func (p *PostgreSQL) QuotesByBotByID(context context.Context, botID int, id int, page int, limit int) ([]QuotesByBot, error) {
 	var result []QuotesByBot
 
 	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {
@@ -303,10 +296,37 @@ func (p *PostgreSQL) QuotesByBotByID(context context.Context, botID int, id int)
 FROM "comments" c
 WHERE from_id = $1
   AND text ILIKE '%id' || $2 || '%'
-ORDER BY date DESC`, botID, id).Each(func(rows *sx.Rows) {
+ORDER BY date DESC OFFSET $3 LIMIT $4`, botID, id, (page-1)*limit, limit).Each(func(rows *sx.Rows) {
 			var q QuotesByBot
 			rows.MustScans(&q)
 			result = append(result, q)
+		})
+	})
+
+	return result, err
+}
+
+func (p *PostgreSQL) QuotesByBotByIDCount(context context.Context, botID int, id int) (int, error) {
+	var total int
+
+	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {
+		tx.MustQueryRowContext(context, `SELECT COUNT(c.*)
+FROM "comments" c
+WHERE from_id = $1
+  AND text ILIKE '%id' || $2 || '%'`, botID, id).MustScan(&total)
+	})
+
+	return total, err
+}
+
+func (p *PostgreSQL) LastTopicsByID(context context.Context, id int, limit int) ([]model.Topic, error) {
+	var result []model.Topic
+
+	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {
+		tx.MustQueryContext(context, `SELECT * FROM topics WHERE created_by = $1 ORDER BY created_at DESC LIMIT $2`, id, limit).Each(func(rows *sx.Rows) {
+			var t model.Topic
+			rows.MustScans(&t)
+			result = append(result, t)
 		})
 	})
 

@@ -163,9 +163,9 @@ type TopicsWithStatsProvider interface {
 }
 
 type TopicsWithStatsCache struct {
-	Topics    []database.TopicsWithStats
-	Total     int
-	CreatedAt time.Time
+	Topics    []database.TopicsWithStats `json:"topics"`
+	Total     int                        `json:"total"`
+	CreatedAt time.Time                  `json:"created_at"`
 }
 
 func TopicsWithStats(provider TopicsWithStatsProvider, cache *cache.Cache) func(w http.ResponseWriter, r *http.Request) {

@@ -126,24 +126,31 @@ func insertProfiles(db *sql.DB, profiles []Profile) error {
 		profilesUnique = append(profilesUnique, profile)
 	}
 
-	return sx.Do(db, func(tx *sx.Tx) {
-		profileQuery := `INSERT INTO profiles VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO UPDATE SET first_name = $2, last_name = $3, screen_name = $4, photo = $5`
+	profileQuery := `INSERT INTO profiles VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO UPDATE SET first_name = $2, last_name = $3, screen_name = $4, photo = $5`
 
-		for _, profile := range profilesUnique {
-			tx.MustExec(profileQuery, profile.ID, profile.FirstName, profile.LastName, profile.ScreenName, profile.Photo)
+	for _, profile := range profilesUnique {
+		_, err := db.Exec(profileQuery, profile.ID, profile.FirstName, profile.LastName, profile.ScreenName, profile.Photo)
+		if err != nil {
+			return fmt.Errorf("insertProfiles: %v", err)
 		}
-	})
+	}
+
+	return nil
 }
 
 func insertTopic(db *sql.DB, topic Topic) error {
-	return sx.Do(db, func(tx *sx.Tx) {
+	err := sx.Do(db, func(tx *sx.Tx) {
 		topicQuery := `INSERT INTO topics VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT (id) DO UPDATE SET title = $2, is_closed = $3, is_fixed = $4, created_at = $5, updated_at = $6, created_by = $7, updated_by = $8`
 		tx.MustExec(topicQuery, topic.ID, topic.Title, topic.IsClosed, topic.IsFixed, topic.CreatedAt, topic.UpdatedAt, topic.CreatedBy.ID, topic.UpdatedBy.ID, false)
 	})
+	if err != nil {
+		return fmt.Errorf("insertTopic: %v", err)
+	}
+	return nil
 }
 
 func insertComments(db *sql.DB, topicID int, comments []Comment) error {
-	return sx.Do(db, func(tx *sx.Tx) {
+	err := sx.Do(db, func(tx *sx.Tx) {
 		commentQuery := `INSERT INTO comments VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT (id) DO UPDATE SET date = $3, text = $4, likes = $5, reply_to_uid = $6, reply_to_cid = $7`
 		attachmentQuery := `INSERT INTO attachments  VALUES($1, $2) ON CONFLICT (comment_id, content) DO UPDATE SET content = $1, comment_id = $2`
 
@@ -155,10 +162,14 @@ func insertComments(db *sql.DB, topicID int, comments []Comment) error {
 			}
 		}
 	})
+	if err != nil {
+		return fmt.Errorf("insertComments: %v", err)
+	}
+	return nil
 }
 
 func insertPoll(db *sql.DB, topicID int, poll Poll) error {
-	return sx.Do(db, func(tx *sx.Tx) {
+	err := sx.Do(db, func(tx *sx.Tx) {
 		pollQuery := `INSERT INTO polls VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (id) DO UPDATE SET question = $2, votes = $3, multiple = $4, end_date = $5, closed = $6`
 		tx.MustExec(pollQuery, poll.ID, poll.Question, poll.Votes, poll.Multiple, poll.EndDate, poll.Closed, topicID)
 
@@ -167,6 +178,10 @@ func insertPoll(db *sql.DB, topicID int, poll Poll) error {
 			tx.MustExec(pollAnswerQuery, answer.ID, answer.Text, answer.Votes, answer.Votes, poll.ID)
 		}
 	})
+	if err != nil {
+		return fmt.Errorf("insertPoll: %v", err)
+	}
+	return nil
 }
 
 func work(db *sql.DB, groupID int, workerID int, client *vkapi.VKClient) func(job updater.TopicUpdateJob) error {
@@ -221,6 +236,12 @@ func work(db *sql.DB, groupID int, workerID int, client *vkapi.VKClient) func(jo
 			}
 
 			insertedComments += len(comments)
+			if len(comments) == 0 {
+				// NOTE(Pedro): Empty topic, there is nothing we can do
+				// example https://vk.com/topic-73721457_41344782
+				break
+			}
+
 			startComment = comments[len(comments)-1].ID
 
 			if insertedComments >= total {
