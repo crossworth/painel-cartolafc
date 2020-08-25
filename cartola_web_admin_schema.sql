@@ -5,7 +5,7 @@
 -- Dumped from database version 11.8 (Debian 11.8-1.pgdg100+1)
 -- Dumped by pg_dump version 12.3
 
--- Started on 2020-08-21 21:52:32
+-- Started on 2020-08-25 13:06:49
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -27,7 +27,7 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm WITH SCHEMA public;
 
 
 --
--- TOC entry 3067 (class 0 OID 0)
+-- TOC entry 3066 (class 0 OID 0)
 -- Dependencies: 2
 -- Name: EXTENSION pg_trgm; Type: COMMENT; Schema: -; Owner: 
 --
@@ -44,7 +44,7 @@ CREATE EXTENSION IF NOT EXISTS unaccent WITH SCHEMA public;
 
 
 --
--- TOC entry 3068 (class 0 OID 0)
+-- TOC entry 3067 (class 0 OID 0)
 -- Dependencies: 3
 -- Name: EXTENSION unaccent; Type: COMMENT; Schema: -; Owner: 
 --
@@ -53,7 +53,7 @@ COMMENT ON EXTENSION unaccent IS 'text search dictionary that removes accents';
 
 
 --
--- TOC entry 230 (class 1255 OID 136277)
+-- TOC entry 229 (class 1255 OID 136277)
 -- Name: f_unaccent(text); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -67,7 +67,7 @@ $_$;
 ALTER FUNCTION public.f_unaccent(text) OWNER TO postgres;
 
 --
--- TOC entry 247 (class 1255 OID 152576)
+-- TOC entry 245 (class 1255 OID 152576)
 -- Name: insert_full_text_search(); Type: FUNCTION; Schema: public; Owner: cartola
 --
 
@@ -105,7 +105,7 @@ $$;
 ALTER FUNCTION public.insert_full_text_search_comment() OWNER TO cartola;
 
 --
--- TOC entry 231 (class 1255 OID 19500)
+-- TOC entry 261 (class 1255 OID 19500)
 -- Name: insert_profile(); Type: FUNCTION; Schema: public; Owner: cartola
 --
 
@@ -126,7 +126,7 @@ $$;
 ALTER FUNCTION public.insert_profile() OWNER TO cartola;
 
 --
--- TOC entry 262 (class 1255 OID 193837)
+-- TOC entry 260 (class 1255 OID 193837)
 -- Name: noquote(text); Type: FUNCTION; Schema: public; Owner: cartola
 --
 
@@ -142,7 +142,7 @@ $$;
 ALTER FUNCTION public.noquote(txt text) OWNER TO cartola;
 
 --
--- TOC entry 248 (class 1255 OID 152733)
+-- TOC entry 246 (class 1255 OID 152733)
 -- Name: update_full_text_search(); Type: FUNCTION; Schema: public; Owner: cartola
 --
 
@@ -176,7 +176,7 @@ CREATE FUNCTION public.update_full_text_search_comment() RETURNS trigger
     AS $$
 BEGIN
     UPDATE full_text_search_comment SET
-        tsv = setweight(to_tsvector(noquote(NEW.text), 'A')),
+        tsv = setweight(to_tsvector(noquote(NEW.text)), 'A'),
         date = NEW.date
     WHERE topic_id = NEW.topic_id AND comment_id = NEW.id;
     RETURN NEW;
@@ -187,7 +187,7 @@ $$;
 ALTER FUNCTION public.update_full_text_search_comment() OWNER TO cartola;
 
 --
--- TOC entry 220 (class 1255 OID 19502)
+-- TOC entry 262 (class 1255 OID 19502)
 -- Name: update_profile(); Type: FUNCTION; Schema: public; Owner: cartola
 --
 
@@ -375,9 +375,8 @@ CREATE TABLE public.topic_update_job (
     priority integer DEFAULT 10 NOT NULL,
     run_after timestamp without time zone NOT NULL,
     retry_waits text[] NOT NULL,
-    ran_at timestamp without time zone,
-    error text DEFAULT ''::text NOT NULL,
-    locked boolean DEFAULT false
+    ran_at timestamp without time zone NOT NULL,
+    error text DEFAULT ''::text NOT NULL
 );
 
 
@@ -400,7 +399,7 @@ CREATE SEQUENCE public.topic_update_job_id_seq
 ALTER TABLE public.topic_update_job_id_seq OWNER TO cartola;
 
 --
--- TOC entry 3069 (class 0 OID 0)
+-- TOC entry 3068 (class 0 OID 0)
 -- Dependencies: 206
 -- Name: topic_update_job_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: cartola
 --
@@ -437,7 +436,7 @@ ALTER TABLE ONLY public.topic_update_job ALTER COLUMN id SET DEFAULT nextval('pu
 
 
 --
--- TOC entry 2901 (class 2606 OID 19464)
+-- TOC entry 2900 (class 2606 OID 19464)
 -- Name: comments PK_comments; Type: CONSTRAINT; Schema: public; Owner: cartola
 --
 
@@ -446,7 +445,7 @@ ALTER TABLE ONLY public.comments
 
 
 --
--- TOC entry 2911 (class 2606 OID 19466)
+-- TOC entry 2910 (class 2606 OID 19466)
 -- Name: polls PK_poll; Type: CONSTRAINT; Schema: public; Owner: cartola
 --
 
@@ -455,7 +454,7 @@ ALTER TABLE ONLY public.polls
 
 
 --
--- TOC entry 2908 (class 2606 OID 19468)
+-- TOC entry 2907 (class 2606 OID 19468)
 -- Name: poll_answers PK_poll_answers; Type: CONSTRAINT; Schema: public; Owner: cartola
 --
 
@@ -464,7 +463,7 @@ ALTER TABLE ONLY public.poll_answers
 
 
 --
--- TOC entry 2914 (class 2606 OID 19470)
+-- TOC entry 2913 (class 2606 OID 19470)
 -- Name: profiles PK_profiles; Type: CONSTRAINT; Schema: public; Owner: cartola
 --
 
@@ -473,7 +472,7 @@ ALTER TABLE ONLY public.profiles
 
 
 --
--- TOC entry 2917 (class 2606 OID 19472)
+-- TOC entry 2916 (class 2606 OID 19472)
 -- Name: topics PK_topics; Type: CONSTRAINT; Schema: public; Owner: cartola
 --
 
@@ -482,7 +481,7 @@ ALTER TABLE ONLY public.topics
 
 
 --
--- TOC entry 2899 (class 2606 OID 19474)
+-- TOC entry 2898 (class 2606 OID 19474)
 -- Name: attachments attachments_pkey; Type: CONSTRAINT; Schema: public; Owner: cartola
 --
 
@@ -491,7 +490,7 @@ ALTER TABLE ONLY public.attachments
 
 
 --
--- TOC entry 2923 (class 2606 OID 19494)
+-- TOC entry 2922 (class 2606 OID 19494)
 -- Name: profile_names profile_names_pk; Type: CONSTRAINT; Schema: public; Owner: cartola
 --
 
@@ -500,7 +499,7 @@ ALTER TABLE ONLY public.profile_names
 
 
 --
--- TOC entry 2926 (class 2606 OID 137847)
+-- TOC entry 2925 (class 2606 OID 137847)
 -- Name: topic_update_job topic_update_job_pkey; Type: CONSTRAINT; Schema: public; Owner: cartola
 --
 
@@ -509,7 +508,7 @@ ALTER TABLE ONLY public.topic_update_job
 
 
 --
--- TOC entry 2924 (class 1259 OID 137832)
+-- TOC entry 2923 (class 1259 OID 137832)
 -- Name: administrators_id_idx; Type: INDEX; Schema: public; Owner: cartola
 --
 
@@ -517,7 +516,7 @@ CREATE UNIQUE INDEX administrators_id_idx ON public.administrators USING btree (
 
 
 --
--- TOC entry 2902 (class 1259 OID 106341)
+-- TOC entry 2901 (class 1259 OID 106341)
 -- Name: comments_date_idx; Type: INDEX; Schema: public; Owner: cartola
 --
 
@@ -525,7 +524,7 @@ CREATE INDEX comments_date_idx ON public.comments USING btree (date);
 
 
 --
--- TOC entry 2903 (class 1259 OID 56784)
+-- TOC entry 2902 (class 1259 OID 56784)
 -- Name: comments_from_id_idx; Type: INDEX; Schema: public; Owner: cartola
 --
 
@@ -533,7 +532,7 @@ CREATE INDEX comments_from_id_idx ON public.comments USING btree (from_id, date)
 
 
 --
--- TOC entry 2904 (class 1259 OID 106340)
+-- TOC entry 2903 (class 1259 OID 106340)
 -- Name: comments_likes_idx; Type: INDEX; Schema: public; Owner: cartola
 --
 
@@ -541,7 +540,7 @@ CREATE INDEX comments_likes_idx ON public.comments USING btree (likes, from_id);
 
 
 --
--- TOC entry 2905 (class 1259 OID 106337)
+-- TOC entry 2904 (class 1259 OID 106337)
 -- Name: comments_topic_id_idx; Type: INDEX; Schema: public; Owner: cartola
 --
 
@@ -549,7 +548,7 @@ CREATE INDEX comments_topic_id_idx ON public.comments USING btree (topic_id);
 
 
 --
--- TOC entry 2932 (class 1259 OID 137871)
+-- TOC entry 2931 (class 1259 OID 137871)
 -- Name: full_text_search_comment_date_idx; Type: INDEX; Schema: public; Owner: cartola
 --
 
@@ -557,7 +556,7 @@ CREATE INDEX full_text_search_comment_date_idx ON public.full_text_search_commen
 
 
 --
--- TOC entry 2933 (class 1259 OID 137872)
+-- TOC entry 2932 (class 1259 OID 137872)
 -- Name: full_text_search_comment_topic_id_idx; Type: INDEX; Schema: public; Owner: cartola
 --
 
@@ -565,7 +564,7 @@ CREATE UNIQUE INDEX full_text_search_comment_topic_id_idx ON public.full_text_se
 
 
 --
--- TOC entry 2929 (class 1259 OID 137862)
+-- TOC entry 2928 (class 1259 OID 137862)
 -- Name: full_text_search_topic_date_idx; Type: INDEX; Schema: public; Owner: cartola
 --
 
@@ -573,7 +572,7 @@ CREATE INDEX full_text_search_topic_date_idx ON public.full_text_search_topic US
 
 
 --
--- TOC entry 2930 (class 1259 OID 137863)
+-- TOC entry 2929 (class 1259 OID 137863)
 -- Name: full_text_search_topic_topic_id_idx; Type: INDEX; Schema: public; Owner: cartola
 --
 
@@ -581,7 +580,7 @@ CREATE UNIQUE INDEX full_text_search_topic_topic_id_idx ON public.full_text_sear
 
 
 --
--- TOC entry 2934 (class 1259 OID 137873)
+-- TOC entry 2933 (class 1259 OID 137873)
 -- Name: ids_full_text_c; Type: INDEX; Schema: public; Owner: cartola
 --
 
@@ -589,7 +588,7 @@ CREATE INDEX ids_full_text_c ON public.full_text_search_comment USING gin (tsv);
 
 
 --
--- TOC entry 2931 (class 1259 OID 137864)
+-- TOC entry 2930 (class 1259 OID 137864)
 -- Name: ids_full_text_t; Type: INDEX; Schema: public; Owner: cartola
 --
 
@@ -597,7 +596,7 @@ CREATE INDEX ids_full_text_t ON public.full_text_search_topic USING gin (tsv);
 
 
 --
--- TOC entry 2909 (class 1259 OID 106344)
+-- TOC entry 2908 (class 1259 OID 106344)
 -- Name: poll_answers_poll_id_idx; Type: INDEX; Schema: public; Owner: cartola
 --
 
@@ -605,7 +604,7 @@ CREATE INDEX poll_answers_poll_id_idx ON public.poll_answers USING btree (poll_i
 
 
 --
--- TOC entry 2912 (class 1259 OID 106343)
+-- TOC entry 2911 (class 1259 OID 106343)
 -- Name: polls_topic_id_idx; Type: INDEX; Schema: public; Owner: cartola
 --
 
@@ -613,7 +612,7 @@ CREATE INDEX polls_topic_id_idx ON public.polls USING btree (topic_id);
 
 
 --
--- TOC entry 2915 (class 1259 OID 106342)
+-- TOC entry 2914 (class 1259 OID 106342)
 -- Name: profiles_id_idx; Type: INDEX; Schema: public; Owner: cartola
 --
 
@@ -621,7 +620,7 @@ CREATE INDEX profiles_id_idx ON public.profiles USING btree (id);
 
 
 --
--- TOC entry 2928 (class 1259 OID 137855)
+-- TOC entry 2927 (class 1259 OID 137855)
 -- Name: settings_name_idx; Type: INDEX; Schema: public; Owner: cartola
 --
 
@@ -629,7 +628,7 @@ CREATE UNIQUE INDEX settings_name_idx ON public.settings USING btree (name);
 
 
 --
--- TOC entry 2906 (class 1259 OID 193850)
+-- TOC entry 2905 (class 1259 OID 193850)
 -- Name: text_trgm_gin; Type: INDEX; Schema: public; Owner: cartola
 --
 
@@ -637,7 +636,7 @@ CREATE INDEX text_trgm_gin ON public.comments USING gin (public.noquote(text) pu
 
 
 --
--- TOC entry 2918 (class 1259 OID 193859)
+-- TOC entry 2917 (class 1259 OID 193859)
 -- Name: title_trgm_gin; Type: INDEX; Schema: public; Owner: cartola
 --
 
@@ -645,15 +644,15 @@ CREATE INDEX title_trgm_gin ON public.topics USING gin (title public.gin_trgm_op
 
 
 --
--- TOC entry 2927 (class 1259 OID 137848)
+-- TOC entry 2926 (class 1259 OID 197932)
 -- Name: topic_update_job_topic_id_idx; Type: INDEX; Schema: public; Owner: cartola
 --
 
-CREATE UNIQUE INDEX topic_update_job_topic_id_idx ON public.topic_update_job USING btree (topic_id, run_after);
+CREATE UNIQUE INDEX topic_update_job_topic_id_idx ON public.topic_update_job USING btree (topic_id, ran_at);
 
 
 --
--- TOC entry 2919 (class 1259 OID 56557)
+-- TOC entry 2918 (class 1259 OID 56557)
 -- Name: topics_created_at_idx; Type: INDEX; Schema: public; Owner: cartola
 --
 
@@ -661,7 +660,7 @@ CREATE INDEX topics_created_at_idx ON public.topics USING btree (created_at);
 
 
 --
--- TOC entry 2920 (class 1259 OID 56556)
+-- TOC entry 2919 (class 1259 OID 56556)
 -- Name: topics_created_by_idx; Type: INDEX; Schema: public; Owner: cartola
 --
 
@@ -669,7 +668,7 @@ CREATE INDEX topics_created_by_idx ON public.topics USING btree (created_by);
 
 
 --
--- TOC entry 2921 (class 1259 OID 133831)
+-- TOC entry 2920 (class 1259 OID 133831)
 -- Name: topics_updated_at_idx; Type: INDEX; Schema: public; Owner: cartola
 --
 
@@ -677,7 +676,7 @@ CREATE INDEX topics_updated_at_idx ON public.topics USING btree (updated_at);
 
 
 --
--- TOC entry 2935 (class 2620 OID 159327)
+-- TOC entry 2934 (class 2620 OID 198056)
 -- Name: comments insert_comment_trigger; Type: TRIGGER; Schema: public; Owner: cartola
 --
 
@@ -685,7 +684,7 @@ CREATE TRIGGER insert_comment_trigger AFTER INSERT ON public.comments FOR EACH R
 
 
 --
--- TOC entry 2937 (class 2620 OID 134083)
+-- TOC entry 2936 (class 2620 OID 196335)
 -- Name: profiles insert_profile_trigger; Type: TRIGGER; Schema: public; Owner: cartola
 --
 
@@ -693,7 +692,7 @@ CREATE TRIGGER insert_profile_trigger AFTER INSERT ON public.profiles FOR EACH R
 
 
 --
--- TOC entry 2939 (class 2620 OID 152654)
+-- TOC entry 2938 (class 2620 OID 152654)
 -- Name: topics insert_topic_trigger; Type: TRIGGER; Schema: public; Owner: cartola
 --
 
@@ -701,7 +700,7 @@ CREATE TRIGGER insert_topic_trigger AFTER INSERT ON public.topics FOR EACH ROW E
 
 
 --
--- TOC entry 2936 (class 2620 OID 159330)
+-- TOC entry 2935 (class 2620 OID 198060)
 -- Name: comments update_comment_trigger; Type: TRIGGER; Schema: public; Owner: cartola
 --
 
@@ -709,7 +708,7 @@ CREATE TRIGGER update_comment_trigger AFTER UPDATE ON public.comments FOR EACH R
 
 
 --
--- TOC entry 2938 (class 2620 OID 134084)
+-- TOC entry 2937 (class 2620 OID 196336)
 -- Name: profiles update_profile_trigger; Type: TRIGGER; Schema: public; Owner: cartola
 --
 
@@ -717,14 +716,14 @@ CREATE TRIGGER update_profile_trigger AFTER UPDATE ON public.profiles FOR EACH R
 
 
 --
--- TOC entry 2940 (class 2620 OID 152785)
+-- TOC entry 2939 (class 2620 OID 152785)
 -- Name: topics update_topic_trigger; Type: TRIGGER; Schema: public; Owner: cartola
 --
 
 CREATE TRIGGER update_topic_trigger AFTER UPDATE ON public.topics FOR EACH ROW EXECUTE PROCEDURE public.update_full_text_search();
 
 
--- Completed on 2020-08-21 21:53:10
+-- Completed on 2020-08-25 13:07:27
 
 --
 -- PostgreSQL database dump complete
