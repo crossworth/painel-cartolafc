@@ -26,7 +26,6 @@ import TopicList from './TopicList'
 import TopicRankingList from './TopicRankingList'
 import Search from './Search'
 import Settings from './Settings'
-import { superAdminOnly } from '../components/SuperAdminOnly'
 import { adminOnly } from '../components/AdminOnly'
 import ChangeLog from './ChangeLog'
 import MyProfile from './MyProfile'
@@ -79,7 +78,7 @@ export default () => {
                 </Link>
               </Menu.Item>)}
 
-             <Menu.Item key="/topicos/ranking">
+              <Menu.Item key="/topicos/ranking">
                 <Link to="/topicos/ranking">
                   <OrderedListOutlined/>
                   <span>Ranking Tópicos</span>
@@ -109,7 +108,7 @@ export default () => {
 
               {adminOnly(<Menu.Item key="/configuracoes">
                 <Link to="/configuracoes">
-                  <LogoutOutlined/>
+                  <SettingOutlined/>
                   <span>Configurações</span>
                 </Link>
               </Menu.Item>)}
@@ -123,7 +122,7 @@ export default () => {
 
               <Menu.Item key="/logout">
                 <a href="/logout">
-                  <SettingOutlined/>
+                  <LogoutOutlined/>
                   <span>Sair</span>
                 </a>
               </Menu.Item>

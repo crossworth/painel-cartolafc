@@ -179,11 +179,7 @@ func work(db *sql.DB, groupID int, workerID int, client *vkapi.VKClient) func(jo
 			return err
 		}
 
-		err = insertProfiles(db, []Profile{topic.CreatedBy, topic.UpdatedBy})
-		if err != nil {
-			log.Printf("Worker %d: erro ao inserir profiles, job-%d (t%d), %v\n", workerID, job.ID, job.TopicID, err)
-			return err
-		}
+		profilesTopic := []Profile{topic.CreatedBy, topic.UpdatedBy}
 
 		err = insertTopic(db, topic)
 		if err != nil {
@@ -204,12 +200,6 @@ func work(db *sql.DB, groupID int, workerID int, client *vkapi.VKClient) func(jo
 				return err
 			}
 
-			err = insertProfiles(db, profiles)
-			if err != nil {
-				log.Printf("Worker %d: erro ao inserir profiles, job-%d (t%d), %v\n", workerID, job.ID, job.TopicID, err)
-				return err
-			}
-
 			if poll.ID != 0 {
 				err = insertPoll(db, job.TopicID, poll)
 				if err != nil {
@@ -221,6 +211,12 @@ func work(db *sql.DB, groupID int, workerID int, client *vkapi.VKClient) func(jo
 			err = insertComments(db, job.TopicID, comments)
 			if err != nil {
 				log.Printf("Worker %d: erro ao inserir comentários, job-%d (t%d), %v\n", workerID, job.ID, job.TopicID, err)
+				return err
+			}
+
+			err = insertProfiles(db, append(profiles, profilesTopic...))
+			if err != nil {
+				log.Printf("Worker %d: erro ao inserir profiles, job-%d (t%d), %v\n", workerID, job.ID, job.TopicID, err)
 				return err
 			}
 
