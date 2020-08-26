@@ -30,7 +30,6 @@ func New() *Server {
 	server.Handler.HandleFunc("/*", func(writer http.ResponseWriter, request *http.Request) {
 		path := chi.URLParam(request, "*")
 
-		// fixme: check if this make sense
 		if _, err := localFs.Open(path); os.IsNotExist(err) || strings.HasSuffix(request.URL.Path, "/") {
 			request.URL.Path = "/"
 		}

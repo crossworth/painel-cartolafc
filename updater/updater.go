@@ -171,3 +171,8 @@ func (t *TopicUpdater) EnqueueTopicID(topicID int) error {
 func (t *TopicUpdater) EnqueueTopicIDWithPriority(topicID int, priority int) error {
 	return enqueueTopicID(t.db, topicID, priority)
 }
+
+func (t *TopicUpdater) EnqueueTopicSliceIDWithPriority(ids []int, priority int) error {
+	return enqueueTopicSliceID(t.db, ids, priority)
+}
+

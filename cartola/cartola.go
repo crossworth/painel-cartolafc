@@ -173,12 +173,15 @@ func (c *Cartola) enqueueAllTopicsIDs() {
 				continue
 			}
 
+			var ids []int
 			for _, topic := range topics.Topics {
-				_ = c.topicUpdater.EnqueueTopicIDWithPriority(topic.ID, 15)
+				ids = append(ids, topic.ID)
 			}
 
+			_ = c.topicUpdater.EnqueueTopicSliceIDWithPriority(ids, 15)
 			total += len(topics.Topics)
 
+			logger.Log.Info().Msgf("adicionado %d tópicos a fila", total)
 			if total >= topics.Count {
 				break
 			}

@@ -47,6 +47,15 @@ func enqueueTopicID(db *sql.DB, topicID int, priority int) error {
 	})
 }
 
+func enqueueTopicSliceID(db *sql.DB, ids []int, priority int) error {
+	return enqueueTopicSliceJob(db, ids, priority, time.Now(), []time.Duration{
+		time.Second * 60,
+		time.Second * 60 * 10,
+		time.Second * 60 * 30,
+		time.Second * 60 * 60,
+	})
+}
+
 func enqueueTopicJob(db *sql.DB, topicID int, priority int, runAfter time.Time, durations Durations) error {
 	job := TopicUpdateJob{
 		TopicID:    topicID,
@@ -67,6 +76,39 @@ VALUES ($1,
         $4,
         $5)
 ON CONFLICT DO NOTHING`, job.TopicID, job.Priority, job.RunAfter, job.RetryWaits, time.Time{})
+	})
+
+	return err
+}
+
+func enqueueTopicSliceJob(db *sql.DB, ids []int, priority int, runAfter time.Time, durations Durations) error {
+	var jobs []TopicUpdateJob
+
+	for _, id := range ids {
+		job := TopicUpdateJob{
+			TopicID:    id,
+			Priority:   priority,
+			RunAfter:   runAfter,
+			RetryWaits: durations,
+		}
+
+		jobs = append(jobs, job)
+	}
+
+	err := sx.Do(db, func(tx *sx.Tx) {
+		for _, job := range jobs {
+			tx.MustExec(`INSERT INTO topic_update_job (topic_id,
+                              priority,
+                              run_after,
+                              retry_waits,
+                              ran_at)
+VALUES ($1,
+        $2,
+        $3,
+        $4,
+        $5)
+ON CONFLICT DO NOTHING`, job.TopicID, job.Priority, job.RunAfter, job.RetryWaits, time.Time{})
+		}
 	})
 
 	return err
