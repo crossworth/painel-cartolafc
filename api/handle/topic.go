@@ -193,12 +193,12 @@ func TopicsWithStats(provider TopicsWithStatsProvider, cache *cache.Cache) func(
 
 		cacheKey := fmt.Sprintf("topics_with_stats_%s_%s_%d_%d_%s_%t_%t", orderBy, orderDir.Stringer(), page, limit, period.Stringer(), showOlderTopics, excludePseudoFixed)
 		topicsCache := cache.Get(cacheKey, func() interface{} {
-			topics, err := provider.TopicWithStats(r.Context(), orderBy, orderDir, period, showOlderTopics, excludePseudoFixed, page, limit)
+			topics, err := provider.TopicWithStats(context.TODO(), orderBy, orderDir, period, showOlderTopics, excludePseudoFixed, page, limit)
 			if err != nil {
 				return err
 			}
 
-			total, err := provider.TopicWithStatsCount(r.Context(), period, showOlderTopics, excludePseudoFixed)
+			total, err := provider.TopicWithStatsCount(context.TODO(), period, showOlderTopics, excludePseudoFixed)
 			if err != nil {
 				return err
 			}
