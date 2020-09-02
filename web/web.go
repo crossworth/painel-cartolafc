@@ -33,8 +33,9 @@ func New() *Server {
 		file, err := localFs.Open(path)
 		if os.IsNotExist(err) || strings.HasSuffix(request.URL.Path, "/") {
 			request.URL.Path = "/"
+		} else {
+			_ = file.Close()
 		}
-		file.Close()
 
 		fs.ServeHTTP(writer, request)
 	})
