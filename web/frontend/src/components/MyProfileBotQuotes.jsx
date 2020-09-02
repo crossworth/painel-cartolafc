@@ -20,17 +20,6 @@ export default props => {
     }).finally(() => {
       setLoading(false)
     })
-  }, [])
-
-  useEffect(() => {
-    setLoading(true)
-    getMyProfileBotQuotes(quotesByBotPage, quotesByBotLimit).then(result => {
-      setQuotesByBot(result)
-    }).catch(err => {
-
-    }).finally(() => {
-      setLoading(false)
-    })
   }, [quotesByBotPage])
 
   return <Spin tip="Carregando..." spinning={loading}>
