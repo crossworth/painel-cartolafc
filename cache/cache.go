@@ -21,7 +21,7 @@ type Cache struct {
 
 func NewCache() *Cache {
 	c := &Cache{
-		defaultExpirationTime: 1 * time.Hour,
+		defaultExpirationTime: 5 * time.Hour,
 		building:              make(map[string]bool),
 	}
 	c.cache = gocache.New(c.defaultExpirationTime, 10*time.Minute)

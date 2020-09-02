@@ -411,3 +411,49 @@ ORDER BY likes DESC LIMIT $2`, id, limit).Each(func(rows *sx.Rows) {
 
 	return result, err
 }
+
+func (p *PostgreSQL) TopicsNumberByIDGraph(context context.Context, id int) ([]GraphValue, error) {
+	var results []GraphValue
+
+	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {
+		tx.MustQueryContext(context, `SELECT TO_DATE(d.date, 'YYYY/MM/DD'),
+       count(t.*)
+FROM (
+         SELECT TO_CHAR(DATE_TRUNC('day', (current_date - offs)), 'YYYY-MM-DD') AS date
+         FROM generate_series(0, 365, 1) AS offs) d
+         LEFT OUTER JOIN topics t ON
+            d.date = TO_CHAR(DATE_TRUNC('day', TO_TIMESTAMP(t.created_at)), 'YYYY-MM-DD') AND
+            t.created_by = $1
+GROUP BY d.date
+ORDER BY d.date;`, id).Each(func(rows *sx.Rows) {
+			var t GraphValue
+			rows.MustScans(&t)
+			results = append(results, t)
+		})
+	})
+
+	return results, err
+}
+
+func (p *PostgreSQL) CommentsNumberByIDGraph(context context.Context, id int) ([]GraphValue, error) {
+	var results []GraphValue
+
+	err := sx.DoContext(context, p.db, func(tx *sx.Tx) {
+		tx.MustQueryContext(context, `SELECT TO_DATE(d.date, 'YYYY/MM/DD'),
+       count(c.*)
+FROM (
+         SELECT TO_CHAR(DATE_TRUNC('day', (current_date - offs)), 'YYYY-MM-DD') AS date
+         FROM generate_series(0, 365, 1) AS offs) d
+         LEFT OUTER JOIN comments c ON
+            d.date = TO_CHAR(DATE_TRUNC('day', TO_TIMESTAMP(c.date)), 'YYYY-MM-DD') AND
+            c.from_id = $1
+GROUP BY d.date
+ORDER BY d.date;`, id).Each(func(rows *sx.Rows) {
+			var t GraphValue
+			rows.MustScans(&t)
+			results = append(results, t)
+		})
+	})
+
+	return results, err
+}

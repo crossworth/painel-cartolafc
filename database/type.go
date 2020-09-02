@@ -2,6 +2,7 @@ package database
 
 import (
 	"strings"
+	"time"
 
 	"github.com/crossworth/cartola-web-admin/model"
 )
@@ -138,3 +139,9 @@ type QuotesByBot struct {
 	TopicTitle  string `json:"topic_title"`
 	DateComment int    `json:"date_comment"`
 }
+
+type GraphValue struct {
+	Day   time.Time `json:"day"`
+	Value int       `json:"value"`
+}
+

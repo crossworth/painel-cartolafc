@@ -20,8 +20,8 @@ const columns = [
   },
   {
     title: 'Soma likes',
-    dataIndex: 'likes',
-    key: 'likes',
+    dataIndex: 'likes_count',
+    key: 'likes_count',
   },
   {
     title: 'Data',

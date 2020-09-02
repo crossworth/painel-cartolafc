@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/carlescere/scheduler"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/cors"
@@ -111,8 +112,11 @@ func NewCartola(
 	})
 
 	c.router.Mount("/", cartola)
-	// _, _ = scheduler.Every(1).Day().NotImmediately().Run(c.enqueueAllTopicsIDs)
-	// c.enqueueAllTopicsIDs() // fixme: remove this
+
+	// NOTE(Pedro): Every 10 days this will run and enqueue all the
+	// community topics to update the likes (in a global way)
+	// and possible get missed topics
+	_, _ = scheduler.Every(10).Day().Run(c.enqueueAllTopicsIDs)
 
 	return c
 }

@@ -137,6 +137,7 @@ const Search = (props) => {
   const setSearch = term => {
     let pag = Object.assign({}, pagination, {
       term: term,
+      current: 1,
     })
     setPagination(pag)
   }
@@ -144,6 +145,7 @@ const Search = (props) => {
   const setSearchType = searchType => {
     let pag = Object.assign({}, pagination, {
       searchType: searchType,
+      current: 1,
     })
     setPagination(pag)
   }
@@ -151,6 +153,7 @@ const Search = (props) => {
   const setFullText = fullText => {
     let pag = Object.assign({}, pagination, {
       fullText: fullText.toString(),
+      current: 1,
     })
     setPagination(pag)
   }

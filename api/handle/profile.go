@@ -452,6 +452,81 @@ func LastTopics(provider LastTopicsProvider) func(w http.ResponseWriter, r *http
 	}
 }
 
+type GraphValueCache struct {
+	Result    []database.GraphValue `json:"result"`
+	CreatedAt time.Time             `json:"created_at"`
+}
+
+type TopicsGraphProvider interface {
+	TopicsNumberByIDGraph(context context.Context, id int) ([]database.GraphValue, error)
+}
+
+func TopicsGraph(provider TopicsGraphProvider, cache *cache.Cache) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vkID, found := model.VKIDFromRequest(r)
+		if !found || vkID == 0 {
+			httputil.SendError(w, fmt.Errorf("usuário não logado!?"))
+			return
+		}
+
+		cacheKey := fmt.Sprintf("profile_topics_graph_%d", vkID)
+		topicsGraphCache := cache.Get(cacheKey, func() interface{} {
+			topicsGraph, err := provider.TopicsNumberByIDGraph(r.Context(), vkID)
+			if err != nil {
+				return err
+			}
+
+			return GraphValueCache{
+				Result:    topicsGraph,
+				CreatedAt: time.Now(),
+			}
+		})
+
+		data, castOK := topicsGraphCache.(GraphValueCache)
+		if !castOK {
+			httputil.SendDatabaseError(w, topicsGraphCache.(error))
+			return
+		}
+
+		httputil.SendJSON(w, data, 200)
+	}
+}
+
+type CommentsGraphProvider interface {
+	CommentsNumberByIDGraph(context context.Context, id int) ([]database.GraphValue, error)
+}
+
+func CommentsGraph(provider CommentsGraphProvider, cache *cache.Cache) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vkID, found := model.VKIDFromRequest(r)
+		if !found || vkID == 0 {
+			httputil.SendError(w, fmt.Errorf("usuário não logado!?"))
+			return
+		}
+
+		cacheKey := fmt.Sprintf("profile_comments_graph_%d", vkID)
+		commentsGraphCache := cache.Get(cacheKey, func() interface{} {
+			topicsGraph, err := provider.CommentsNumberByIDGraph(r.Context(), vkID)
+			if err != nil {
+				return err
+			}
+
+			return GraphValueCache{
+				Result:    topicsGraph,
+				CreatedAt: time.Now(),
+			}
+		})
+
+		data, castOK := commentsGraphCache.(GraphValueCache)
+		if !castOK {
+			httputil.SendDatabaseError(w, commentsGraphCache.(error))
+			return
+		}
+
+		httputil.SendJSON(w, data, 200)
+	}
+}
+
 type ProfileNameProvider interface {
 	SearchProfileName(context context.Context, text string) ([]model.Profile, error)
 }

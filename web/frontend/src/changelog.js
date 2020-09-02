@@ -99,6 +99,17 @@ const changeLog = `
 - Adicionado dark theme
 - Adicionado paginação citações do bot
 - Adicionado últimos tópicos
+
+2 Setembro
+- Alterado cache padrão novamente para 5 horas
+- Alterado tempo de session para 7 dias
+- Ativado enfileiramento global de tópicos a cada 10 dias
+- Melhorado pre-load dos temas CSS
+- Melhorado ícones
+- Corrigido problema que em alguns casos ainda era possível procurar por citações
+- Corrigido problema de soma de likes não sendo exibido nas páginas de tópicos de membros dos administradores
+- Adicionado aba de gráficos em Meu Perfil
+- Melhorado performance da página Meu Perfil, carregando dados conforme a aba é selecionada
 `
 
 export {

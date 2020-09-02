@@ -17,5 +17,9 @@
 }
 
 .theme-background {
-    background: #141414;
+    background: #141414 !important;
+}
+
+text {
+    fill: hsla(0,0%,100%,.65) !important;
 }

@@ -5,6 +5,7 @@
   "homepage": "/",
   "dependencies": {
     "@ant-design/icons": "^4.2.1",
+    "@nivo/calendar": "^0.62.0",
     "antd": "^4.4.3",
     "axios": "^0.19.2",
     "babel-plugin-import": "^1.13.0",

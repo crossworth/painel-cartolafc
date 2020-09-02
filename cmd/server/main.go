@@ -91,7 +91,7 @@ func setupSessionStorage() sessions.Store {
 	appURL := util.GetStringFromEnvOrFatalError("APP_VK_URL")
 	sessionSecret := util.GetStringFromEnvOrFatalError("SESSION_SECRET")
 
-	maxAge := 86400 * 1 // 1 day
+	maxAge := 86400 * 7 // 7 days
 	isHttps := strings.HasPrefix(appURL, "https://")
 
 	cookieStore := sessions.NewCookieStore([]byte(sessionSecret))

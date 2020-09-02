@@ -30,9 +30,11 @@ func New() *Server {
 	server.Handler.HandleFunc("/*", func(writer http.ResponseWriter, request *http.Request) {
 		path := chi.URLParam(request, "*")
 
-		if _, err := localFs.Open(path); os.IsNotExist(err) || strings.HasSuffix(request.URL.Path, "/") {
+		file, err := localFs.Open(path)
+		if os.IsNotExist(err) || strings.HasSuffix(request.URL.Path, "/") {
 			request.URL.Path = "/"
 		}
+		file.Close()
 
 		fs.ServeHTTP(writer, request)
 	})

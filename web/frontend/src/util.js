@@ -105,6 +105,21 @@ const normalizeComment = text => {
   return text
 }
 
+const months = [
+  'Jan',
+  'Fev',
+  'Mar',
+  'Abr',
+  'Mai',
+  'Jun',
+  'Jul',
+  'Ago',
+  'Set',
+  'Out',
+  'Nov',
+  'Dez'
+]
+
 export {
   timeStampToDate,
   getBeforeFromURL,
@@ -117,5 +132,6 @@ export {
   setGlobalPageSize,
   getGlobalPageSize,
   normalizeScreenName,
-  normalizeComment
+  normalizeComment,
+  months
 }
