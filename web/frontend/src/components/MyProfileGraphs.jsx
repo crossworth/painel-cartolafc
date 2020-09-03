@@ -3,11 +3,22 @@ import { Col, Divider, Row, Spin } from 'antd'
 import { ResponsiveCalendar } from '@nivo/calendar'
 import { months } from '../util'
 import { getCommentsGraph, getTopicsGraph } from '../api'
+import useWindowDimensions from '../useWindowDimensions'
 
 export default props => {
   const [loading, setLoading] = useState(false)
   const [topicsGraph, setTopicsGraph] = useState([])
   const [commentsGraph, setCommentsGraph] = useState([])
+  const [direction, setDirection] = useState('horizontal')
+  const { width } = useWindowDimensions()
+
+  useEffect(() => {
+    if (width < 600) {
+      setDirection('vertical')
+    } else {
+      setDirection('horizontal')
+    }
+  }, [width])
 
   useEffect(() => {
     setLoading(true)
@@ -67,7 +78,7 @@ export default props => {
   return <Spin tip="Carregando..." spinning={loading}>
     <Divider plain>Tópicos por dia</Divider>
     <Row>
-      <Col md={24} style={{
+      <Col span={24} style={{
         height: '300px',
         maxWidth: '800px',
         margin: '0 auto',
@@ -76,10 +87,11 @@ export default props => {
           data={topicsGraph}
           from={getTopicsGraphFrom()}
           to={getTopicsGraphTo()}
+          direction={direction}
           monthLegend={(year, month) => months[month]}
           emptyColor="#eeeeee"
           colors={['#bbdefb', '#64b5f6', '#1e88e5', '#0d47a1']}
-          margin={{ top: 40, right: 40, bottom: 40, left: 40 }}
+          margin={{ top: 10, right: 10, bottom: 10, left: 10 }}
           yearSpacing={40}
           monthBorderColor="#ffffff"
           dayBorderWidth={2}
@@ -103,7 +115,7 @@ export default props => {
     <Divider plain>Comentários por dia</Divider>
 
     <Row>
-      <Col md={24} style={{
+      <Col span={24} style={{
         height: '300px',
         maxWidth: '800px',
         margin: '0 auto',
@@ -112,10 +124,11 @@ export default props => {
           data={commentsGraph}
           from={getCommentsGraphFrom()}
           to={getCommentsGraphTo()}
+          direction={direction}
           monthLegend={(year, month) => months[month]}
           emptyColor="#eeeeee"
           colors={['#bbdefb', '#64b5f6', '#1e88e5', '#0d47a1']}
-          margin={{ top: 40, right: 40, bottom: 40, left: 40 }}
+          margin={{ top: 10, right: 10, bottom: 10, left: 10 }}
           yearSpacing={40}
           monthBorderColor="#ffffff"
           dayBorderWidth={2}

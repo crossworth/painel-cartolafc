@@ -110,6 +110,8 @@ const changeLog = `
 - Corrigido problema de soma de likes não sendo exibido nas páginas de tópicos de membros dos administradores
 - Adicionado aba de gráficos em Meu Perfil
 - Melhorado performance da página Meu Perfil, carregando dados conforme a aba é selecionada
+- Adicionado usuário nos resultados da pesquisa
+- Ajusta problema que gráfico não era exibido no celular
 `
 
 export {
