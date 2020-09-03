@@ -111,7 +111,7 @@ func (p *PostgreSQL) SearchTopicsILike(context context.Context, term string, pag
        t.id                                                        AS topic_id,
        t.created_at                                                AS date,
        (SELECT COUNT(c.*) FROM comments c WHERE c.topic_id = t.id) AS comments_count,
-	   t.created_by                                                AS from_id,
+	   t.created_by                                                AS from_id
 FROM topics t
 WHERE t.title ILIKE '%' || $1 || '%'
 ORDER BY t.created_at DESC
