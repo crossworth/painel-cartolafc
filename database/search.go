@@ -2,6 +2,8 @@ package database
 
 import (
 	"context"
+	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/travelaudience/go-sx"
@@ -18,12 +20,13 @@ func (p *PostgreSQL) SearchTopics(context context.Context, term string, page int
 func (p *PostgreSQL) SearchTopicsFullText(context context.Context, term string, page int, limit int) ([]Search, error) {
 	var result []Search
 
-	query := `SELECT $1                                                                    as term,
-       ts_headline((select title from topics t where t.id = ft.topic_id), q) as headline,
-       ft.topic_id                                                           as topic_id,
-       ft.date                                                               as date,
-       ts_rank(tsv, q)                                                       as rank,
-       (SELECT COUNT(c.*) FROM comments c WHERE c.topic_id = ft.topic_id)    as comments_count
+	query := `SELECT $1                                                                    AS term,
+       ts_headline((SELECT title FROM topics t WHERE t.id = ft.topic_id), q) AS headline,
+       ft.topic_id                                                           AS topic_id,
+       ft.date                                                               AS date,
+       ts_rank(tsv, q)                                                       AS rank,
+       (SELECT COUNT(c.*) FROM comments c WHERE c.topic_id = ft.topic_id)    AS comments_count,
+       (SELECT created_by FROM topics t WHERE t.id = ft.topic_id)            AS from_id
 FROM full_text_search_topic ft,
      plainto_tsquery($1) q
 WHERE tsv @@ q
@@ -40,23 +43,75 @@ OFFSET $2 LIMIT $3`
 				&search.Date,
 				&search.Rank,
 				&search.CommentsCount,
+				&search.FromID,
 			)
 			search.Type = SearchTypeTopic
 			result = append(result, search)
 		})
 	})
 
-	return result, err
+	return p.populateProfiles(context, result, err)
+}
+
+func (p *PostgreSQL) populateProfiles(context context.Context, input []Search, err error) ([]Search, error) {
+	if err != nil {
+		return input, err
+	}
+
+	if len(input) == 0 {
+		return input, err
+	}
+
+	var ids []string
+
+	for _, s := range input {
+		ids = append(ids, strconv.Itoa(s.FromID))
+	}
+
+	type profileResult struct {
+		ID         int
+		Name       string
+		ScreenName string
+		Photo      string
+	}
+
+	var profiles []profileResult
+	query := fmt.Sprintf(`SELECT p.id, p.first_name, p.screen_name, p.photo FROM profiles p WHERE id in (%s)`, strings.Join(ids, ", "))
+	err = sx.DoContext(context, p.db, func(tx *sx.Tx) {
+		tx.MustQueryContext(context, query).Each(func(r *sx.Rows) {
+			var profile profileResult
+			r.MustScan(
+				&profile.ID,
+				&profile.Name,
+				&profile.ScreenName,
+				&profile.Photo,
+			)
+			profiles = append(profiles, profile)
+		})
+	})
+
+	for i := range input {
+		for _, p := range profiles {
+			if p.ID == input[i].FromID {
+				input[i].FromName = p.Name
+				input[i].FromPhoto = p.Photo
+				input[i].FromScreenName = p.ScreenName
+			}
+		}
+	}
+
+	return input, err
 }
 
 func (p *PostgreSQL) SearchTopicsILike(context context.Context, term string, page int, limit int) ([]Search, error) {
 	var result []Search
 
-	query := `SELECT $1                                                          as term,
-       t.title                                                     as headline,
-       t.id                                                        as topic_id,
-       t.created_at                                                as date,
-       (SELECT COUNT(c.*) FROM comments c WHERE c.topic_id = t.id) as comments_count
+	query := `SELECT $1                                                          AS term,
+       t.title                                                     AS headline,
+       t.id                                                        AS topic_id,
+       t.created_at                                                AS date,
+       (SELECT COUNT(c.*) FROM comments c WHERE c.topic_id = t.id) AS comments_count,
+	   t.created_by                                                AS from_id,
 FROM topics t
 WHERE t.title ILIKE '%' || $1 || '%'
 ORDER BY t.created_at DESC
@@ -70,6 +125,7 @@ OFFSET $2 LIMIT $3`
 				&search.TopicID,
 				&search.Date,
 				&search.CommentsCount,
+				&search.FromID,
 			)
 			search.Type = SearchTypeTopic
 			start := strings.Index(strings.ToLower(search.Headline), strings.ToLower(term))
@@ -79,7 +135,7 @@ OFFSET $2 LIMIT $3`
 		})
 	})
 
-	return result, err
+	return p.populateProfiles(context, result, err)
 }
 
 func (p *PostgreSQL) SearchTopicsCount(context context.Context, term string, fullText bool) (int, error) {
@@ -126,13 +182,14 @@ func (p *PostgreSQL) SearchComments(context context.Context, term string, page i
 func (p *PostgreSQL) SearchCommentsFullText(context context.Context, term string, page int, limit int) ([]Search, error) {
 	var result []Search
 
-	query := `SELECT $1                                                                                as term,
-       ts_headline((SELECT noquote(text) FROM comments c WHERE c.id = fc.comment_id), q) as headline,
-       fc.topic_id                                                                       as topic_id,
-       fc.comment_id                                                                     as comment_id,
-       fc.date                                                                           as date,
-       ts_rank(tsv, q)                                                                   as rank,
-       (SELECT c.likes FROM comments c WHERE c.id = fc.comment_id)                       as likes_count
+	query := `SELECT $1                                                                                AS term,
+       ts_headline((SELECT noquote(c.text) FROM comments c WHERE c.id = fc.comment_id), q) AS headline,
+       fc.topic_id                                                                       AS topic_id,
+       fc.comment_id                                                                     AS comment_id,
+       fc.date                                                                           AS date,
+       ts_rank(tsv, q)                                                                   AS rank,
+       (SELECT c.likes FROM comments c WHERE c.id = fc.comment_id)                       AS likes_count,
+       (SELECT c.from_id FROM comments c WHERE c.id = fc.comment_id)                     AS from_id
 FROM full_text_search_comment fc,
      plainto_tsquery($1) q
 WHERE tsv @@ q
@@ -150,24 +207,26 @@ OFFSET $2 LIMIT $3`
 				&search.Date,
 				&search.Rank,
 				&search.LikesCount,
+				&search.FromID,
 			)
 			search.Type = SearchTypeComment
 			result = append(result, search)
 		})
 	})
 
-	return result, err
+	return p.populateProfiles(context, result, err)
 }
 
 func (p *PostgreSQL) SearchCommentsILike(context context.Context, term string, page int, limit int) ([]Search, error) {
 	var result []Search
 
-	query := `SELECT $1            as term,
-       noquote(text) as headline,
-       c.topic_id    as topic_id,
-       c.id          as comment_id,
-       c.date        as date,
-       c.likes       as likes_count
+	query := `SELECT $1            AS term,
+       noquote(text) AS headline,
+       c.topic_id    AS topic_id,
+       c.id          AS comment_id,
+       c.date        AS date,
+       c.likes       AS likes_count,
+       c.from_id     AS from_id
 FROM comments c
 WHERE noquote(text) ILIKE '%' || $1 || '%'
 ORDER BY date DESC
@@ -183,6 +242,7 @@ OFFSET $2 LIMIT $3`
 				&search.CommentID,
 				&search.Date,
 				&search.LikesCount,
+				&search.FromID,
 			)
 			search.Type = SearchTypeComment
 			start := strings.Index(strings.ToLower(search.Headline), strings.ToLower(term))
@@ -192,7 +252,7 @@ OFFSET $2 LIMIT $3`
 		})
 	})
 
-	return result, err
+	return p.populateProfiles(context, result, err)
 }
 
 func (p *PostgreSQL) SearchCommentsCount(context context.Context, term string, fullText bool) (int, error) {

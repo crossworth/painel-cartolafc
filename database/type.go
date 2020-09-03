@@ -115,15 +115,19 @@ func (s SearchType) Stringer() string {
 }
 
 type Search struct {
-	Term          string     `json:"term"`
-	Headline      string     `json:"headline"`
-	Type          SearchType `json:"type"`
-	Date          int        `json:"date"`
-	TopicID       int        `json:"topic_id"`
-	CommentID     int        `json:"comment_id"`
-	CommentsCount int        `json:"comments_count"`
-	LikesCount    int        `json:"likes_count"`
-	Rank          float32    `json:"-"`
+	Term           string     `json:"term"`
+	Headline       string     `json:"headline"`
+	Type           SearchType `json:"type"`
+	Date           int        `json:"date"`
+	TopicID        int        `json:"topic_id"`
+	CommentID      int        `json:"comment_id"`
+	CommentsCount  int        `json:"comments_count"`
+	FromID         int        `json:"from_id"`
+	FromName       string     `json:"from_name"`
+	FromScreenName string     `json:"from_screen_name"`
+	FromPhoto      string     `json:"from_photo"`
+	LikesCount     int        `json:"likes_count"`
+	Rank           float32    `json:"-"`
 }
 
 type TopicsWithStats struct {
@@ -144,4 +148,3 @@ type GraphValue struct {
 	Day   time.Time `json:"day"`
 	Value int       `json:"value"`
 }
-

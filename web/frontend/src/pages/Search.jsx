@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react'
-import { Button, Checkbox, Form, Input, Radio, Space, Spin, Table, Typography } from 'antd'
+import { Button, Checkbox, Col, Form, Input, Radio, Row, Space, Spin, Table, Typography } from 'antd'
 import { getSearch } from '../api'
 import {
   getGlobalPageSize, normalizeComment,
-  normalizeQuote,
+  normalizeQuote, normalizeScreenName,
   parseIntWithDefault,
   setGlobalPageSize,
   stringWithDefault,
@@ -38,6 +38,21 @@ const columns = [
         return <div>{data.likes_count} likes</div>
       }
     }
+  },
+  {
+    title: 'Por',
+    dataIndex: 'from_id',
+    key: 'from_id',
+    render: (text, data) => <div>
+      <Row style={{ textAlign: 'center'}}>
+        <Col span={24}>
+          <img width="50" height="50" src={data.from_photo} alt=''/>
+        </Col>
+        <Col span={24}>
+          {`${data.from_name} (@${normalizeScreenName(data.from_screen_name, data.from_id)})`}
+        </Col>
+      </Row>
+    </div>
   },
   {
     title: '',
