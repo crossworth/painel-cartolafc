@@ -5,4 +5,4 @@
 // and any other packr generated files.
 package web
 
-import _ "github.com/crossworth/cartola-web-admin/web/packrd"
+import _ "github.com/crossworth/painel-cartolafc/web/packrd"

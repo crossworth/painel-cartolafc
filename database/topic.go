@@ -8,7 +8,7 @@ import (
 
 	"github.com/travelaudience/go-sx"
 
-	"github.com/crossworth/cartola-web-admin/model"
+	"github.com/crossworth/painel-cartolafc/model"
 )
 
 func (p *PostgreSQL) Topics(context context.Context, before int, limit int, orderBy OrderBy) ([]TopicWithPollAndCommentsCount, error) {

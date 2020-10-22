@@ -4,7 +4,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/crossworth/cartola-web-admin/model"
+	"github.com/crossworth/painel-cartolafc/model"
 )
 
 type PaginationTimestamps struct {

@@ -5,9 +5,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/crossworth/cartola-web-admin/database"
-	"github.com/crossworth/cartola-web-admin/logger"
-	"github.com/crossworth/cartola-web-admin/model"
+	"github.com/crossworth/painel-cartolafc/database"
+	"github.com/crossworth/painel-cartolafc/logger"
+	"github.com/crossworth/painel-cartolafc/model"
 )
 
 type UserHandler struct {

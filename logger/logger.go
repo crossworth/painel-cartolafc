@@ -15,7 +15,7 @@ import (
 	"github.com/rs/zerolog/hlog"
 	"github.com/rs/zerolog/log"
 
-	"github.com/crossworth/cartola-web-admin/model"
+	"github.com/crossworth/painel-cartolafc/model"
 )
 
 type LogLevel int

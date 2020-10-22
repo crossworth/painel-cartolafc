@@ -6,10 +6,10 @@ import (
 
 	"github.com/gorilla/sessions"
 
-	"github.com/crossworth/cartola-web-admin/httputil"
-	"github.com/crossworth/cartola-web-admin/logger"
-	"github.com/crossworth/cartola-web-admin/model"
-	"github.com/crossworth/cartola-web-admin/util"
+	"github.com/crossworth/painel-cartolafc/httputil"
+	"github.com/crossworth/painel-cartolafc/logger"
+	"github.com/crossworth/painel-cartolafc/model"
+	"github.com/crossworth/painel-cartolafc/util"
 )
 
 var (

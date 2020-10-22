@@ -7,10 +7,10 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 
-	"github.com/crossworth/cartola-web-admin/api/handle"
-	"github.com/crossworth/cartola-web-admin/cache"
-	"github.com/crossworth/cartola-web-admin/database"
-	"github.com/crossworth/cartola-web-admin/logger"
+	"github.com/crossworth/painel-cartolafc/api/handle"
+	"github.com/crossworth/painel-cartolafc/cache"
+	"github.com/crossworth/painel-cartolafc/database"
+	"github.com/crossworth/painel-cartolafc/logger"
 )
 
 type PublicAPI struct {

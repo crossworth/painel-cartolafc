@@ -9,7 +9,7 @@ import (
 
 	"github.com/travelaudience/go-sx"
 
-	"github.com/crossworth/cartola-web-admin/model"
+	"github.com/crossworth/painel-cartolafc/model"
 )
 
 var (

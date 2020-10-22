@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/crossworth/cartola-web-admin/logger"
+	"github.com/crossworth/painel-cartolafc/logger"
 )
 
 // this is based on: https://github.com/btubbs/pgq

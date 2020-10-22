@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-chi/chi"
 
-	"github.com/crossworth/cartola-web-admin/util"
+	"github.com/crossworth/painel-cartolafc/util"
 )
 
 func RemoveDoubleSlashes(next http.Handler) http.Handler {

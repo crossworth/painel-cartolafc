@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/crossworth/cartola-web-admin/logger"
+	"github.com/crossworth/painel-cartolafc/logger"
 )
 
 // Deprecated: Remove this

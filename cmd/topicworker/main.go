@@ -12,7 +12,7 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/travelaudience/go-sx"
 
-	"github.com/crossworth/cartola-web-admin/updater"
+	"github.com/crossworth/painel-cartolafc/updater"
 )
 
 type Account struct {

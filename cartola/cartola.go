@@ -14,15 +14,15 @@ import (
 	"github.com/go-chi/cors"
 	"github.com/gorilla/sessions"
 
-	"github.com/crossworth/cartola-web-admin/api"
-	"github.com/crossworth/cartola-web-admin/auth"
-	"github.com/crossworth/cartola-web-admin/cache"
-	"github.com/crossworth/cartola-web-admin/database"
-	"github.com/crossworth/cartola-web-admin/httputil"
-	"github.com/crossworth/cartola-web-admin/logger"
-	"github.com/crossworth/cartola-web-admin/updater"
-	"github.com/crossworth/cartola-web-admin/vk"
-	"github.com/crossworth/cartola-web-admin/web"
+	"github.com/crossworth/painel-cartolafc/api"
+	"github.com/crossworth/painel-cartolafc/auth"
+	"github.com/crossworth/painel-cartolafc/cache"
+	"github.com/crossworth/painel-cartolafc/database"
+	"github.com/crossworth/painel-cartolafc/httputil"
+	"github.com/crossworth/painel-cartolafc/logger"
+	"github.com/crossworth/painel-cartolafc/updater"
+	"github.com/crossworth/painel-cartolafc/vk"
+	"github.com/crossworth/painel-cartolafc/web"
 )
 
 type Cartola struct {

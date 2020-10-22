@@ -11,14 +11,14 @@ import (
 	"github.com/markbates/goth"
 	"github.com/markbates/goth/gothic"
 
-	"github.com/crossworth/cartola-web-admin/cache"
-	"github.com/crossworth/cartola-web-admin/cartola"
-	"github.com/crossworth/cartola-web-admin/database"
-	"github.com/crossworth/cartola-web-admin/logger"
-	"github.com/crossworth/cartola-web-admin/updater"
-	"github.com/crossworth/cartola-web-admin/util"
-	"github.com/crossworth/cartola-web-admin/vk"
-	"github.com/crossworth/cartola-web-admin/vk/openid"
+	"github.com/crossworth/painel-cartolafc/cache"
+	"github.com/crossworth/painel-cartolafc/cartola"
+	"github.com/crossworth/painel-cartolafc/database"
+	"github.com/crossworth/painel-cartolafc/logger"
+	"github.com/crossworth/painel-cartolafc/updater"
+	"github.com/crossworth/painel-cartolafc/util"
+	"github.com/crossworth/painel-cartolafc/vk"
+	"github.com/crossworth/painel-cartolafc/vk/openid"
 )
 
 func main() {

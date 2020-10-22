@@ -1,4 +1,4 @@
-module github.com/crossworth/cartola-web-admin
+module github.com/crossworth/painel-cartolafc
 
 go 1.13
 
