@@ -21,6 +21,7 @@ var (
 	apiVersion   = "5.71"
 )
 
+// This is based on github.com/markbates/goth VK implementation
 func New(clientKey, secret, callbackURL string, scopes ...string) *Provider {
 	p := &Provider{
 		ClientKey:    clientKey,

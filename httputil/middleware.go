@@ -10,6 +10,7 @@ import (
 	"github.com/crossworth/painel-cartolafc/util"
 )
 
+// This is a copy of https://github.com/go-chi/chi/blob/master/middleware/strip.go#L13
 func RemoveDoubleSlashes(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		var path string
